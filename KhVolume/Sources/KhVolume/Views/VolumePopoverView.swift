@@ -263,7 +263,7 @@ struct VolumePopoverView: View {
     private var actionsSection: some View {
         VStack(alignment: .leading, spacing: 4) {
             PopoverMenuRow(
-                title: "Sound Settings…",
+                title: "Preferences…",
                 isKeyboardFocused: isKeyboardFocused(.soundSettings)
             ) {
                 dismiss()

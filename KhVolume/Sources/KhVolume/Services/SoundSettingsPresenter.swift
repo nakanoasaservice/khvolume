@@ -1,10 +1,10 @@
 import AppKit
 import SwiftUI
 
-/// Brings the sound settings window to the front (for MenuBarExtra).
+/// Brings the preferences window to the front (for MenuBarExtra).
 @MainActor
 enum SoundSettingsPresenter {
-    private static let windowTitle = "KH Volume Sound Settings"
+    private static let windowTitle = "KH Volume Preferences"
     private static var fallbackPanel: NSPanel?
     private static let windowDelegate = SettingsWindowDelegate()
 
@@ -107,7 +107,7 @@ enum SoundSettingsPresenter {
 @MainActor
 private final class SettingsWindowDelegate: NSObject, NSWindowDelegate {
     func windowWillClose(_ notification: Notification) {
-        let title = "KH Volume Sound Settings"
+        let title = "KH Volume Preferences"
         let anyOpen = NSApp.windows.contains { $0.isVisible && $0.title == title }
         if !anyOpen, NSApp.activationPolicy() == .regular {
             NSApp.setActivationPolicy(.accessory)

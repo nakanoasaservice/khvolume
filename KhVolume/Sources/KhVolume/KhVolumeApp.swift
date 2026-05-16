@@ -13,7 +13,7 @@ struct KhVolumeApp: App {
         }
         .menuBarExtraStyle(.window)
 
-        Window("KH Volume Sound Settings", id: "sound-settings") {
+        Window("KH Volume Preferences", id: "sound-settings") {
             SoundSettingsView(store: store)
         }
         .windowResizability(.contentSize)
