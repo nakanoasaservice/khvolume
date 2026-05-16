@@ -24,16 +24,11 @@ struct SoundSettingsView: View {
 
             Section("Volume") {
                 LabeledContent("Volume limit") {
-                    VStack(alignment: .leading, spacing: 6) {
-                        HStack(spacing: 12) {
-                            Slider(value: $store.config.maxVolumeLimit, in: 0...120, step: 1)
-                            Text("\(Int(store.config.maxVolumeLimit.rounded())) dB")
-                                .monospacedDigit()
-                                .frame(width: 52, alignment: .trailing)
-                        }
-                        Text("The slider and shortcuts cannot exceed this level.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                    HStack(spacing: 12) {
+                        Slider(value: $store.config.maxVolumeLimit, in: 0...120)
+                        Text("\(Int(store.config.maxVolumeLimit.rounded())) dB")
+                            .monospacedDigit()
+                            .frame(width: 52, alignment: .trailing)
                     }
                 }
                 .onChange(of: store.config.maxVolumeLimit) { _, _ in store.saveConfig() }
