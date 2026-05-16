@@ -51,7 +51,9 @@ def get_session(settings: Settings) -> "KhtoolSession":
 
 
 def session_available(settings: Settings) -> bool:
-    return settings.khtool_json.is_file()
+    from khvol_cli import khtool_json_has_devices
+
+    return khtool_json_has_devices(settings.khtool_json)
 
 
 class KhtoolSession:

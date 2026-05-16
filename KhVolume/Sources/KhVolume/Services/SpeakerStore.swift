@@ -118,12 +118,32 @@ final class SpeakerStore {
             apply(json: json)
             status.connection = json.balanced ? .ready : .warning
         } catch let err as KhvolError {
+            if await recoverAfterDeviceError(err) {
+                return
+            }
             status.connection = .disconnected
             status.lastError = err.localizedDescription
             status.devices = []
         } catch {
             status.connection = .disconnected
             status.lastError = error.localizedDescription
+        }
+    }
+
+    /// After link loss, stale or empty `khtool.json` can block status until a rescan succeeds.
+    private func recoverAfterDeviceError(_ err: KhvolError) async -> Bool {
+        guard case .deviceError = err else { return false }
+        await loadInterfaces()
+        do {
+            let count = try await makeClient().scan()
+            guard count > 0 else { return false }
+            let json = try await makeClient().jsonStatus()
+            apply(json: json)
+            status.lastError = nil
+            status.connection = json.balanced ? .ready : .warning
+            return true
+        } catch {
+            return false
         }
     }
 

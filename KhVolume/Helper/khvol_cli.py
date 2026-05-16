@@ -227,6 +227,28 @@ def _khtool_run_subprocess(
     return result
 
 
+def _khtool_payload_has_devices(data: Any) -> bool:
+    if not isinstance(data, dict) or not data:
+        return False
+    for key in ("ssc_devices", "devices"):
+        devices = data.get(key)
+        if isinstance(devices, list):
+            return len(devices) > 0
+    return True
+
+
+def khtool_json_has_devices(path: Path) -> bool:
+    if not path.is_file():
+        return False
+    try:
+        if path.stat().st_size <= 2:
+            return False
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return False
+    return _khtool_payload_has_devices(data)
+
+
 def parse_khtool_status(output: str) -> dict[str, Any]:
     devices: dict[str, dict[str, Any]] = {}
     current: str | None = None
@@ -261,6 +283,8 @@ def parse_khtool_status(output: str) -> dict[str, Any]:
 
 
 def read_status(settings: Settings) -> dict[str, Any]:
+    if not khtool_json_has_devices(settings.khtool_json):
+        raise KhvolError("no speakers configured; run scan", EXIT_DEVICE)
     level = khtool_run(
         settings,
         "--expert",
@@ -386,18 +410,41 @@ def cmd_interfaces(settings: Settings) -> int:
 
 
 def scan_device_count(settings: Settings) -> int:
-    result = khtool_run(settings, "--scan")
-    match = re.search(r"Found\s+(\d+)\s+Device\(s\)", result.stdout)
-    if not match:
-        raise KhvolError("could not parse device count from scan output", EXIT_DEVICE)
-    return int(match.group(1))
+    from ssc_scan import scan_ssc_setup
+
+    settings.config_dir.mkdir(parents=True, exist_ok=True)
+    setup = scan_ssc_setup(scan_time_seconds=12.0, interface=settings.interface)
+    if not setup.ssc_devices:
+        setup = scan_ssc_setup(scan_time_seconds=12.0, interface=None)
+    if setup.ssc_devices:
+        setup.to_json(str(settings.khtool_json))
+    return len(setup.ssc_devices)
 
 
 def cmd_scan(settings: Settings) -> int:
     from khtool_session import invalidate_session
 
     invalidate_session()
+    previous: str | None = None
+    had_devices = False
+    if settings.khtool_json.is_file():
+        previous = settings.khtool_json.read_text(encoding="utf-8")
+        try:
+            had_devices = _khtool_payload_has_devices(json.loads(previous))
+        except json.JSONDecodeError:
+            had_devices = False
+
     count = scan_device_count(settings)
+
+    if count == 0:
+        if had_devices and previous is not None:
+            settings.khtool_json.write_text(previous, encoding="utf-8")
+        else:
+            try:
+                settings.khtool_json.unlink(missing_ok=True)
+            except OSError:
+                pass
+
     print(json.dumps({"speakerCount": count}, separators=(",", ":")))
     return EXIT_OK if count > 0 else EXIT_DEVICE
 

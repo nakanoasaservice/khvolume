@@ -37,7 +37,11 @@ struct VolumePopoverView: View {
         .onAppear {
             sliderLevel = store.previewAverageLevel
             focusedNavIndex = nil
-            Task { await store.startupIfNeeded() }
+            Task {
+                await store.startupIfNeeded()
+                await store.loadInterfaces()
+                store.scheduleRefresh()
+            }
         }
         .onChange(of: store.previewAverageLevel) { _, new in
             if !isDragging {
