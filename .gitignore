@@ -1,0 +1,56 @@
+# macOS
+.DS_Store
+._*
+
+# Python (helper build venv)
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+.mypy_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# PyInstaller / local build
+build/
+dist/
+
+# Swift
+KhVolume/.build/
+DerivedData/
+xcuserdata/
+*.hmap
+*.ipa
+*.dSYM
+*.dSYM.zip
+timeline.xctimeline
+playground.xcworkspace
+
+# Local config & runtime data
+khvolume.local.env
+*.local.env
+khtool.json
+khtool_commands.json
+logs/
+.smoke-config/
+
+# Bundled khvol helper (regenerate: ./scripts/build-khvol-helper.sh)
+KhVolume/Helpers/khvol
+KhVolume/Helpers/khvol-bundle/
+
+# IDE
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.history/
+*.vsix

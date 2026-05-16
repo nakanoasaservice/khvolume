@@ -1,0 +1,5 @@
+# Pinned deps for PyInstaller bundle (build/venv).
+pyinstaller==6.14.1
+zeroconf==0.148.0
+# schwinn fork (SSC / Neumann KH)
+pyssc @ git+https://github.com/schwinn/pyssc.git@main

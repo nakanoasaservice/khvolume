@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Run the khvol CLI from source (DEBUG / smoke tests without PyInstaller).
+set -euo pipefail
+
+HELPER_DIR="$(cd "$(dirname "$0")/../Helper" && pwd)"
+REPO="$(cd "$(dirname "$0")/../.." && pwd)"
+
+export KHVOL_ROOT="$HELPER_DIR"
+
+PYTHON="${KHVOL_PYTHON:-}"
+if [[ -z "$PYTHON" ]]; then
+  if [[ -x "$REPO/.venv/bin/python" ]]; then
+    PYTHON="$REPO/.venv/bin/python"
+  else
+    PYTHON="python3"
+  fi
+fi
+
+exec "$PYTHON" "$HELPER_DIR/khvol_cli.py" "$@"

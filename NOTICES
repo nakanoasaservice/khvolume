@@ -1,0 +1,30 @@
+KH Volume — Third-Party Notices
+===============================
+
+This application bundles or depends on the following open-source components.
+
+khtool
+------
+Copyright (c) 2022 Thorsten Schwinn
+MIT License — see KhVolume/Helper/vendor/LICENSE
+https://github.com/schwinn/khtool
+
+pyssc (schwinn fork)
+--------------------
+Copyright (c) 2022 JJ Wohlgemuth
+MIT License — https://github.com/schwinn/pyssc/blob/main/LICENSE
+Bundled via PyInstaller in KhVolume/Helpers/khvol-bundle/
+
+zeroconf
+--------
+See the package metadata in the PyInstaller bundle for license terms.
+
+KeyboardShortcuts (Swift package)
+---------------------------------
+Copyright (c) Sindre Sorhus
+MIT License — https://github.com/sindresorhus/KeyboardShortcuts
+
+PyInstaller (build-time only)
+-----------------------------
+Used to build the khvol helper; not redistributed as a standalone product.
+https://pyinstaller.org/
