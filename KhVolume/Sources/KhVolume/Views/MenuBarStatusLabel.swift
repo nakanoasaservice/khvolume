@@ -4,16 +4,19 @@ struct MenuBarStatusLabel: View {
     @Bindable var store: SpeakerStore
 
     var body: some View {
-        Text(displayText)
-            .monospacedDigit()
-            .frame(minWidth: 24, minHeight: 16, alignment: .center)
-            .task { await store.startupIfNeeded() }
-    }
-
-    private var displayText: String {
-        if store.isBusy {
-            return store.menuBarApplyingText
+        Group {
+            if store.isBusy {
+                Text(store.menuBarApplyingText)
+            } else if let volumeText = store.menuBarHotkeyVolumeText {
+                Text(volumeText)
+                    .monospacedDigit()
+            } else if store.status.connection == .disconnected {
+                Text("!")
+            } else {
+                Image(systemName: "hifispeaker.fill")
+            }
         }
-        return store.menuBarLabel
+        .frame(minWidth: 24, minHeight: 16, alignment: .center)
+        .task { await store.startupIfNeeded() }
     }
 }

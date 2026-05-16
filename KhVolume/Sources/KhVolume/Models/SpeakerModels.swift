@@ -21,19 +21,6 @@ struct SpeakerStatus: Equatable {
     var isMuted: Bool = false
     var levelMismatch: Bool = false
     var lastError: String?
-
-    var menuBarTitle: String {
-        switch connection {
-        case .scanning:
-            if isMuted { return "🔇" }
-            return "\(Int(averageLevel.rounded()))"
-        case .disconnected:
-            return "!"
-        case .warning, .ready:
-            if isMuted { return "🔇" }
-            return "\(Int(averageLevel.rounded()))"
-        }
-    }
 }
 
 struct NetworkInterfaceInfo: Identifiable, Equatable, Codable {

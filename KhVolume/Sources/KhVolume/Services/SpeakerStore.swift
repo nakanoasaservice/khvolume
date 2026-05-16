@@ -53,12 +53,10 @@ final class SpeakerStore {
         pendingVolumeLevel ?? status.averageLevel
     }
 
-    /// Menu bar label (uncommitted value while hotkey preview is active).
-    var menuBarLabel: String {
-        if let pending = pendingVolumeLevel, !isBusy {
-            return "\(Int(pending.rounded()))"
-        }
-        return status.menuBarTitle
+    /// Menu bar volume digits while a hotkey adjustment is in progress.
+    var menuBarHotkeyVolumeText: String? {
+        guard let pending = pendingVolumeLevel, !isBusy else { return nil }
+        return "\(Int(pending.rounded()))"
     }
 
     /// Menu bar label while applying to speakers (single glyph, no extra width).
