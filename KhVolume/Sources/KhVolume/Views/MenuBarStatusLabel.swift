@@ -5,9 +5,7 @@ struct MenuBarStatusLabel: View {
 
     var body: some View {
         Group {
-            if store.isBusy {
-                Text(store.menuBarApplyingText)
-            } else if let volumeText = store.menuBarHotkeyVolumeText {
+            if let volumeText = store.menuBarHotkeyVolumeText {
                 Text(volumeText)
                     .monospacedDigit()
             } else if store.status.connection == .disconnected {

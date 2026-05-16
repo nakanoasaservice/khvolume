@@ -55,12 +55,9 @@ final class SpeakerStore {
 
     /// Menu bar volume digits while a hotkey adjustment is in progress.
     var menuBarHotkeyVolumeText: String? {
-        guard let pending = pendingVolumeLevel, !isBusy else { return nil }
+        guard let pending = pendingVolumeLevel else { return nil }
         return "\(Int(pending.rounded()))"
     }
-
-    /// Menu bar label while applying to speakers (single glyph, no extra width).
-    var menuBarApplyingText: String { "↻" }
 
     private func makeClient() -> KhvolClient {
         KhvolClient(
