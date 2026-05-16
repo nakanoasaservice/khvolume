@@ -17,7 +17,7 @@ struct VolumePopoverView: View {
     @State private var focusedNavIndex: Int?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 8) {
             volumeSection
             Divider()
             networkSection
@@ -25,7 +25,7 @@ struct VolumePopoverView: View {
             actionsSection
         }
         .padding(.horizontal, 10)
-        .padding(.vertical, 12)
+        .padding(.vertical, 10)
         .frame(width: 280)
         .background {
             PopoverKeyboardHandler(
@@ -232,13 +232,13 @@ struct VolumePopoverView: View {
     }
 
     private var networkSection: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 2) {
             Text("Network")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.leading, 8)
-                .padding(.bottom, 2)
+                .padding(.bottom, 1)
 
             ForEach(activeInterfaces) { iface in
                 PopoverMenuRow(
@@ -265,7 +265,7 @@ struct VolumePopoverView: View {
     }
 
     private var actionsSection: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 2) {
             PopoverMenuRow(
                 title: "Preferences…",
                 isKeyboardFocused: isKeyboardFocused(.soundSettings)

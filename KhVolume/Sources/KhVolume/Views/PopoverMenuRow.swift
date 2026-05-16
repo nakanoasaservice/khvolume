@@ -24,7 +24,7 @@ struct PopoverMenuRow: View {
                 }
             }
             .padding(.horizontal, 8)
-            .padding(.vertical, 5)
+            .padding(.vertical, 3)
             .contentShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
         }
         .buttonStyle(.plain)
