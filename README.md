@@ -1,61 +1,39 @@
 # KH Volume
 
-**Menu bar volume control for Neumann KH DSP monitors on macOS** — especially when you use **S/PDIF coaxial digital input** and macOS volume keys no longer map to your speakers.
+**KH Volume** is a macOS menu bar application designed to control the volume of **Neumann KH DSP** studio monitors. It is especially useful when your speakers are connected via **S/PDIF coaxial digital input** or USB, where the standard macOS volume keys no longer map to your monitors.
 
-KH Volume drives the speaker’s **network DSP level** (Sennheiser Sound Control / SSC over IPv6), not the macOS system volume slider. That is the practical way to change level when audio is fed over **digital coax**, USB, or any input where the Mac’s volume control does not reach the monitors.
+Instead of adjusting the system volume slider, KH Volume directly drives the **network DSP level** of your speakers using Sennheiser Sound Control (SSC) over IPv6. This provides a practical and precise way to change the listening level and toggle mute directly from your Mac's menu bar.
 
-**Thanks to [Thorsten Schwinn](https://github.com/schwinn)** and the contributors of [**khtool**](https://github.com/schwinn/khtool) — the open-source Python tool that talks to Neumann KH DSP speakers over SSC. KH Volume is a native macOS menu bar shell around a bundled `khvol` helper that builds on vendored khtool (MIT). Without that project, this app would not exist.
+**Thanks to [Thorsten Schwinn](https://github.com/schwinn)** and the contributors of [**khtool**](https://github.com/schwinn/khtool) — the open-source Python tool that communicates with Georg Neumann KH speakers over SSC. KH Volume is a native macOS shell around a bundled `khvol` helper that builds on vendored khtool (MIT). Without that project, this app would not exist.
 
-## Who is this for?
+## Supported Monitors
 
-You might be searching for:
-
-- **Neumann KH 120 II volume control on Mac**
-- **KH 750 DSP macOS volume**
-- **S/PDIF coaxial digital input volume** (no response to ⌘ volume keys)
-- **KH monitor menu bar volume**
-- **Georg Neumann KH digital input level control**
-
-If your KH speakers are on **Ethernet** (built-in port or adapter) and support SSC — as **KH 80 DSP**, **KH 120 II**, **KH 150**, **KH 150 AES67**, **KH 750 DSP**, and related KH DSP models do — KH Volume can set level and mute from the menu bar with optional global shortcuts.
-
-## Supported monitors (examples)
-
-KH Volume talks to Neumann **KH DSP** loudspeakers that expose SSC on the LAN, including:
-
-| Model | Notes |
-|--------|--------|
-| **KH 80 DSP** | Compact nearfield |
-| **KH 120 II** | Common studio monitor; digital inputs incl. S/PDIF coax |
-| **KH 150** | Mid-size DSP monitor |
-| **KH 150 AES67** | AES67 networking variant |
-| **KH 750 DSP** | Subwoofer; level/mute via SSC (some settings differ from full-range models) |
-
-Other KH DSP models that appear in a network scan with [khtool](KhVolume/Helper/vendor/khtool.py) are generally supported for **level** and **mute**.
+If your KH monitors are connected to your local network via Ethernet (built-in port or adapter) and support SSC, KH Volume can seamlessly manage their levels. This includes popular models across the Neumann KH DSP lineup: **KH 80 DSP**, **KH 120 II**, **KH 150**, **KH 150 AES67**, and **KH 750 DSP**.
 
 ## How it works
 
-1. Mac and speakers share a network (usually **Ethernet** to the speaker’s RJ45).
-2. KH Volume runs a bundled **`khvol`** helper (Python + [khtool](KhVolume/Helper/vendor/)) to send SSC commands.
-3. The app shows the current DSP level in the **menu bar**, with a popover like macOS Sound.
-4. Optional shortcuts (default **⌥=** / **⌥-**) adjust level without opening the popover.
+1. Your Mac and the speakers share a network connection (usually Ethernet to the speaker’s RJ45 port).
+2. KH Volume runs a bundled **`khvol`** helper (Python + [khtool](KhVolume/Helper/vendor/)) to send SSC commands over the LAN.
+3. The app displays the current DSP level in the menu bar, featuring a popover similar to the native macOS Sound interface.
+4. Optional global shortcuts (default **⌥=** / **⌥-**) allow you to adjust the level without opening the popover.
 
-**Important:** Control is over the **network control plane**, not over the S/PDIF bitstream. Your Mac can play audio via **S/PDIF coaxial digital** while level is adjusted separately via Ethernet/SSC. Both cables/connections are used for different jobs.
+**Important:** The control mechanism operates entirely over the network control plane, independent of the audio bitstream. This means your Mac can output pristine audio via a digital S/PDIF connection while the volume level is managed separately over Ethernet via SSC.
 
 ## Features
 
-- Menu bar level display and slider
-- Mute toggle
-- **Network** interface picker (USB Ethernet, built-in LAN, etc.)
-- Per-app volume cap (“volume limit”) and step size (1 / 3 / 6 dB)
-- Global shortcuts (customizable in Sound Settings)
-- Open at Login (requires signed app in `/Applications`)
-- Left/right level mismatch warning (stereo pairs)
+- Menu bar level display and slider for quick access
+- Mute toggle functionality
+- Network interface picker (supports USB Ethernet adapters, built-in LAN, etc.)
+- Per-app volume cap (“volume limit”) and customizable step sizes (1 / 3 / 6 dB)
+- Global keyboard shortcuts (customizable in Sound Settings)
+- Open at Login support (requires a signed app in `/Applications`)
+- Left/right level mismatch warning for stereo pairs
 
 ## Requirements
 
 - **macOS 14** or later
-- Neumann **KH DSP** monitors reachable on your LAN (SSC / IPv6 link-local)
-- A Mac network interface that can reach the speakers (e.g. USB–Ethernet adapter, `en15`, `en0`)
+- Neumann KH DSP monitors reachable on your LAN via SSC (IPv6 link-local)
+- A Mac network interface capable of reaching the speakers (e.g., USB–Ethernet adapter, `en15`, `en0`)
 - To **build from source:** Xcode Command Line Tools / Swift 5.9+, Python 3.12+ (for the bundled helper only)
 
 ## Install (release)
