@@ -39,8 +39,7 @@ struct VolumePopoverView: View {
             focusedNavIndex = nil
             Task {
                 await store.startupIfNeeded()
-                await store.loadInterfaces()
-                store.scheduleRefresh()
+                await store.preparePopover()
             }
         }
         .onChange(of: store.previewAverageLevel) { _, new in

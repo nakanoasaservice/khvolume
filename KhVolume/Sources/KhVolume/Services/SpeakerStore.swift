@@ -16,9 +16,11 @@ final class SpeakerStore {
     private var hotkeyCommitTask: Task<Void, Never>?
     private var hotkeyManager: HotkeyManager?
     private var hasStartedUp = false
+    private var lastInterfacesLoad: Date?
     /// When a hotkey arrives during apply, commit after the current operation finishes.
     private var hotkeyCommitPendingAfterBusy = false
     private let hotkeyDebounceNanos: UInt64 = 400_000_000
+    private let interfacesReloadInterval: TimeInterval = 60
 
     init() {
         config = AppPaths.loadConfig()
@@ -105,20 +107,33 @@ final class SpeakerStore {
         await Task.yield()
     }
 
-    func refresh() async {
+    func refresh(showBusy: Bool = true) async {
         guard !isBusy else { return }
-        await markMenuBarLoading()
-        defer { isBusy = false }
+        if showBusy {
+            await markMenuBarLoading()
+        }
+        defer {
+            if showBusy { isBusy = false }
+        }
 
+        await applyStatusFromHelper(attemptRecovery: true)
+    }
+
+    /// Popover open: refresh interface list and status without blocking controls or rescanning.
+    func preparePopover() async {
+        await loadInterfacesIfNeeded()
+        await refresh(showBusy: false)
+    }
+
+    private func applyStatusFromHelper(attemptRecovery: Bool) async {
         status.lastError = nil
 
         do {
-            let client = makeClient()
-            let json = try await client.jsonStatus()
+            let json = try await makeClient().jsonStatus()
             apply(json: json)
             status.connection = json.balanced ? .ready : .warning
         } catch let err as KhvolError {
-            if await recoverAfterDeviceError(err) {
+            if attemptRecovery, await recoverAfterDeviceError(err) {
                 return
             }
             status.connection = .disconnected
@@ -130,10 +145,12 @@ final class SpeakerStore {
         }
     }
 
-    /// After link loss, stale or empty `khtool.json` can block status until a rescan succeeds.
+    /// Rescan only when the speaker cache is missing (not on every transient json failure).
     private func recoverAfterDeviceError(_ err: KhvolError) async -> Bool {
-        guard case .deviceError = err else { return false }
-        await loadInterfaces()
+        guard case .deviceError(let message) = err, shouldRescan(after: message) else { return false }
+        await loadInterfaces(force: true)
+        isBusy = true
+        defer { isBusy = false }
         do {
             let count = try await makeClient().scan()
             guard count > 0 else { return false }
@@ -147,9 +164,31 @@ final class SpeakerStore {
         }
     }
 
-    func loadInterfaces() async {
+    private func shouldRescan(after message: String) -> Bool {
+        if !AppPaths.hasSpeakerCache { return true }
+        let lower = message.lowercased()
+        return lower.contains("run scan") || lower.contains("no speakers configured")
+    }
+
+    func loadInterfacesIfNeeded() async {
+        if !interfaces.isEmpty,
+           let last = lastInterfacesLoad,
+           Date().timeIntervalSince(last) < interfacesReloadInterval {
+            return
+        }
+        await loadInterfaces(force: true)
+    }
+
+    func loadInterfaces(force: Bool = false) async {
+        if !force,
+           !interfaces.isEmpty,
+           let last = lastInterfacesLoad,
+           Date().timeIntervalSince(last) < interfacesReloadInterval {
+            return
+        }
         do {
             interfaces = try await makeClient().interfaces()
+            lastInterfacesLoad = Date()
         } catch {
             interfaces = []
         }
@@ -282,7 +321,7 @@ final class SpeakerStore {
 
     func scheduleRefresh() {
         refreshTask?.cancel()
-        refreshTask = Task { await refresh() }
+        refreshTask = Task { await refresh(showBusy: true) }
     }
 
     private func refreshWhileBusy() async {

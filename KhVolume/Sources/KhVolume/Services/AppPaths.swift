@@ -14,6 +14,18 @@ enum AppPaths {
         appSupportURL.appendingPathComponent("config.json")
     }
 
+    static var khtoolCacheURL: URL {
+        appSupportURL.appendingPathComponent("khtool.json")
+    }
+
+    /// True when a non-empty speaker cache exists (avoids rescan on every popover open).
+    static var hasSpeakerCache: Bool {
+        guard let data = try? Data(contentsOf: khtoolCacheURL),
+              let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        else { return false }
+        return !object.isEmpty
+    }
+
     static func loadConfig() -> AppConfig {
         guard let data = try? Data(contentsOf: configURL),
               let config = try? JSONDecoder().decode(AppConfig.self, from: data)
