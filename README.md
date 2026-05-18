@@ -6,6 +6,8 @@ Instead of adjusting the system volume slider, KH Volume directly drives the **n
 
 **Thanks to [Thorsten Schwinn](https://github.com/schwinn)** and the contributors of [**khtool**](https://github.com/schwinn/khtool) — the open-source Python tool that communicates with Georg Neumann KH speakers over SSC. KH Volume is a native macOS shell around a bundled `khvol` helper that builds on vendored khtool (MIT). Without that project, this app would not exist.
 
+![KH Volume menu bar popover showing volume slider and network picker](image/screenshot.png)
+
 ## Supported Monitors
 
 If your KH monitors are connected to your local network via Ethernet (built-in port or adapter) and support SSC, KH Volume can seamlessly manage their levels. This includes popular models across the Neumann KH DSP lineup: **KH 80 DSP**, **KH 120 II**, **KH 150**, **KH 150 AES67**, and **KH 750 DSP**.
