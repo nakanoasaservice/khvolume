@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# Sign KhVolume.app and bundled khvol helper for distribution.
+# Sign "KH Volume.app" and bundled khvol helper for distribution.
 # Usage:
 #   export SIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)"
-#   ./scripts/sign-app.sh dist/KhVolume.app
+#   ./scripts/sign-app.sh "dist/KH Volume.app"
 # Optional notarization:
 #   export NOTARY_APPLE_ID=...
 #   export NOTARY_TEAM_ID=...
 #   export NOTARY_APP_PASSWORD=...
-#   ./scripts/sign-app.sh dist/KhVolume.app --notarize
+#   ./scripts/sign-app.sh "dist/KH Volume.app" --notarize
 set -euo pipefail
 
 APP_PATH="${1:-}"
@@ -17,7 +17,7 @@ if [[ "${2:-}" == "--notarize" ]]; then
 fi
 
 if [[ -z "$APP_PATH" || ! -d "$APP_PATH" ]]; then
-  echo "usage: SIGN_IDENTITY='Developer ID Application: …' $0 path/to/KhVolume.app [--notarize]" >&2
+  echo "usage: SIGN_IDENTITY='Developer ID Application: …' $0 'path/to/KH Volume.app' [--notarize]" >&2
   exit 1
 fi
 
@@ -58,7 +58,7 @@ codesign --verify --deep --strict --verbose=2 "$APP_PATH"
 
 if $NOTARIZE; then
   ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-  ZIP="$ROOT/dist/KhVolume-notarize.zip"
+  ZIP="$ROOT/dist/KH-Volume-notarize.zip"
   ditto -c -k --keepParent "$APP_PATH" "$ZIP"
   xcrun notarytool submit "$ZIP" \
     --apple-id "$NOTARY_APPLE_ID" \

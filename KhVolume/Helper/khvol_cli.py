@@ -557,7 +557,7 @@ def usage_text() -> str:
         "  down [--step N]  decrease level by step\n"
         "  set LEVEL        set absolute level (dB)\n"
         "  set --apply-only skip pre-read balance check (UI already validated)\n"
-        "  set --json       emit status JSON after set (for KhVolume.app)\n"
+        "  set --json       emit status JSON after set (for KH Volume.app)\n"
         "  mute | unmute | toggle-mute\n"
     )
 

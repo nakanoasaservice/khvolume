@@ -48,7 +48,7 @@ enum LaunchAtLogin {
             return "Could not register the login item. Install a Developer ID–signed app in /Applications."
         }
         if ns.localizedDescription.localizedCaseInsensitiveContains("not permitted") {
-            return "Login item registration was denied. Launch a signed KhVolume.app from /Applications."
+            return "Login item registration was denied. Launch a signed \"KH Volume.app\" from /Applications."
         }
         return ns.localizedDescription
     }

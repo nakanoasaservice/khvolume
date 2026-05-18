@@ -43,7 +43,7 @@ Pre-built signed releases may be published separately. To build locally:
 ```bash
 ./scripts/build-khvol-helper.sh
 ./scripts/build-app-bundle.sh
-open dist/KhVolume.app
+open "dist/KH Volume.app"
 ```
 
 For distribution signing and notarization, see `scripts/sign-app.sh`.
@@ -78,7 +78,7 @@ export KHVOL_INTERFACE=en15   # your USB-LAN interface name
 | Menu bar shows `!` | Speaker off, wrong network interface, or no route to the speaker |
 | No speakers in **Network** list | Cable/link down; pick the interface that has link (`ifconfig`) |
 | Level does not change | Confirm `--scan` finds devices; try the interface where `khtool` works |
-| **Open at Login** fails | Install a **Developer ID–signed** `KhVolume.app` in `/Applications` |
+| **Open at Login** fails | Install a **Developer ID–signed** `KH Volume.app` in `/Applications` |
 | Left/right levels differ | Use decrease-only until matched, or enable “allow increase when mismatched” in settings |
 
 ## Project layout

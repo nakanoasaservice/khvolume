@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
-# Build KhVolume.app with bundled khvol helper (Release).
+# Build "KH Volume.app" with bundled khvol helper (Release).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
 APP_NAME="KhVolume"
+APP_BUNDLE_NAME="KH Volume"
 BUNDLE_ID="com.khvolume.app"
 BUILD_DIR="$ROOT/KhVolume/.build/release"
-APP_DIR="$ROOT/dist/${APP_NAME}.app"
+APP_DIR="$ROOT/dist/${APP_BUNDLE_NAME}.app"
 CONTENTS="$APP_DIR/Contents"
 MACOS="$CONTENTS/MacOS"
 HELPERS="$CONTENTS/Helpers"
