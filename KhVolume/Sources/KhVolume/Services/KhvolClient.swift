@@ -28,7 +28,7 @@ enum KhvolError: LocalizedError {
 
 struct KhvolClient {
     let configDir: URL
-    let interface: String
+    let interface: String?
     let maxLevel: Double
     let step: Double
     let force: Bool
@@ -120,10 +120,12 @@ struct KhvolClient {
 
         var args = [
             "--config-dir", configuration.configDirPath,
-            "--interface", configuration.interface,
             "--max-level", String(format: "%.1f", configuration.maxLevel),
             "--step", String(format: "%.1f", configuration.step),
         ]
+        if let interface = configuration.interface, !interface.isEmpty {
+            args.append(contentsOf: ["--interface", interface])
+        }
         if configuration.force { args.append("--force") }
         args.append(contentsOf: configuration.command)
         process.arguments = args
@@ -238,7 +240,7 @@ private enum DispatchTimeout {
 private struct KhvolRunConfiguration: Sendable {
     let helperPath: String
     let configDirPath: String
-    let interface: String
+    let interface: String?
     let maxLevel: Double
     let step: Double
     let force: Bool

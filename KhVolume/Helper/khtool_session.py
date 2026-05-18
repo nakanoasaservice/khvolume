@@ -33,6 +33,8 @@ def invalidate_session() -> None:
 
 
 def get_session(settings: Settings) -> "KhtoolSession":
+    if not settings.interface:
+        raise RuntimeError("network interface not configured")
     key = (str(settings.config_dir.resolve()), settings.interface)
     cached = _CACHE.get(key)
     if cached is not None:
@@ -180,16 +182,17 @@ def _load_khtool_module(khtool_path: Path) -> ModuleType:
 def _subprocess_khtool(
     settings: Settings, extra_args: tuple[str, ...], check: bool
 ) -> _KhtoolRunResult:
-    from khvol_cli import python_executable
+    from khvol_cli import python_executable, require_interface
 
+    interface = require_interface(settings)
     if getattr(sys, "frozen", False):
-        cmd = [sys.executable, "--run-khtool", "-i", settings.interface, "-t", "all", *extra_args]
+        cmd = [sys.executable, "--run-khtool", "-i", interface, "-t", "all", *extra_args]
     else:
         cmd = [
             python_executable(),
             str(settings.khtool),
             "-i",
-            settings.interface,
+            interface,
             "-t",
             "all",
             *extra_args,

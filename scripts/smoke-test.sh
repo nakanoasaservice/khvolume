@@ -20,7 +20,7 @@ if [[ -z "$KHVOL" ]]; then
   fi
 fi
 
-IFACE="${KHVOL_INTERFACE:-en15}"
+IFACE="${KHVOL_INTERFACE:?Set KHVOL_INTERFACE to your USB-LAN interface name (e.g. export KHVOL_INTERFACE=en0)}"
 COMMON=(--config-dir "$CONFIG_DIR" --interface "$IFACE")
 
 echo "== interfaces JSON =="

@@ -44,8 +44,8 @@ final class SpeakerStore {
         scheduleRefresh()
     }
 
-    var interfaceName: String {
-        config.networkInterface ?? "en15"
+    var interfaceName: String? {
+        config.networkInterface
     }
 
     /// Current level for UI, including uncommitted hotkey preview.

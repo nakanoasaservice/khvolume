@@ -19,9 +19,12 @@ EXIT_DEVICE = 2
 EXIT_MISMATCH = 3
 
 BALANCE_TOLERANCE = 0.05
-DEFAULT_INTERFACE = "en15"
 DEFAULT_STEP = 1.0
 DEFAULT_MAX_LEVEL = 120.0
+MISSING_INTERFACE_MESSAGE = (
+    "network interface not configured; use -i/--interface, "
+    "KHVOL_INTERFACE, or config interface"
+)
 
 
 def repo_root() -> Path:
@@ -51,7 +54,7 @@ def python_executable() -> str:
 @dataclass
 class Settings:
     config_dir: Path
-    interface: str
+    interface: str | None
     step: float
     max_level: float
     force: bool
@@ -119,7 +122,6 @@ def build_settings(args: argparse.Namespace) -> Settings:
         args.interface
         or os.environ.get("KHVOL_INTERFACE")
         or config.get("interface")
-        or DEFAULT_INTERFACE
     )
     cli_step = getattr(args, "step", None)
     step = float(
@@ -136,7 +138,7 @@ def build_settings(args: argparse.Namespace) -> Settings:
 
     return Settings(
         config_dir=config_dir,
-        interface=str(interface),
+        interface=str(interface) if interface else None,
         step=step,
         max_level=max_level,
         force=bool(args.force),
@@ -155,7 +157,14 @@ def eprint(message: str) -> None:
     print(message, file=sys.stderr)
 
 
+def require_interface(settings: Settings) -> str:
+    if not settings.interface:
+        raise KhvolError(MISSING_INTERFACE_MESSAGE, EXIT_ERROR)
+    return settings.interface
+
+
 def khtool_run(settings: Settings, *extra_args: str, check: bool = True) -> subprocess.CompletedProcess[str]:
+    iface = require_interface(settings)
     if not settings.khtool.is_file():
         raise KhvolError(f"khtool not found: {settings.khtool}", EXIT_ERROR)
 
@@ -163,7 +172,7 @@ def khtool_run(settings: Settings, *extra_args: str, check: bool = True) -> subp
         from khtool_session import invalidate_session
 
         invalidate_session()
-        return _khtool_run_subprocess(settings, extra_args, check)
+        return _khtool_run_subprocess(settings, iface, extra_args, check)
 
     from khtool_session import get_session, session_available
 
@@ -180,18 +189,18 @@ def khtool_run(settings: Settings, *extra_args: str, check: bool = True) -> subp
             stderr=result.stderr,
         )
 
-    return _khtool_run_subprocess(settings, extra_args, check)
+    return _khtool_run_subprocess(settings, iface, extra_args, check)
 
 
 def _khtool_run_subprocess(
-    settings: Settings, extra_args: tuple[str, ...], check: bool
+    settings: Settings, interface: str, extra_args: tuple[str, ...], check: bool
 ) -> subprocess.CompletedProcess[str]:
     if getattr(sys, "frozen", False):
         cmd = [
             sys.executable,
             "--run-khtool",
             "-i",
-            settings.interface,
+            interface,
             "-t",
             "all",
             *extra_args,
@@ -201,7 +210,7 @@ def _khtool_run_subprocess(
             python_executable(),
             str(settings.khtool),
             "-i",
-            settings.interface,
+            interface,
             "-t",
             "all",
             *extra_args,
@@ -413,8 +422,9 @@ def scan_device_count(settings: Settings) -> int:
     from ssc_scan import scan_ssc_setup
 
     settings.config_dir.mkdir(parents=True, exist_ok=True)
-    setup = scan_ssc_setup(scan_time_seconds=12.0, interface=settings.interface)
-    if not setup.ssc_devices:
+    iface = settings.interface
+    setup = scan_ssc_setup(scan_time_seconds=12.0, interface=iface)
+    if not setup.ssc_devices and iface is not None:
         setup = scan_ssc_setup(scan_time_seconds=12.0, interface=None)
     if setup.ssc_devices:
         setup.to_json(str(settings.khtool_json))
