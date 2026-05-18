@@ -10,7 +10,7 @@ private enum PopoverNavItem: Hashable {
 
 struct VolumePopoverView: View {
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.openWindow) private var openWindow
+    @Environment(\.openSettings) private var openSettings
     @Bindable var store: SpeakerStore
     @State private var sliderLevel: Double = 0
     @State private var isDragging = false
@@ -110,7 +110,7 @@ struct VolumePopoverView: View {
             Task { await store.selectInterface(name) }
         case .soundSettings:
             dismiss()
-            SoundSettingsPresenter.present(store: store, openWindow: openWindow)
+            SoundSettingsPresenter.present(openSettings: openSettings)
         case .quit:
             NSApplication.shared.terminate(nil)
         }
@@ -270,7 +270,7 @@ struct VolumePopoverView: View {
                 isKeyboardFocused: isKeyboardFocused(.soundSettings)
             ) {
                 dismiss()
-                SoundSettingsPresenter.present(store: store, openWindow: openWindow)
+                SoundSettingsPresenter.present(openSettings: openSettings)
             }
 
             PopoverMenuRow(

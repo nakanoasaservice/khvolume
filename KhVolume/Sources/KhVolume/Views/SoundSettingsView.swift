@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 import KeyboardShortcuts
 
@@ -57,8 +58,58 @@ struct SoundSettingsView: View {
         .fixedSize(horizontal: false, vertical: true)
         .frame(minWidth: 420)
         .padding()
+        .background {
+            SettingsWindowLifecycleView()
+                .frame(width: 0, height: 0)
+        }
         .onAppear {
             store.reconcileLaunchAtLoginFromService()
+        }
+    }
+}
+
+private struct SettingsWindowLifecycleView: NSViewRepresentable {
+    func makeNSView(context: Context) -> LifecycleView {
+        LifecycleView()
+    }
+
+    func updateNSView(_ nsView: LifecycleView, context: Context) {}
+
+    final class LifecycleView: NSView {
+        private weak var observedWindow: NSWindow?
+        private var closeObserver: NSObjectProtocol?
+
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            observe(window)
+        }
+
+        deinit {
+            removeCloseObserver()
+        }
+
+        private func observe(_ window: NSWindow?) {
+            guard observedWindow !== window else { return }
+            removeCloseObserver()
+            observedWindow = window
+
+            guard let window else { return }
+            closeObserver = NotificationCenter.default.addObserver(
+                forName: NSWindow.willCloseNotification,
+                object: window,
+                queue: .main
+            ) { _ in
+                Task { @MainActor in
+                    SoundSettingsPresenter.settingsWindowDidClose()
+                }
+            }
+        }
+
+        private func removeCloseObserver() {
+            if let closeObserver {
+                NotificationCenter.default.removeObserver(closeObserver)
+                self.closeObserver = nil
+            }
         }
     }
 }
