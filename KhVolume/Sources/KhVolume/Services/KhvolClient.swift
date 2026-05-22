@@ -76,8 +76,8 @@ struct KhvolClient {
         return try decodeStatusJSON(from: raw)
     }
 
-    func toggleMute() async throws -> KhvolJSONStatus {
-        try decodeStatusJSON(from: try await run(["toggle-mute"]))
+    func setMuted(_ muted: Bool) async throws -> KhvolJSONStatus {
+        try decodeStatusJSON(from: try await run([muted ? "mute" : "unmute"]))
     }
 
     private func decodeStatusJSON(from raw: String) throws -> KhvolJSONStatus {

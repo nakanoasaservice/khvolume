@@ -16,7 +16,7 @@ from network_interfaces import emit_interfaces_json
 from speaker_control import (
     emit_current_status_json,
     set_level_and_emit_status,
-    toggle_mute_and_emit_status,
+    set_muted_and_emit_status,
 )
 from speaker_scan import run_scan_command
 
@@ -28,7 +28,8 @@ def usage_text() -> str:
         "  scan             rescan LAN and refresh khtool.json\n"
         "  interfaces       list hardware ports and link activity (macOS networksetup)\n"
         "  set LEVEL        set absolute level (dB) and emit status JSON\n"
-        "  toggle-mute      toggle mute state and emit status JSON\n"
+        "  mute             mute speakers and emit status JSON\n"
+        "  unmute           unmute speakers and emit status JSON\n"
     )
 
 
@@ -59,7 +60,8 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("interfaces", help="list interfaces via networksetup")
     p_set = sub.add_parser("set", help="set absolute level (dB)")
     p_set.add_argument("level", type=float)
-    sub.add_parser("toggle-mute", help="toggle mute state")
+    sub.add_parser("mute", help="mute speakers")
+    sub.add_parser("unmute", help="unmute speakers")
     return parser
 
 
@@ -81,8 +83,10 @@ def main() -> int:
                 return emit_interfaces_json()
             case "set":
                 return set_level_and_emit_status(settings, args.level)
-            case "toggle-mute":
-                return toggle_mute_and_emit_status(settings)
+            case "mute":
+                return set_muted_and_emit_status(settings, True)
+            case "unmute":
+                return set_muted_and_emit_status(settings, False)
             case _:
                 raise KhvolError(f"unhandled command: {cmd}", EXIT_ERROR)
     except KhvolError as exc:

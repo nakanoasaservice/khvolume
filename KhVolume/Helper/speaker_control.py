@@ -32,8 +32,7 @@ def set_level_and_emit_status(settings: Settings, level: float) -> int:
     return emit_status_json(read_status(runner))
 
 
-def toggle_mute_and_emit_status(settings: Settings) -> int:
+def set_muted_and_emit_status(settings: Settings, muted: bool) -> int:
     runner = KhtoolRunner(settings)
-    status = read_status(runner)
-    runner.set_muted(not status["muted"])
+    runner.set_muted(muted)
     return emit_status_json(read_status(runner))

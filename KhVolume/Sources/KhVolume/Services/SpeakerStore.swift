@@ -237,7 +237,8 @@ final class SpeakerStore {
 
     func toggleMute() async {
         cancelPendingHotkeyVolume()
-        await runMutation { try await $0.toggleMute() }
+        let targetMuted = !status.isMuted
+        await runMutation { try await $0.setMuted(targetMuted) }
     }
 
     func cancelPendingHotkeyVolume() {
