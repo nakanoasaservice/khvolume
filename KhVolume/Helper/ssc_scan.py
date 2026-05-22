@@ -8,15 +8,22 @@ from __future__ import annotations
 
 import socket
 import time
-from typing import Any
+from typing import Any, Protocol
 
 SSC_SERVICE_TYPE = "_ssc._tcp.local."
+
+
+class SscSetup(Protocol):
+    ssc_devices: list[Any]
+
+    def to_json(self, path: str) -> None:
+        ...
 
 
 def scan_ssc_setup(
     scan_time_seconds: float = 12.0,
     interface: str | None = None,
-) -> Any:
+) -> SscSetup:
     from pyssc.ssc_device import Ssc_device
     from pyssc.ssc_device_setup import Ssc_device_setup
     from zeroconf import IPVersion, ServiceBrowser, ServiceStateChange, Zeroconf
@@ -50,7 +57,9 @@ def scan_ssc_setup(
             pass
 
     zeroconf = Zeroconf(**zc_kwargs)
-    ServiceBrowser(zeroconf, [SSC_SERVICE_TYPE], handlers=[on_service_state_change])
-    time.sleep(scan_time_seconds)
-    zeroconf.close()
+    try:
+        ServiceBrowser(zeroconf, [SSC_SERVICE_TYPE], handlers=[on_service_state_change])
+        time.sleep(scan_time_seconds)
+    finally:
+        zeroconf.close()
     return Ssc_device_setup(found)

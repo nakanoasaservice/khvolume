@@ -4,176 +4,21 @@
 from __future__ import annotations
 
 import argparse
-import json
-import re
-import subprocess
 import sys
-from pathlib import Path
-from typing import TypedDict
 
-from khvol_common import (
-    EXIT_DEVICE,
+from khvol_errors import (
     EXIT_ERROR,
-    EXIT_OK,
     KhvolError,
-    Settings,
-    SpeakerStatus,
-    build_settings,
     eprint,
-    khtool_payload_has_devices,
-    parse_khtool_status,
-    status_json_document,
 )
-from khtool_runner import KhtoolRunner
-from khtool_session import invalidate_session
-
-
-class HardwareInterface(TypedDict):
-    name: str
-    label: str
-    status: str
-
-
-class ScanResult(TypedDict):
-    speakerCount: int
-
-
-def read_status(settings: Settings) -> SpeakerStatus:
-    return parse_khtool_status(KhtoolRunner(settings).read_status_output())
-
-
-def emit_status_json(status: SpeakerStatus) -> int:
-    print(json.dumps(status_json_document(status), separators=(",", ":")))
-    return EXIT_OK
-
-
-def cmd_json(settings: Settings) -> int:
-    return emit_status_json(read_status(settings))
-
-
-def parse_networksetup_ports(text: str) -> list[tuple[str, str]]:
-    ports: list[tuple[str, str]] = []
-    current_hw: str | None = None
-    for raw in text.splitlines():
-        line = raw.strip()
-        m_hw = re.match(r"Hardware Port:\s*(.+)", line)
-        if m_hw:
-            current_hw = m_hw.group(1).strip()
-            continue
-        m_dev = re.match(r"Device:\s*(\S+)", line)
-        if m_dev and current_hw:
-            ports.append((current_hw, m_dev.group(1)))
-            current_hw = None
-    return ports
-
-
-def interface_is_active(interface: str) -> bool:
-    try:
-        proc = subprocess.run(
-            ["ifconfig", interface],
-            capture_output=True,
-            text=True,
-            timeout=5,
-            check=False,
-        )
-    except (OSError, subprocess.TimeoutExpired):
-        return False
-    if proc.returncode != 0:
-        return False
-    out = proc.stdout
-    if "status: active" in out:
-        return True
-    if "status: inactive" in out:
-        return False
-    if "LOOPBACK" in out:
-        return False
-    return bool(re.search(r"<[^>]*UP[^>]*RUNNING[^>]*>", out))
-
-
-def list_hardware_interfaces() -> list[HardwareInterface]:
-    setup = Path("/usr/sbin/networksetup")
-    if not setup.is_file():
-        raise KhvolError("networksetup not found (macOS only)", EXIT_ERROR)
-    try:
-        proc = subprocess.run(
-            [str(setup), "-listallhardwareports"],
-            capture_output=True,
-            text=True,
-            timeout=30,
-            check=False,
-        )
-    except (OSError, subprocess.TimeoutExpired) as exc:
-        raise KhvolError(f"networksetup failed: {exc}", EXIT_ERROR) from exc
-    if proc.returncode != 0:
-        detail = (proc.stderr or proc.stdout or "").strip()
-        raise KhvolError(detail or "networksetup exited with error", EXIT_ERROR)
-
-    rows: list[HardwareInterface] = []
-    for hw, dev in parse_networksetup_ports(proc.stdout):
-        state = "active" if interface_is_active(dev) else "inactive"
-        rows.append({"name": dev, "label": hw, "status": state})
-    return rows
-
-
-def cmd_interfaces() -> int:
-    print(json.dumps(list_hardware_interfaces(), separators=(",", ":")))
-    return EXIT_OK
-
-
-def scan_device_count(settings: Settings) -> int:
-    from ssc_scan import scan_ssc_setup
-
-    settings.config_dir.mkdir(parents=True, exist_ok=True)
-    iface = settings.interface
-    setup = scan_ssc_setup(scan_time_seconds=12.0, interface=iface)
-    if not setup.ssc_devices and iface is not None:
-        setup = scan_ssc_setup(scan_time_seconds=12.0, interface=None)
-    if setup.ssc_devices:
-        setup.to_json(str(settings.khtool_json))
-    return len(setup.ssc_devices)
-
-
-def cmd_scan(settings: Settings) -> int:
-    invalidate_session()
-    previous: str | None = None
-    had_devices = False
-    if settings.khtool_json.is_file():
-        previous = settings.khtool_json.read_text(encoding="utf-8")
-        try:
-            had_devices = khtool_payload_has_devices(json.loads(previous))
-        except json.JSONDecodeError:
-            had_devices = False
-
-    count = scan_device_count(settings)
-
-    if count == 0:
-        if had_devices and previous is not None:
-            settings.khtool_json.write_text(previous, encoding="utf-8")
-        else:
-            try:
-                settings.khtool_json.unlink(missing_ok=True)
-            except OSError:
-                pass
-
-    result: ScanResult = {"speakerCount": count}
-    print(json.dumps(result, separators=(",", ":")))
-    return EXIT_OK if count > 0 else EXIT_DEVICE
-
-
-def apply_level(settings: Settings, level: float) -> None:
-    KhtoolRunner(settings).set_level(level)
-
-
-def cmd_set(settings: Settings, level: float) -> int:
-    apply_level(settings, level)
-    return emit_status_json(read_status(settings))
-
-
-def cmd_toggle_mute(settings: Settings) -> int:
-    runner = KhtoolRunner(settings)
-    status = read_status(settings)
-    runner.set_muted(not status["muted"])
-    return emit_status_json(read_status(settings))
+from khvol_settings import build_settings
+from network_interfaces import emit_interfaces_json
+from speaker_control import (
+    emit_current_status_json,
+    set_level_and_emit_status,
+    toggle_mute_and_emit_status,
+)
+from speaker_scan import run_scan_command
 
 
 def usage_text() -> str:
@@ -236,15 +81,15 @@ def main() -> int:
     try:
         match cmd:
             case "json":
-                return cmd_json(settings)
+                return emit_current_status_json(settings)
             case "scan":
-                return cmd_scan(settings)
+                return run_scan_command(settings)
             case "interfaces":
-                return cmd_interfaces()
+                return emit_interfaces_json()
             case "set":
-                return cmd_set(settings, args.level)
+                return set_level_and_emit_status(settings, args.level)
             case "toggle-mute":
-                return cmd_toggle_mute(settings)
+                return toggle_mute_and_emit_status(settings)
             case _:
                 raise KhvolError(f"unhandled command: {cmd}", EXIT_ERROR)
     except KhvolError as exc:

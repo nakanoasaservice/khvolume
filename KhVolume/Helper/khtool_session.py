@@ -6,74 +6,33 @@ import argparse
 import importlib.util
 import io
 import json
-import os
 import sys
 from contextlib import redirect_stdout
-from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
 from typing import Any
 
-from khvol_common import Settings
+from khvol_errors import EXIT_DEVICE, EXIT_ERROR, KhvolError
+from khtool_json import khtool_json_has_devices
+from khvol_settings import Settings
 from khtool_commands import ExpertQuery, ExpertSetLevel, KhtoolCommand, MuteCommand
-
-_CACHE: dict[tuple[str, str], KhtoolSession] = {}
-
-
-@dataclass(frozen=True, slots=True)
-class KhtoolRunResult:
-    returncode: int
-    stdout: str
-    stderr: str
-
-
-def invalidate_session() -> None:
-    for session in _CACHE.values():
-        session.close()
-    _CACHE.clear()
-
-
-def get_session(settings: Settings) -> KhtoolSession:
-    if not settings.interface:
-        raise RuntimeError("network interface not configured")
-    key = (str(settings.config_dir.resolve()), settings.interface)
-    cached = _CACHE.get(key)
-    if cached is not None:
-        return cached
-
-    config_key = key[0]
-    for existing_key, existing_session in list(_CACHE.items()):
-        if existing_key[0] == config_key and existing_key != key:
-            existing_session.close()
-            del _CACHE[existing_key]
-
-    session = KhtoolSession(settings)
-    session.connect()
-    _CACHE[key] = session
-    return session
 
 
 class KhtoolSession:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
         self._khtool = _load_khtool_module(settings.khtool)
-        self._previous_cwd = os.getcwd()
         self.devices: list[Any] = []
+        if not settings.interface:
+            raise KhvolError("network interface not configured", EXIT_ERROR)
         self._interface_suffix = "%" + settings.interface
-
-    def close(self) -> None:
-        try:
-            os.chdir(self._previous_cwd)
-        except OSError:
-            pass
 
     def connect(self) -> None:
         self.settings.config_dir.mkdir(parents=True, exist_ok=True)
-        os.chdir(self.settings.config_dir)
         self._khtool.interface = self._interface_suffix
 
-        if not self.settings.khtool_json.is_file():
-            raise RuntimeError("khtool.json missing; run scan first")
+        if not khtool_json_has_devices(self.settings.khtool_json):
+            raise KhvolError("no speakers configured; run scan", EXIT_DEVICE)
 
         import pyssc as ssc
 
@@ -86,13 +45,12 @@ class KhtoolSession:
             if hasattr(device, "connected") and not device.connected:
                 raise RuntimeError(f"device {device.ip} is not online")
 
-    def run(self, command: KhtoolCommand) -> KhtoolRunResult:
+    def run(self, command: KhtoolCommand) -> str:
         match command:
             case ExpertQuery.LEVEL | ExpertQuery.MUTE | ExpertSetLevel() as expert:
-                stdout = self._run_expert_all(expert.payload)
+                return self._run_expert_all(expert.payload)
             case MuteCommand(muted=muted):
-                stdout = self._run_mute(muted)
-        return KhtoolRunResult(0, stdout, "")
+                return self._run_mute(muted)
 
     def _device_lines(self, device: Any, response: str) -> list[str]:
         name = self._device_display_name(device)
@@ -123,29 +81,31 @@ class KhtoolSession:
     def _run_mute(self, muted: bool) -> str:
         chunks: list[str] = []
         for device in self.devices:
-            args = argparse.Namespace(
-                query=False,
-                brightness=None,
-                delay=None,
-                dimm=None,
-                level=None,
-                mute=muted,
-                unmute=not muted,
-                expert=None,
-                save=False,
-            )
             lines: list[str] = []
             name = self._device_display_name(device)
             lines.append(f"Used Device:  {name}")
 
             buffer = io.StringIO()
             with redirect_stdout(buffer):
-                self._khtool.handle_device(args, device)
+                self._khtool.handle_device(self._mute_args(muted), device)
             body = buffer.getvalue().strip()
             if body:
                 lines.append(body)
             chunks.extend(lines)
         return "\n".join(chunks) + "\n"
+
+    def _mute_args(self, muted: bool) -> argparse.Namespace:
+        return argparse.Namespace(
+            query=False,
+            brightness=None,
+            delay=None,
+            dimm=None,
+            level=None,
+            mute=muted,
+            unmute=not muted,
+            expert=None,
+            save=False,
+        )
 
 
 def _load_khtool_module(khtool_path: Path) -> ModuleType:

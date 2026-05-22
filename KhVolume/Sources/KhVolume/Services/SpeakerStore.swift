@@ -286,12 +286,7 @@ final class SpeakerStore {
             status.connection = json.balanced ? .ready : .warning
         } catch let err as KhvolError {
             status.lastError = err.localizedDescription
-            switch err {
-            case .mismatch:
-                status.connection = .warning
-            default:
-                status.connection = .disconnected
-            }
+            status.connection = .disconnected
         } catch {
             status.lastError = error.localizedDescription
             status.connection = .disconnected

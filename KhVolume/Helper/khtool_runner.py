@@ -2,49 +2,48 @@
 
 from __future__ import annotations
 
-from khvol_common import (
-    EXIT_DEVICE,
+from khvol_errors import (
     EXIT_ERROR,
     KhvolError,
-    Settings,
-    clamp_level,
-    khtool_json_has_devices,
 )
+from khvol_settings import Settings
 from khtool_commands import ExpertQuery, ExpertSetLevel, KhtoolCommand, MuteCommand
-from khtool_session import KhtoolRunResult, get_session
+from khtool_session import KhtoolSession
 
 
 class KhtoolRunner:
     def __init__(self, settings: Settings) -> None:
         self._settings = settings
+        self._session: KhtoolSession | None = None
 
-    def run(self, command: KhtoolCommand) -> KhtoolRunResult:
-        self._require_device_cache()
+    def run(self, command: KhtoolCommand) -> str:
         try:
-            session = get_session(self._settings)
-            result = session.run(command)
+            return self._get_session().run(command)
         except RuntimeError as exc:
             raise KhvolError(str(exc), EXIT_ERROR) from exc
-        return result
 
-    def query_levels(self) -> KhtoolRunResult:
+    def query_levels(self) -> str:
         return self.run(ExpertQuery.LEVEL)
 
-    def query_mute(self) -> KhtoolRunResult:
+    def query_mute(self) -> str:
         return self.run(ExpertQuery.MUTE)
 
-    def set_level(self, level: float) -> KhtoolRunResult:
-        clamped = clamp_level(level, self._settings.max_level)
+    def set_level(self, level: float) -> str:
+        clamped = max(0.0, min(self._settings.max_level, level))
         return self.run(ExpertSetLevel(clamped))
 
-    def set_muted(self, muted: bool) -> KhtoolRunResult:
+    def set_muted(self, muted: bool) -> str:
         return self.run(MuteCommand(muted))
 
     def read_status_output(self) -> str:
-        level = self.query_levels().stdout
-        mute = self.query_mute().stdout
+        level = self.query_levels()
+        mute = self.query_mute()
         return level + "\n" + mute
 
-    def _require_device_cache(self) -> None:
-        if not khtool_json_has_devices(self._settings.khtool_json):
-            raise KhvolError("no speakers configured; run scan", EXIT_DEVICE)
+    def _get_session(self) -> KhtoolSession:
+        if self._session is not None:
+            return self._session
+        session = KhtoolSession(self._settings)
+        session.connect()
+        self._session = session
+        return session

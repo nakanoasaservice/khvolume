@@ -4,7 +4,6 @@ enum KhvolError: LocalizedError {
     case helperMissing
     case commandFailed(String)
     case deviceError(String)
-    case mismatch(String)
     case parseFailed
     case timedOut
 
@@ -15,8 +14,6 @@ enum KhvolError: LocalizedError {
         case .commandFailed(let msg):
             return msg
         case .deviceError(let msg):
-            return msg
-        case .mismatch(let msg):
             return msg
         case .parseFailed:
             return "Failed to parse khvol output"
@@ -99,12 +96,8 @@ struct KhvolClient {
     @discardableResult
     func scan() async throws -> Int {
         let raw = try await run(["scan"])
-        if let data = raw.data(using: .utf8),
-           let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-           let count = obj["speakerCount"] as? Int {
-            return count
-        }
-        return 0
+        guard let data = raw.data(using: .utf8) else { throw KhvolError.parseFailed }
+        return try JSONDecoder().decode(KhvolScanResult.self, from: data).speakerCount
     }
 
     private static func execute(_ configuration: KhvolRunConfiguration) throws -> String {
@@ -151,8 +144,6 @@ struct KhvolClient {
             return stdout.trimmingCharacters(in: .whitespacesAndNewlines)
         case 2:
             throw KhvolError.deviceError(stderr.isEmpty ? stdout : stderr)
-        case 3:
-            throw KhvolError.mismatch(stderr.isEmpty ? "Left/Right levels differ" : stderr)
         default:
             throw KhvolError.commandFailed(stderr.isEmpty ? stdout : stderr)
         }
@@ -237,4 +228,8 @@ private struct KhvolRunConfiguration: Sendable {
     let command: [String]
     let extraEnv: [String: String]
     let timeoutSeconds: TimeInterval
+}
+
+private struct KhvolScanResult: Codable {
+    let speakerCount: Int
 }
