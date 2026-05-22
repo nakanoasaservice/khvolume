@@ -27,7 +27,7 @@ def repo_root() -> Path:
         return Path(env_root).resolve()
     if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
         return Path(sys._MEIPASS).resolve()
-    return Path(__file__).resolve().parent
+    return Path(__file__).resolve().parent.parent
 
 
 def default_khtool_path(root: Path) -> Path:

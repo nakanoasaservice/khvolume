@@ -6,19 +6,19 @@ from __future__ import annotations
 import argparse
 import sys
 
-from khvol_errors import (
+from khvol.errors import (
     EXIT_ERROR,
     KhvolError,
     eprint,
 )
-from khvol_settings import build_settings
-from network_interfaces import emit_interfaces_json
-from speaker_control import (
+from khvol.settings import build_settings
+from khvol.network_interfaces import emit_interfaces_json
+from khvol.speaker_control import (
     emit_current_status_json,
     set_level_and_emit_status,
     set_muted_and_emit_status,
 )
-from speaker_scan import run_scan_command
+from khvol.speaker_scan import run_scan_command
 
 
 def usage_text() -> str:

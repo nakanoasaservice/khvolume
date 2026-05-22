@@ -5,10 +5,10 @@ from __future__ import annotations
 import json
 from typing import TypedDict
 
-from khvol_errors import EXIT_DEVICE, EXIT_OK
-from khvol_settings import Settings
-from khtool_json import khtool_payload_has_devices
-from ssc_scan import scan_ssc_setup
+from khvol.errors import EXIT_DEVICE, EXIT_OK
+from khvol.settings import Settings
+from khvol.khtool_json import khtool_payload_has_devices
+from khvol.ssc_scan import scan_ssc_setup
 
 
 class ScanResult(TypedDict):

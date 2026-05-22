@@ -4,12 +4,12 @@ from __future__ import annotations
 
 import json
 
-from khvol_errors import (
+from khvol.errors import (
     EXIT_OK,
 )
-from khvol_settings import Settings
-from khtool_runner import KhtoolRunner
-from speaker_status import SpeakerStatus, parse_khtool_status, status_json_document
+from khvol.settings import Settings
+from khvol.khtool_runner import KhtoolRunner
+from khvol.speaker_status import SpeakerStatus, parse_khtool_status, status_json_document
 
 
 def read_status(runner: KhtoolRunner) -> SpeakerStatus:

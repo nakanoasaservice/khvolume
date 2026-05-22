@@ -8,7 +8,7 @@ import subprocess
 from pathlib import Path
 from typing import TypedDict
 
-from khvol_errors import EXIT_ERROR, EXIT_OK, KhvolError
+from khvol.errors import EXIT_ERROR, EXIT_OK, KhvolError
 
 
 class HardwareInterface(TypedDict):

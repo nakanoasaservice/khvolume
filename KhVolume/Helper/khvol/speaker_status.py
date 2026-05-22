@@ -6,7 +6,7 @@ import json
 import re
 from typing import TypedDict
 
-from khvol_errors import EXIT_DEVICE, KhvolError
+from khvol.errors import EXIT_DEVICE, KhvolError
 
 BALANCE_TOLERANCE = 0.05
 

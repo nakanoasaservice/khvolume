@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from khvol_errors import (
+from khvol.errors import (
     EXIT_ERROR,
     KhvolError,
 )
-from khvol_settings import Settings
-from khtool_commands import ExpertQuery, ExpertSetLevel, KhtoolCommand, MuteCommand
-from khtool_session import KhtoolSession
+from khvol.settings import Settings
+from khvol.khtool_commands import ExpertQuery, ExpertSetLevel, KhtoolCommand, MuteCommand
+from khvol.khtool_session import KhtoolSession
 
 MAX_KHTOOL_LEVEL = 120.0
 

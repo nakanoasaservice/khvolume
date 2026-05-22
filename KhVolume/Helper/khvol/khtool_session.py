@@ -12,10 +12,10 @@ from pathlib import Path
 from types import ModuleType
 from typing import Any
 
-from khvol_errors import EXIT_DEVICE, EXIT_ERROR, KhvolError
-from khtool_json import khtool_json_has_devices
-from khvol_settings import Settings
-from khtool_commands import ExpertQuery, ExpertSetLevel, KhtoolCommand, MuteCommand
+from khvol.errors import EXIT_DEVICE, EXIT_ERROR, KhvolError
+from khvol.khtool_json import khtool_json_has_devices
+from khvol.settings import Settings
+from khvol.khtool_commands import ExpertQuery, ExpertSetLevel, KhtoolCommand, MuteCommand
 
 
 class KhtoolSession:

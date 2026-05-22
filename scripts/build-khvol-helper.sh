@@ -47,6 +47,7 @@ pyinstaller \
   --distpath "$ROOT/dist" \
   --workpath "$ROOT/build/pyinstaller" \
   --specpath "$ROOT/build/pyinstaller" \
+  --paths "$HELPER_SRC" \
   --add-data "$HELPER_SRC/vendor/khtool.py:khtool" \
   --hidden-import pyssc \
   --hidden-import zeroconf \
