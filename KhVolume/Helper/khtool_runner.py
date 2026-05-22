@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-
 from khvol_common import (
     EXIT_DEVICE,
     EXIT_ERROR,
@@ -13,40 +11,33 @@ from khvol_common import (
     khtool_json_has_devices,
 )
 from khtool_commands import ExpertQuery, ExpertSetLevel, KhtoolCommand, MuteCommand
-from khtool_session import get_session
-
-
-@dataclass(frozen=True, slots=True)
-class KhtoolRunOutput:
-    stdout: str
-    stderr: str
-    returncode: int
+from khtool_session import KhtoolRunResult, get_session
 
 
 class KhtoolRunner:
     def __init__(self, settings: Settings) -> None:
         self._settings = settings
 
-    def run(self, command: KhtoolCommand) -> KhtoolRunOutput:
+    def run(self, command: KhtoolCommand) -> KhtoolRunResult:
         self._require_device_cache()
         try:
             session = get_session(self._settings)
             result = session.run(command)
         except RuntimeError as exc:
             raise KhvolError(str(exc), EXIT_ERROR) from exc
-        return KhtoolRunOutput(result.stdout, result.stderr, result.returncode)
+        return result
 
-    def query_levels(self) -> KhtoolRunOutput:
+    def query_levels(self) -> KhtoolRunResult:
         return self.run(ExpertQuery.LEVEL)
 
-    def query_mute(self) -> KhtoolRunOutput:
+    def query_mute(self) -> KhtoolRunResult:
         return self.run(ExpertQuery.MUTE)
 
-    def set_level(self, level: float) -> KhtoolRunOutput:
+    def set_level(self, level: float) -> KhtoolRunResult:
         clamped = clamp_level(level, self._settings.max_level)
         return self.run(ExpertSetLevel(clamped))
 
-    def set_muted(self, muted: bool) -> KhtoolRunOutput:
+    def set_muted(self, muted: bool) -> KhtoolRunResult:
         return self.run(MuteCommand(muted))
 
     def read_status_output(self) -> str:

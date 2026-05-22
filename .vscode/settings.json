@@ -2,6 +2,7 @@
     "cSpell.words": [
         "bitstream",
         "checkmark",
+        "dimm",
         "Georg",
         "hifispeaker",
         "iface",
@@ -9,6 +10,7 @@
         "khvol",
         "khvolume",
         "miniaturizable",
+        "networksetup",
         "Neumann",
         "PDIF",
         "pyssc",
@@ -18,6 +20,7 @@
         "Sennheiser",
         "subheadline",
         "Thorsten",
+        "unmute",
         "venv"
     ]
 }
