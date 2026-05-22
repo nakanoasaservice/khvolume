@@ -63,9 +63,7 @@ final class SpeakerStore {
         KhvolClient(
             configDir: AppPaths.appSupportURL,
             interface: interfaceName,
-            maxLevel: config.effectiveMax,
-            step: config.volumeStep,
-            force: config.allowForceOnMismatch
+            maxLevel: config.effectiveMax
         )
     }
 

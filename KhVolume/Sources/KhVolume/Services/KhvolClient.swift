@@ -30,8 +30,6 @@ struct KhvolClient {
     let configDir: URL
     let interface: String?
     let maxLevel: Double
-    let step: Double
-    let force: Bool
 
     func run(_ command: [String], timeoutSeconds: TimeInterval = 45) async throws -> String {
         let helper = try resolveHelperURL()
@@ -54,8 +52,6 @@ struct KhvolClient {
             configDirPath: configDir.path,
             interface: interface,
             maxLevel: maxLevel,
-            step: step,
-            force: force,
             command: command,
             extraEnv: extraEnv,
             timeoutSeconds: timeoutSeconds
@@ -81,14 +77,12 @@ struct KhvolClient {
         let raw = try await run([
             "set",
             String(format: "%.1f", level),
-            "--apply-only",
-            "--json",
         ])
         return try decodeStatusJSON(from: raw)
     }
 
     func toggleMute() async throws -> KhvolJSONStatus {
-        try decodeStatusJSON(from: try await run(["toggle-mute", "--json"]))
+        try decodeStatusJSON(from: try await run(["toggle-mute"]))
     }
 
     private func decodeStatusJSON(from raw: String) throws -> KhvolJSONStatus {
@@ -121,12 +115,10 @@ struct KhvolClient {
         var args = [
             "--config-dir", configuration.configDirPath,
             "--max-level", String(format: "%.1f", configuration.maxLevel),
-            "--step", String(format: "%.1f", configuration.step),
         ]
         if let interface = configuration.interface, !interface.isEmpty {
             args.append(contentsOf: ["--interface", interface])
         }
-        if configuration.force { args.append("--force") }
         args.append(contentsOf: configuration.command)
         process.arguments = args
 
@@ -242,8 +234,6 @@ private struct KhvolRunConfiguration: Sendable {
     let configDirPath: String
     let interface: String?
     let maxLevel: Double
-    let step: Double
-    let force: Bool
     let command: [String]
     let extraEnv: [String: String]
     let timeoutSeconds: TimeInterval

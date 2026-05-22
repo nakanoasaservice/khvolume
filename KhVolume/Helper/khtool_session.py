@@ -4,23 +4,24 @@ from __future__ import annotations
 
 import argparse
 import importlib.util
+import io
 import json
 import os
-import subprocess
 import sys
+from contextlib import redirect_stdout
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
-if TYPE_CHECKING:
-    from khvol_cli import Settings
+from khvol_common import Settings, khtool_json_has_devices
+from khtool_commands import ExpertQuery, ExpertSetLevel, KhtoolCommand, MuteCommand
 
-_CACHE: dict[tuple[str, str], "KhtoolSession"] = {}
+_CACHE: dict[tuple[str, str], KhtoolSession] = {}
 
 
-@dataclass
-class _KhtoolRunResult:
+@dataclass(frozen=True, slots=True)
+class KhtoolRunResult:
     returncode: int
     stdout: str
     stderr: str
@@ -32,7 +33,11 @@ def invalidate_session() -> None:
     _CACHE.clear()
 
 
-def get_session(settings: Settings) -> "KhtoolSession":
+def session_available(settings: Settings) -> bool:
+    return khtool_json_has_devices(settings.khtool_json)
+
+
+def get_session(settings: Settings) -> KhtoolSession:
     if not settings.interface:
         raise RuntimeError("network interface not configured")
     key = (str(settings.config_dir.resolve()), settings.interface)
@@ -50,12 +55,6 @@ def get_session(settings: Settings) -> "KhtoolSession":
     session.connect()
     _CACHE[key] = session
     return session
-
-
-def session_available(settings: Settings) -> bool:
-    from khvol_cli import khtool_json_has_devices
-
-    return khtool_json_has_devices(settings.khtool_json)
 
 
 class KhtoolSession:
@@ -91,26 +90,19 @@ class KhtoolSession:
             if hasattr(device, "connected") and not device.connected:
                 raise RuntimeError(f"device {device.ip} is not online")
 
-    def run(self, extra_args: tuple[str, ...], check: bool = True) -> _KhtoolRunResult:
-        args = list(extra_args)
-        if not args:
-            raise RuntimeError("empty khtool args")
-
+    def run(self, command: KhtoolCommand, check: bool = True) -> KhtoolRunResult:
         try:
-            if args[0] == "--expert" and len(args) >= 2:
-                stdout = self._run_expert_all(args[1])
-            elif args == ["--mute"]:
-                stdout = self._run_mute(True)
-            elif args == ["--unmute"]:
-                stdout = self._run_mute(False)
-            else:
-                return _subprocess_khtool(self.settings, extra_args, check)
+            match command:
+                case ExpertQuery.LEVEL | ExpertQuery.MUTE | ExpertSetLevel() as expert:
+                    stdout = self._run_expert_all(expert.payload)
+                case MuteCommand(muted=muted):
+                    stdout = self._run_mute(muted)
         except RuntimeError as exc:
             if check:
                 raise
-            return _KhtoolRunResult(1, "", str(exc))
+            return KhtoolRunResult(1, "", str(exc))
 
-        return _KhtoolRunResult(0, stdout, "")
+        return KhtoolRunResult(0, stdout, "")
 
     def _device_lines(self, device: Any, response: str) -> list[str]:
         name = self._device_display_name(device)
@@ -156,9 +148,6 @@ class KhtoolSession:
             name = self._device_display_name(device)
             lines.append(f"Used Device:  {name}")
 
-            import io
-            from contextlib import redirect_stdout
-
             buffer = io.StringIO()
             with redirect_stdout(buffer):
                 self._khtool.handle_device(args, device)
@@ -177,36 +166,3 @@ def _load_khtool_module(khtool_path: Path) -> ModuleType:
     sys.modules["khtool_embedded"] = module
     spec.loader.exec_module(module)
     return module
-
-
-def _subprocess_khtool(
-    settings: Settings, extra_args: tuple[str, ...], check: bool
-) -> _KhtoolRunResult:
-    from khvol_cli import python_executable, require_interface
-
-    interface = require_interface(settings)
-    if getattr(sys, "frozen", False):
-        cmd = [sys.executable, "--run-khtool", "-i", interface, "-t", "all", *extra_args]
-    else:
-        cmd = [
-            python_executable(),
-            str(settings.khtool),
-            "-i",
-            interface,
-            "-t",
-            "all",
-            *extra_args,
-        ]
-
-    settings.config_dir.mkdir(parents=True, exist_ok=True)
-    result = subprocess.run(
-        cmd,
-        cwd=settings.config_dir,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    if check and result.returncode != 0:
-        detail = (result.stderr or result.stdout or "").strip()
-        raise RuntimeError(detail or f"khtool exited with code {result.returncode}")
-    return _KhtoolRunResult(result.returncode, result.stdout, result.stderr)
