@@ -52,12 +52,6 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="network interface (e.g. en15)",
     )
-    parser.add_argument(
-        "--max-level",
-        type=float,
-        default=None,
-        help="maximum level in dB",
-    )
 
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("json", help="emit JSON status")
@@ -75,7 +69,6 @@ def main() -> int:
     settings = build_settings(
         config_dir=args.config_dir,
         interface=args.interface,
-        max_level=args.max_level,
     )
     cmd = args.command
     try:

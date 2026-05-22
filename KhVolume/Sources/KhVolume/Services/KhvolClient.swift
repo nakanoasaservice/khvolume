@@ -26,7 +26,6 @@ enum KhvolError: LocalizedError {
 struct KhvolClient {
     let configDir: URL
     let interface: String?
-    let maxLevel: Double
 
     func run(_ command: [String], timeoutSeconds: TimeInterval = 45) async throws -> String {
         let helper = try resolveHelperURL()
@@ -48,7 +47,6 @@ struct KhvolClient {
             helperPath: helper.path,
             configDirPath: configDir.path,
             interface: interface,
-            maxLevel: maxLevel,
             command: command,
             extraEnv: extraEnv,
             timeoutSeconds: timeoutSeconds
@@ -105,10 +103,7 @@ struct KhvolClient {
         process.executableURL = URL(fileURLWithPath: configuration.helperPath)
         process.currentDirectoryURL = URL(fileURLWithPath: configuration.configDirPath, isDirectory: true)
 
-        var args = [
-            "--config-dir", configuration.configDirPath,
-            "--max-level", String(format: "%.1f", configuration.maxLevel),
-        ]
+        var args = ["--config-dir", configuration.configDirPath]
         if let interface = configuration.interface, !interface.isEmpty {
             args.append(contentsOf: ["--interface", interface])
         }
@@ -224,7 +219,6 @@ private struct KhvolRunConfiguration: Sendable {
     let helperPath: String
     let configDirPath: String
     let interface: String?
-    let maxLevel: Double
     let command: [String]
     let extraEnv: [String: String]
     let timeoutSeconds: TimeInterval

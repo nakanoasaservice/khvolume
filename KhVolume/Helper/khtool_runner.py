@@ -10,6 +10,8 @@ from khvol_settings import Settings
 from khtool_commands import ExpertQuery, ExpertSetLevel, KhtoolCommand, MuteCommand
 from khtool_session import KhtoolSession
 
+MAX_KHTOOL_LEVEL = 120.0
+
 
 class KhtoolRunner:
     def __init__(self, settings: Settings) -> None:
@@ -29,7 +31,7 @@ class KhtoolRunner:
         return self.run(ExpertQuery.MUTE)
 
     def set_level(self, level: float) -> str:
-        clamped = max(0.0, min(self._settings.max_level, level))
+        clamped = max(0.0, min(MAX_KHTOOL_LEVEL, level))
         return self.run(ExpertSetLevel(clamped))
 
     def set_muted(self, muted: bool) -> str:

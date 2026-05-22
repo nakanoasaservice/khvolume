@@ -62,8 +62,7 @@ final class SpeakerStore {
     private func makeClient() -> KhvolClient {
         KhvolClient(
             configDir: AppPaths.appSupportURL,
-            interface: interfaceName,
-            maxLevel: config.effectiveMax
+            interface: interfaceName
         )
     }
 

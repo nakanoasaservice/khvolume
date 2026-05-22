@@ -9,14 +9,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-DEFAULT_MAX_LEVEL = 120.0
-
 
 @dataclass(frozen=True, slots=True)
 class Settings:
     config_dir: Path
     interface: str | None
-    max_level: float
     khtool: Path
 
     @property
@@ -70,8 +67,6 @@ def load_config(config_dir: Path) -> dict[str, Any]:
             loaded = json.loads(config_json.read_text(encoding="utf-8"))
             if isinstance(loaded, dict):
                 config.update(loaded)
-                if "maxVolumeLimit" in loaded:
-                    config.setdefault("max_level", loaded["maxVolumeLimit"])
         except json.JSONDecodeError:
             pass
 
@@ -82,8 +77,6 @@ def load_config(config_dir: Path) -> dict[str, Any]:
         env_values = load_env_file(env_path)
         if env_values.get("KHVOL_INTERFACE"):
             config["interface"] = env_values["KHVOL_INTERFACE"]
-        if env_values.get("KHVOL_MAX_LEVEL"):
-            config["max_level"] = env_values["KHVOL_MAX_LEVEL"]
 
     return config
 
@@ -92,7 +85,6 @@ def build_settings(
     *,
     config_dir: str | None,
     interface: str | None,
-    max_level: float | None,
 ) -> Settings:
     root = repo_root()
     resolved_config_dir = Path(config_dir).resolve() if config_dir else root
@@ -103,15 +95,8 @@ def build_settings(
         or os.environ.get("KHVOL_INTERFACE")
         or config.get("interface")
     )
-    resolved_max_level = float(
-        max_level
-        if max_level is not None
-        else os.environ.get("KHVOL_MAX_LEVEL", config.get("max_level", DEFAULT_MAX_LEVEL))
-    )
-
     return Settings(
         config_dir=resolved_config_dir,
         interface=str(resolved_interface) if resolved_interface else None,
-        max_level=resolved_max_level,
         khtool=default_khtool_path(root),
     )
