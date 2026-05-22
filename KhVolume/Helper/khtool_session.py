@@ -86,18 +86,12 @@ class KhtoolSession:
             if hasattr(device, "connected") and not device.connected:
                 raise RuntimeError(f"device {device.ip} is not online")
 
-    def run(self, command: KhtoolCommand, check: bool = True) -> KhtoolRunResult:
-        try:
-            match command:
-                case ExpertQuery.LEVEL | ExpertQuery.MUTE | ExpertSetLevel() as expert:
-                    stdout = self._run_expert_all(expert.payload)
-                case MuteCommand(muted=muted):
-                    stdout = self._run_mute(muted)
-        except RuntimeError as exc:
-            if check:
-                raise
-            return KhtoolRunResult(1, "", str(exc))
-
+    def run(self, command: KhtoolCommand) -> KhtoolRunResult:
+        match command:
+            case ExpertQuery.LEVEL | ExpertQuery.MUTE | ExpertSetLevel() as expert:
+                stdout = self._run_expert_all(expert.payload)
+            case MuteCommand(muted=muted):
+                stdout = self._run_mute(muted)
         return KhtoolRunResult(0, stdout, "")
 
     def _device_lines(self, device: Any, response: str) -> list[str]:

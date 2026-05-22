@@ -27,11 +27,11 @@ class KhtoolRunner:
     def __init__(self, settings: Settings) -> None:
         self._settings = settings
 
-    def run(self, command: KhtoolCommand, *, check: bool = True) -> KhtoolRunOutput:
+    def run(self, command: KhtoolCommand) -> KhtoolRunOutput:
         self._require_device_cache()
         try:
             session = get_session(self._settings)
-            result = session.run(command, check=check)
+            result = session.run(command)
         except RuntimeError as exc:
             raise KhvolError(str(exc), EXIT_ERROR) from exc
         return KhtoolRunOutput(result.stdout, result.stderr, result.returncode)
