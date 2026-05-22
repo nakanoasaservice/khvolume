@@ -5,9 +5,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Literal, TypeAlias
-
-KhtoolTarget = Literal["all"]
+from typing import TypeAlias
 
 
 class ExpertQuery(Enum):
@@ -38,22 +36,6 @@ class ExpertSetLevel:
 @dataclass(frozen=True, slots=True)
 class MuteCommand:
     muted: bool
-
-
-@dataclass(frozen=True, slots=True)
-class KhtoolInvocation:
-    interface: str
-    target: KhtoolTarget
-    command: KhtoolCommand
-
-    def argv(self) -> tuple[str, ...]:
-        match self.command:
-            case ExpertQuery.LEVEL | ExpertQuery.MUTE | ExpertSetLevel() as command:
-                return ("--expert", command.payload)
-            case MuteCommand(muted=True):
-                return ("--mute",)
-            case MuteCommand(muted=False):
-                return ("--unmute",)
 
 
 KhtoolCommand: TypeAlias = ExpertQuery | ExpertSetLevel | MuteCommand

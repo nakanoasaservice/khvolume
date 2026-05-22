@@ -14,7 +14,7 @@ from pathlib import Path
 from types import ModuleType
 from typing import Any
 
-from khvol_common import Settings, khtool_json_has_devices
+from khvol_common import Settings
 from khtool_commands import ExpertQuery, ExpertSetLevel, KhtoolCommand, MuteCommand
 
 _CACHE: dict[tuple[str, str], KhtoolSession] = {}
@@ -31,10 +31,6 @@ def invalidate_session() -> None:
     for session in _CACHE.values():
         session.close()
     _CACHE.clear()
-
-
-def session_available(settings: Settings) -> bool:
-    return khtool_json_has_devices(settings.khtool_json)
 
 
 def get_session(settings: Settings) -> KhtoolSession:

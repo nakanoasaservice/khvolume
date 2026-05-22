@@ -19,12 +19,9 @@ from khvol_common import (
     Settings,
     SpeakerStatus,
     build_settings,
-    default_khtool_path,
     eprint,
-    khtool_json_has_devices,
     khtool_payload_has_devices,
     parse_khtool_status,
-    repo_root,
     status_json_document,
 )
 from khtool_runner import KhtoolRunner
@@ -42,8 +39,6 @@ class ScanResult(TypedDict):
 
 
 def read_status(settings: Settings) -> SpeakerStatus:
-    if not khtool_json_has_devices(settings.khtool_json):
-        raise KhvolError("no speakers configured; run scan", EXIT_DEVICE)
     return parse_khtool_status(KhtoolRunner(settings).read_status_output())
 
 
@@ -257,22 +252,5 @@ def main() -> int:
         return exc.code
 
 
-def run_khtool_internal() -> None:
-    import builtins
-    import runpy
-
-    builtins.exit = sys.exit
-
-    khtool = default_khtool_path(repo_root())
-    if not khtool.is_file():
-        eprint(f"khtool not found: {khtool}")
-        raise SystemExit(EXIT_ERROR)
-    sys.argv = ["khtool", *sys.argv[2:]]
-    runpy.run_path(str(khtool), run_name="__main__")
-
-
 if __name__ == "__main__":
-    if len(sys.argv) >= 2 and sys.argv[1] == "--run-khtool":
-        run_khtool_internal()
-        raise SystemExit(EXIT_OK)
     sys.exit(main())

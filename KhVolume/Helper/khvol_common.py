@@ -80,10 +80,6 @@ def default_khtool_path(root: Path) -> Path:
             return root / "vendor" / "khtool" / "khtool.py"
 
 
-def python_executable() -> str:
-    return os.environ.get("KHVOL_PYTHON", sys.executable)
-
-
 def load_env_file(path: Path) -> dict[str, str]:
     if not path.is_file():
         return {}
