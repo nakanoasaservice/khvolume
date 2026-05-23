@@ -56,6 +56,13 @@ else
   /usr/libexec/PlistBuddy -c "Add :CFBundleExecutable string $APP_NAME" "$CONTENTS/Info.plist" 2>/dev/null || true
 fi
 
+ICON_SRC="$ROOT/KhVolume/Sources/KhVolume/Resources/AppIcon.icns"
+if [[ -f "$ICON_SRC" ]]; then
+  cp "$ICON_SRC" "$RESOURCES/AppIcon.icns"
+else
+  echo "build-app-bundle: warning: AppIcon.icns not found in Resources" >&2
+fi
+
 echo "Built $APP_DIR"
 echo "Run: open \"$APP_DIR\""
 
