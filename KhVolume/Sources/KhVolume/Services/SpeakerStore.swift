@@ -15,6 +15,7 @@ final class SpeakerStore {
     private var refreshTask: Task<Void, Never>?
     private var hotkeyCommitTask: Task<Void, Never>?
     private var hotkeyManager: HotkeyManager?
+    private let volumeHUD = VolumeHUDController()
     private var hasStartedUp = false
     private var lastInterfacesLoad: Date?
     /// When a hotkey arrives during apply, commit after the current operation finishes.
@@ -57,6 +58,17 @@ final class SpeakerStore {
     var menuBarHotkeyVolumeText: String? {
         guard let pending = pendingVolumeLevel else { return nil }
         return "\(Int(pending.rounded()))"
+    }
+
+    var hudDeviceName: String {
+        switch status.devices.count {
+        case 0:
+            return "KH Volume"
+        case 1:
+            return status.devices[0].name
+        default:
+            return status.devices.map(\.name).joined(separator: " / ")
+        }
     }
 
     private func makeClient() -> KhvolClient {
@@ -233,12 +245,23 @@ final class SpeakerStore {
         let base = pendingVolumeLevel ?? status.averageLevel
         pendingVolumeLevel = min(config.effectiveMax, max(0, base + delta))
         status.lastError = nil
+        showVolumeHUD()
+    }
+
+    private func showVolumeHUD() {
+        volumeHUD.show(
+            deviceName: hudDeviceName,
+            level: previewAverageLevel,
+            maxLevel: config.effectiveMax,
+            isMuted: status.isMuted
+        )
     }
 
     func toggleMute() async {
         cancelPendingHotkeyVolume()
         let targetMuted = !status.isMuted
         await runMutation { try await $0.setMuted(targetMuted) }
+        showVolumeHUD()
     }
 
     func cancelPendingHotkeyVolume() {
