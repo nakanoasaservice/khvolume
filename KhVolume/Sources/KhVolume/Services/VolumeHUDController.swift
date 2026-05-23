@@ -3,6 +3,7 @@ import SwiftUI
 
 @MainActor
 final class VolumeHUDController {
+    private weak var store: SpeakerStore?
     private var panel: NSPanel?
     private var hostingView: NSHostingView<VolumeHUDView>?
     private var hideTask: Task<Void, Never>?
@@ -13,26 +14,16 @@ final class VolumeHUDController {
     private let menuBarGap: CGFloat = 8
     private let screenEdgeMargin: CGFloat = 8
 
-    func show(level: Double, maxLevel: Double, isMuted: Bool, isCommitting: Bool = false) {
+    func configure(store: SpeakerStore) {
+        self.store = store
+    }
+
+    /// Shows or refreshes the HUD. Content updates reactively from `SpeakerStore`.
+    func present() {
+        guard let store else { return }
         hideTask?.cancel()
 
-        let view = VolumeHUDView(
-            level: level,
-            maxLevel: maxLevel,
-            isMuted: isMuted,
-            isCommitting: isCommitting
-        )
-
-        let panel = ensurePanel()
-        if let hostingView {
-            hostingView.rootView = view
-        } else {
-            let newHostingView = NSHostingView(rootView: view)
-            newHostingView.translatesAutoresizingMaskIntoConstraints = false
-            panel.contentView = newHostingView
-            self.hostingView = newHostingView
-        }
-
+        let panel = ensurePanel(store: store)
         panel.layoutIfNeeded()
         positionPanel(panel)
 
@@ -67,7 +58,7 @@ final class VolumeHUDController {
         scheduleHide()
     }
 
-    private func ensurePanel() -> NSPanel {
+    private func ensurePanel(store: SpeakerStore) -> NSPanel {
         if let panel {
             return panel
         }
@@ -86,6 +77,11 @@ final class VolumeHUDController {
         panel.hidesOnDeactivate = false
         panel.isMovableByWindowBackground = false
         panel.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle, .fullScreenAuxiliary]
+
+        let hostingView = NSHostingView(rootView: VolumeHUDView(store: store))
+        hostingView.translatesAutoresizingMaskIntoConstraints = false
+        panel.contentView = hostingView
+        self.hostingView = hostingView
         self.panel = panel
         return panel
     }

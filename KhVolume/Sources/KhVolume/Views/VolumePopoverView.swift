@@ -148,7 +148,7 @@ struct VolumePopoverView: View {
             HStack(spacing: 10) {
                 muteButton
                 sliderControl
-                Text(store.status.isMuted ? "—" : "\(Int(sliderLevel.rounded()))")
+                Text(displayedVolumeLevelText)
                     .monospacedDigit()
                     .frame(width: 28, alignment: .trailing)
             }
@@ -190,6 +190,11 @@ struct VolumePopoverView: View {
         return Color(nsColor: .selectedContentBackgroundColor).opacity(0.85)
     }
 
+    private var displayedVolumeLevelText: String {
+        let level = isDragging ? sliderLevel : store.previewAverageLevel
+        return store.volumeLevelText(for: level)
+    }
+
     private var sliderControl: some View {
         Slider(
             value: $sliderLevel,
@@ -201,7 +206,7 @@ struct VolumePopoverView: View {
                 }
             }
         )
-        .disabled(store.status.isMuted || store.isBusy || blockIncrease)
+        .disabled(store.isVolumeSliderDisabled || blockIncrease)
     }
 
     private var levelMismatchDetails: some View {
@@ -227,7 +232,7 @@ struct VolumePopoverView: View {
     }
 
     private var blockIncrease: Bool {
-        store.status.levelMismatch && !store.config.allowForceOnMismatch
+        store.blocksVolumeIncrease
     }
 
     private var networkSection: some View {

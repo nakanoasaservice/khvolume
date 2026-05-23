@@ -2,49 +2,36 @@ import AppKit
 import SwiftUI
 
 struct VolumeHUDView: View {
-    let level: Double
-    let maxLevel: Double
-    let isMuted: Bool
-    let isCommitting: Bool
-
-    private var fraction: Double {
-        guard maxLevel > 0 else { return 0 }
-        return min(1, max(0, level / maxLevel))
-    }
-
-    private var levelText: String {
-        if isMuted { return "—" }
-        return "\(Int(level.rounded()))"
-    }
+    @Bindable var store: SpeakerStore
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(levelText)
+            Text(store.volumeLevelText)
                 .font(.system(size: 13, weight: .semibold))
                 .monospacedDigit()
-                .foregroundStyle(.white.opacity(isCommitting ? 0.65 : 1))
+                .foregroundStyle(.white.opacity(store.isVolumeCommitting ? 0.65 : 1))
 
             HStack(spacing: 10) {
-                Image(systemName: isMuted ? "speaker.slash.fill" : "speaker.fill")
+                Image(systemName: store.status.isMuted ? "speaker.slash.fill" : "speaker.fill")
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(.white.opacity(isCommitting ? 0.5 : 0.85))
+                    .foregroundStyle(.white.opacity(store.isVolumeCommitting ? 0.5 : 0.85))
                     .frame(width: 14)
 
                 VolumeHUDTrack(
-                    fraction: isMuted ? 0 : fraction,
-                    isDisabled: isCommitting
+                    fraction: store.volumeFraction,
+                    isDisabled: store.isVolumeCommitting
                 )
 
                 Image(systemName: "speaker.wave.3.fill")
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(.white.opacity(isCommitting ? 0.5 : 0.85))
+                    .foregroundStyle(.white.opacity(store.isVolumeCommitting ? 0.5 : 0.85))
                     .frame(width: 14)
             }
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 14)
         .frame(width: 300)
-        .animation(.easeInOut(duration: 0.15), value: isCommitting)
+        .animation(.easeInOut(duration: 0.15), value: store.isVolumeCommitting)
         .background {
             VolumeHUDBackground()
         }
