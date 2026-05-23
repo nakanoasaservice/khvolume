@@ -9,6 +9,7 @@ final class HotkeyVolumeInteraction {
     }
 
     private weak var store: SpeakerStore?
+    private let hud: VolumeHUDController
     private var activeDirection: Direction?
     private var repeatTask: Task<Void, Never>?
 
@@ -17,8 +18,9 @@ final class HotkeyVolumeInteraction {
     /// Repeat interval while held.
     private let repeatIntervalNanos: UInt64 = 90_000_000
 
-    init(store: SpeakerStore) {
+    init(store: SpeakerStore, hud: VolumeHUDController) {
         self.store = store
+        self.hud = hud
     }
 
     func keyDown(_ direction: Direction) {
@@ -42,10 +44,11 @@ final class HotkeyVolumeInteraction {
         let step = store.config.volumeStep
         switch direction {
         case .up:
-            store.adjustLevelByHotkey(delta: step)
+            store.adjustVolume(by: step)
         case .down:
-            store.adjustLevelByHotkey(delta: -step)
+            store.adjustVolume(by: -step)
         }
+        hud.present()
     }
 
     private func startRepeatIfStillHeld() {

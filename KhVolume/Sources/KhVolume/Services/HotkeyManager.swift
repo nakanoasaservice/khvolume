@@ -12,10 +12,12 @@ extension KeyboardShortcuts.Name {
 final class HotkeyManager {
     private weak var store: SpeakerStore?
     private let volumeInteraction: HotkeyVolumeInteraction
+    private let volumeHUD = VolumeHUDController()
 
     init(store: SpeakerStore) {
         self.store = store
-        self.volumeInteraction = HotkeyVolumeInteraction(store: store)
+        volumeHUD.configure(store: store)
+        volumeInteraction = HotkeyVolumeInteraction(store: store, hud: volumeHUD)
     }
 
     func register() {
@@ -35,7 +37,9 @@ final class HotkeyManager {
 
         KeyboardShortcuts.onKeyUp(for: .muteToggle) { [weak self] in
             Task { @MainActor in
-                await self?.store?.toggleMute()
+                guard let self, let store = self.store else { return }
+                await store.toggleMute()
+                self.volumeHUD.present()
             }
         }
     }

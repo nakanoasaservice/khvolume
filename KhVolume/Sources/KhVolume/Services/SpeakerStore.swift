@@ -17,7 +17,6 @@ final class SpeakerStore {
     private var refreshTask: Task<Void, Never>?
     private var volumeCommitTask: Task<Void, Never>?
     private var hotkeyManager: HotkeyManager?
-    private let volumeHUD = VolumeHUDController()
     private var hasStartedUp = false
     private var lastInterfacesLoad: Date?
     /// When volume input arrives during commit, schedule again after the current operation finishes.
@@ -29,7 +28,6 @@ final class SpeakerStore {
     init() {
         config = AppPaths.loadConfig()
         KhVolumeBootstrap.store = self
-        volumeHUD.configure(store: self)
         Task { await startupIfNeeded() }
     }
 
@@ -243,7 +241,7 @@ final class SpeakerStore {
     }
 
     /// Updates the shared preview level and debounces commit to the device.
-    func setVolumePreview(_ level: Double, showHUD: Bool = false) {
+    func setVolumePreview(_ level: Double) {
         guard !isStatusLoading else { return }
 
         let requested = clampVolume(level)
@@ -254,9 +252,6 @@ final class SpeakerStore {
 
         pendingVolumeLevel = requested
         status.lastError = nil
-        if showHUD {
-            volumeHUD.present()
-        }
 
         if isBusy {
             volumeCommitPendingAfterBusy = true
@@ -265,13 +260,13 @@ final class SpeakerStore {
         scheduleVolumeCommit()
     }
 
-    /// Hotkeys: preview immediately, then debounced commit (tap, burst, and hold).
-    func adjustLevelByHotkey(delta: Double) {
+    /// Relative volume change from a delta (e.g. hotkey step).
+    func adjustVolume(by delta: Double) {
         guard !isStatusLoading else { return }
         guard volumeChangeAllowed(delta: delta) else { return }
 
         let base = pendingVolumeLevel ?? status.averageLevel
-        setVolumePreview(base + delta, showHUD: true)
+        setVolumePreview(base + delta)
     }
 
     private func volumeChangeAllowed(delta: Double) -> Bool {
@@ -286,7 +281,6 @@ final class SpeakerStore {
         cancelPendingVolume()
         let targetMuted = !status.isMuted
         await runMutation { try await $0.setMuted(targetMuted) }
-        volumeHUD.present()
     }
 
     func cancelPendingVolume() {
