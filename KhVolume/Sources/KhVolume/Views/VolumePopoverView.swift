@@ -12,8 +12,6 @@ struct VolumePopoverView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openSettings) private var openSettings
     @Bindable var store: SpeakerStore
-    @State private var sliderLevel: Double = 0
-    @State private var isDragging = false
     @State private var focusedNavIndex: Int?
 
     var body: some View {
@@ -35,16 +33,10 @@ struct VolumePopoverView: View {
             )
         }
         .onAppear {
-            sliderLevel = store.previewAverageLevel
             focusedNavIndex = nil
             Task {
                 await store.startupIfNeeded()
                 await store.preparePopover()
-            }
-        }
-        .onChange(of: store.previewAverageLevel) { _, new in
-            if !isDragging {
-                sliderLevel = new
             }
         }
         .onChange(of: navigableItems) { _, _ in
@@ -148,7 +140,7 @@ struct VolumePopoverView: View {
             HStack(spacing: 10) {
                 muteButton
                 sliderControl
-                Text(displayedVolumeLevelText)
+                Text(store.volumeLevelText)
                     .monospacedDigit()
                     .frame(width: 28, alignment: .trailing)
             }
@@ -178,7 +170,7 @@ struct VolumePopoverView: View {
                 .contentShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
         }
         .buttonStyle(.plain)
-        .disabled(store.isBusy)
+        .disabled(store.isStatusLoading)
         .background {
             RoundedRectangle(cornerRadius: 6, style: .continuous)
                 .fill(muteHighlightFill)
@@ -186,27 +178,19 @@ struct VolumePopoverView: View {
     }
 
     private var muteHighlightFill: Color {
-        guard !store.isBusy, isKeyboardFocused(.mute) else { return .clear }
+        guard !store.isStatusLoading, isKeyboardFocused(.mute) else { return .clear }
         return Color(nsColor: .selectedContentBackgroundColor).opacity(0.85)
-    }
-
-    private var displayedVolumeLevelText: String {
-        let level = isDragging ? sliderLevel : store.previewAverageLevel
-        return store.volumeLevelText(for: level)
     }
 
     private var sliderControl: some View {
         Slider(
-            value: $sliderLevel,
-            in: 0...store.config.effectiveMax,
-            onEditingChanged: { editing in
-                isDragging = editing
-                if !editing {
-                    Task { await store.setLevel(sliderLevel) }
-                }
-            }
+            value: Binding(
+                get: { store.previewAverageLevel },
+                set: { store.setVolumePreview($0) }
+            ),
+            in: 0...store.config.effectiveMax
         )
-        .disabled(store.isVolumeSliderDisabled || blockIncrease)
+        .disabled(store.isVolumeSliderDisabled)
     }
 
     private var levelMismatchDetails: some View {
@@ -229,10 +213,6 @@ struct VolumePopoverView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 8)
         }
-    }
-
-    private var blockIncrease: Bool {
-        store.blocksVolumeIncrease
     }
 
     private var networkSection: some View {

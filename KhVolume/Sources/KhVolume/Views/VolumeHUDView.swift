@@ -9,29 +9,25 @@ struct VolumeHUDView: View {
             Text(store.volumeLevelText)
                 .font(.system(size: 13, weight: .semibold))
                 .monospacedDigit()
-                .foregroundStyle(.white.opacity(store.isVolumeCommitting ? 0.65 : 1))
+                .foregroundStyle(.white)
 
             HStack(spacing: 10) {
                 Image(systemName: store.status.isMuted ? "speaker.slash.fill" : "speaker.fill")
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(.white.opacity(store.isVolumeCommitting ? 0.5 : 0.85))
+                    .foregroundStyle(.white.opacity(0.85))
                     .frame(width: 14)
 
-                VolumeHUDTrack(
-                    fraction: store.volumeFraction,
-                    isDisabled: store.isVolumeCommitting
-                )
+                VolumeHUDTrack(fraction: store.volumeFraction)
 
                 Image(systemName: "speaker.wave.3.fill")
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(.white.opacity(store.isVolumeCommitting ? 0.5 : 0.85))
+                    .foregroundStyle(.white.opacity(0.85))
                     .frame(width: 14)
             }
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 14)
         .frame(width: 300)
-        .animation(.easeInOut(duration: 0.15), value: store.isVolumeCommitting)
         .background {
             VolumeHUDBackground()
         }
@@ -40,7 +36,6 @@ struct VolumeHUDView: View {
 
 private struct VolumeHUDTrack: View {
     let fraction: Double
-    var isDisabled: Bool = false
     private let tickCount = 16
 
     var body: some View {
@@ -48,11 +43,11 @@ private struct VolumeHUDTrack: View {
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     Capsule()
-                        .fill(Color.white.opacity(isDisabled ? 0.14 : 0.22))
+                        .fill(Color.white.opacity(0.22))
                         .frame(height: 3)
 
                     Capsule()
-                        .fill(Color.white.opacity(isDisabled ? 0.55 : 0.92))
+                        .fill(Color.white.opacity(0.92))
                         .frame(width: max(0, geo.size.width * fraction), height: 3)
                 }
                 .frame(maxHeight: .infinity, alignment: .center)
@@ -62,7 +57,7 @@ private struct VolumeHUDTrack: View {
             HStack(spacing: 0) {
                 ForEach(0..<tickCount, id: \.self) { index in
                     Circle()
-                        .fill(Color.white.opacity(isDisabled ? 0.08 : 0.14))
+                        .fill(Color.white.opacity(0.14))
                         .frame(width: 2, height: 2)
                     if index < tickCount - 1 {
                         Spacer(minLength: 0)

@@ -8,20 +8,22 @@ final class SpeakerStore {
     var status = SpeakerStatus()
     var interfaces: [NetworkInterfaceInfo] = []
     var isBusy = false
+    /// True while status refresh, scan, or other non-volume mutations are in flight.
+    private(set) var isStatusLoading = false
     var launchAtLoginMessage: String?
-    /// Uncommitted level from hotkey preview; cleared after a successful device commit.
+    /// Uncommitted target level shared by hotkeys, popover slider, and HUD preview.
     var pendingVolumeLevel: Double?
 
     private var refreshTask: Task<Void, Never>?
-    private var hotkeyCommitTask: Task<Void, Never>?
+    private var volumeCommitTask: Task<Void, Never>?
     private var hotkeyManager: HotkeyManager?
     private let volumeHUD = VolumeHUDController()
     private var hasStartedUp = false
     private var lastInterfacesLoad: Date?
-    /// When a hotkey arrives during apply, commit after the current operation finishes.
-    private var hotkeyCommitPendingAfterBusy = false
-    private var isHotkeyVolumeCommitting = false
-    private let hotkeyDebounceNanos: UInt64 = 400_000_000
+    /// When volume input arrives during commit, schedule again after the current operation finishes.
+    private var volumeCommitPendingAfterBusy = false
+    private(set) var isVolumeCommitting = false
+    private let volumeDebounceNanos: UInt64 = 400_000_000
     private let interfacesReloadInterval: TimeInterval = 60
 
     init() {
@@ -72,18 +74,16 @@ final class SpeakerStore {
         return min(1, max(0, previewAverageLevel / config.effectiveMax))
     }
 
-    var isVolumeCommitting: Bool { isHotkeyVolumeCommitting }
-
-    var blocksVolumeIncrease: Bool {
-        status.levelMismatch && !config.allowForceOnMismatch
-    }
-
     var isVolumeSliderDisabled: Bool {
-        status.isMuted || isBusy
+        status.isMuted || isStatusLoading
     }
 
     private func clampVolume(_ level: Double) -> Double {
         min(config.effectiveMax, max(0, level))
+    }
+
+    var blocksVolumeIncrease: Bool {
+        status.levelMismatch && !config.allowForceOnMismatch
     }
 
     private func makeClient() -> KhvolClient {
@@ -121,6 +121,7 @@ final class SpeakerStore {
 
     private func markMenuBarLoading() async {
         refreshTask?.cancel()
+        isStatusLoading = true
         isBusy = true
         status.connection = .scanning
         await Task.yield()
@@ -132,7 +133,10 @@ final class SpeakerStore {
             await markMenuBarLoading()
         }
         defer {
-            if showBusy { isBusy = false }
+            if showBusy {
+                isBusy = false
+                isStatusLoading = false
+            }
         }
 
         await applyStatusFromHelper(attemptRecovery: true)
@@ -168,8 +172,12 @@ final class SpeakerStore {
     private func recoverAfterDeviceError(_ err: KhvolError) async -> Bool {
         guard case .deviceError(let message) = err, shouldRescan(after: message) else { return false }
         await loadInterfaces(force: true)
+        isStatusLoading = true
         isBusy = true
-        defer { isBusy = false }
+        defer {
+            isStatusLoading = false
+            isBusy = false
+        }
         do {
             let count = try await makeClient().scan()
             guard count > 0 else { return false }
@@ -215,11 +223,16 @@ final class SpeakerStore {
 
     func selectInterface(_ name: String) async {
         guard !isBusy else { return }
+        cancelPendingVolume()
         config.networkInterface = name
         saveConfig()
+        isStatusLoading = true
         isBusy = true
         status.lastError = nil
-        defer { isBusy = false }
+        defer {
+            isStatusLoading = false
+            isBusy = false
+        }
         do {
             _ = try await makeClient().scan()
             await refreshWhileBusy()
@@ -229,28 +242,39 @@ final class SpeakerStore {
         }
     }
 
-    func setLevel(_ level: Double) async {
-        cancelPendingHotkeyVolume()
-        let clamped = clampVolume(level)
-        await executeVolumeLevelMutation(showMenuBarLoading: true) {
-            try await $0.setLevel(clamped)
-        }
-    }
+    /// Updates the shared preview level and debounces commit to the device.
+    func setVolumePreview(_ level: Double, showHUD: Bool = false) {
+        guard !isStatusLoading else { return }
 
-    /// Hotkeys: immediate preview, then debounced set commit (tap, burst, and hold).
-    func adjustLevelByHotkey(delta: Double) {
-        guard hotkeyVolumeChangeAllowed(delta: delta) else { return }
-
-        applyHotkeyVolumePreview(delta: delta)
-
-        if isBusy {
-            hotkeyCommitPendingAfterBusy = true
+        let requested = clampVolume(level)
+        if blocksVolumeIncrease && requested > previewAverageLevel {
+            status.lastError = "Left and right levels do not match"
             return
         }
-        scheduleHotkeyCommit()
+
+        pendingVolumeLevel = requested
+        status.lastError = nil
+        if showHUD {
+            volumeHUD.present()
+        }
+
+        if isBusy {
+            volumeCommitPendingAfterBusy = true
+            return
+        }
+        scheduleVolumeCommit()
     }
 
-    private func hotkeyVolumeChangeAllowed(delta: Double) -> Bool {
+    /// Hotkeys: preview immediately, then debounced commit (tap, burst, and hold).
+    func adjustLevelByHotkey(delta: Double) {
+        guard !isStatusLoading else { return }
+        guard volumeChangeAllowed(delta: delta) else { return }
+
+        let base = pendingVolumeLevel ?? status.averageLevel
+        setVolumePreview(base + delta, showHUD: true)
+    }
+
+    private func volumeChangeAllowed(delta: Double) -> Bool {
         if delta > 0 && blocksVolumeIncrease {
             status.lastError = "Left and right levels do not match"
             return false
@@ -258,45 +282,38 @@ final class SpeakerStore {
         return true
     }
 
-    private func applyHotkeyVolumePreview(delta: Double) {
-        let base = pendingVolumeLevel ?? status.averageLevel
-        pendingVolumeLevel = clampVolume(base + delta)
-        status.lastError = nil
-        volumeHUD.present()
-    }
-
     func toggleMute() async {
-        cancelPendingHotkeyVolume()
+        cancelPendingVolume()
         let targetMuted = !status.isMuted
         await runMutation { try await $0.setMuted(targetMuted) }
         volumeHUD.present()
     }
 
-    func cancelPendingHotkeyVolume() {
-        hotkeyCommitTask?.cancel()
-        hotkeyCommitTask = nil
-        hotkeyCommitPendingAfterBusy = false
+    func cancelPendingVolume() {
+        volumeCommitTask?.cancel()
+        volumeCommitTask = nil
+        volumeCommitPendingAfterBusy = false
         pendingVolumeLevel = nil
     }
 
-    private func scheduleHotkeyCommit() {
-        hotkeyCommitTask?.cancel()
-        hotkeyCommitTask = Task {
-            try? await Task.sleep(nanoseconds: hotkeyDebounceNanos)
+    private func scheduleVolumeCommit() {
+        volumeCommitTask?.cancel()
+        volumeCommitTask = Task {
+            try? await Task.sleep(nanoseconds: volumeDebounceNanos)
             guard !Task.isCancelled else { return }
-            await commitPendingHotkeyVolume()
+            await commitPendingVolume()
         }
     }
 
-    private func commitPendingHotkeyVolume() async {
+    private func commitPendingVolume() async {
         guard let levelToCommit = pendingVolumeLevel else { return }
 
-        let success = await executeVolumeLevelMutation(showMenuBarLoading: false) {
+        let success = await executeVolumeLevelMutation {
             try await $0.setLevel(levelToCommit)
         }
         guard success else {
             if pendingVolumeLevel != nil {
-                scheduleHotkeyCommit()
+                scheduleVolumeCommit()
             }
             return
         }
@@ -304,31 +321,23 @@ final class SpeakerStore {
         if pendingVolumeLevel == levelToCommit {
             pendingVolumeLevel = nil
         } else if pendingVolumeLevel != nil {
-            scheduleHotkeyCommit()
+            scheduleVolumeCommit()
         }
     }
 
     @discardableResult
     private func executeVolumeLevelMutation(
-        showMenuBarLoading: Bool,
         _ body: (KhvolClient) async throws -> KhvolJSONStatus
     ) async -> Bool {
-        if showMenuBarLoading {
-            guard !isBusy else { return false }
-            await markMenuBarLoading()
-        } else {
-            guard !isHotkeyVolumeCommitting else { return false }
-            isHotkeyVolumeCommitting = true
-            isBusy = true
-            volumeHUD.present()
-        }
+        guard !isVolumeCommitting else { return false }
+
+        isVolumeCommitting = true
+        isBusy = true
 
         defer {
-            if !showMenuBarLoading {
-                isHotkeyVolumeCommitting = false
-            }
+            isVolumeCommitting = false
             isBusy = false
-            flushHotkeyCommitAfterBusyIfNeeded()
+            flushVolumeCommitAfterBusyIfNeeded()
         }
 
         do {
@@ -348,13 +357,13 @@ final class SpeakerStore {
         }
     }
 
-    private func flushHotkeyCommitAfterBusyIfNeeded() {
-        guard hotkeyCommitPendingAfterBusy, pendingVolumeLevel != nil else {
-            hotkeyCommitPendingAfterBusy = false
+    private func flushVolumeCommitAfterBusyIfNeeded() {
+        guard volumeCommitPendingAfterBusy, pendingVolumeLevel != nil else {
+            volumeCommitPendingAfterBusy = false
             return
         }
-        hotkeyCommitPendingAfterBusy = false
-        scheduleHotkeyCommit()
+        volumeCommitPendingAfterBusy = false
+        scheduleVolumeCommit()
     }
 
     private func runMutation(_ body: (KhvolClient) async throws -> KhvolJSONStatus) async {
@@ -362,7 +371,8 @@ final class SpeakerStore {
         await markMenuBarLoading()
         defer {
             isBusy = false
-            flushHotkeyCommitAfterBusyIfNeeded()
+            isStatusLoading = false
+            flushVolumeCommitAfterBusyIfNeeded()
         }
         do {
             let json = try await body(makeClient())
