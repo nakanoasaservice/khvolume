@@ -9,7 +9,7 @@ final class SpeakerStore {
     var interfaces: [NetworkInterfaceInfo] = []
     var isBusy = false
     var launchAtLoginMessage: String?
-    /// Preview level before hotkey burst commits (shown in the menu bar immediately).
+    /// Preview level before hotkey burst commits (shown in the HUD immediately).
     var pendingVolumeLevel: Double?
 
     private var refreshTask: Task<Void, Never>?
@@ -20,6 +20,7 @@ final class SpeakerStore {
     private var lastInterfacesLoad: Date?
     /// When a hotkey arrives during apply, commit after the current operation finishes.
     private var hotkeyCommitPendingAfterBusy = false
+    private var isHotkeyVolumeCommitting = false
     private let hotkeyDebounceNanos: UInt64 = 400_000_000
     private let interfacesReloadInterval: TimeInterval = 60
 
@@ -52,23 +53,6 @@ final class SpeakerStore {
     /// Current level for UI, including uncommitted hotkey preview.
     var previewAverageLevel: Double {
         pendingVolumeLevel ?? status.averageLevel
-    }
-
-    /// Menu bar volume digits while a hotkey adjustment is in progress.
-    var menuBarHotkeyVolumeText: String? {
-        guard let pending = pendingVolumeLevel else { return nil }
-        return "\(Int(pending.rounded()))"
-    }
-
-    var hudDeviceName: String {
-        switch status.devices.count {
-        case 0:
-            return "KH Volume"
-        case 1:
-            return status.devices[0].name
-        default:
-            return status.devices.map(\.name).joined(separator: " / ")
-        }
     }
 
     private func makeClient() -> KhvolClient {
@@ -250,10 +234,10 @@ final class SpeakerStore {
 
     private func showVolumeHUD() {
         volumeHUD.show(
-            deviceName: hudDeviceName,
             level: previewAverageLevel,
             maxLevel: config.effectiveMax,
-            isMuted: status.isMuted
+            isMuted: status.isMuted,
+            isCommitting: isHotkeyVolumeCommitting
         )
     }
 
@@ -281,9 +265,55 @@ final class SpeakerStore {
     }
 
     private func commitPendingHotkeyVolume() async {
-        guard let level = pendingVolumeLevel else { return }
-        await runMutation { try await $0.setLevel(level) }
-        pendingVolumeLevel = nil
+        guard let levelToCommit = pendingVolumeLevel else { return }
+
+        let success = await runHotkeyVolumeCommit { try await $0.setLevel(levelToCommit) }
+        guard success else {
+            if pendingVolumeLevel != nil {
+                scheduleHotkeyCommit()
+            }
+            return
+        }
+
+        if pendingVolumeLevel == levelToCommit {
+            pendingVolumeLevel = nil
+        } else if pendingVolumeLevel != nil {
+            scheduleHotkeyCommit()
+        }
+    }
+
+    @discardableResult
+    private func runHotkeyVolumeCommit(
+        _ body: (KhvolClient) async throws -> KhvolJSONStatus
+    ) async -> Bool {
+        guard !isHotkeyVolumeCommitting else { return false }
+
+        isHotkeyVolumeCommitting = true
+        isBusy = true
+        showVolumeHUD()
+
+        defer {
+            isHotkeyVolumeCommitting = false
+            isBusy = false
+            showVolumeHUD()
+            flushHotkeyCommitAfterBusyIfNeeded()
+        }
+
+        do {
+            let json = try await body(makeClient())
+            status.lastError = nil
+            apply(json: json)
+            status.connection = json.balanced ? .ready : .warning
+            return true
+        } catch let err as KhvolError {
+            status.lastError = err.localizedDescription
+            status.connection = .disconnected
+            return false
+        } catch {
+            status.lastError = error.localizedDescription
+            status.connection = .disconnected
+            return false
+        }
     }
 
     private func flushHotkeyCommitAfterBusyIfNeeded() {

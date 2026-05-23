@@ -11,16 +11,16 @@ final class VolumeHUDController {
     private let hideDelayNanos: UInt64 = 1_500_000_000
     private let slideOffset: CGFloat = 10
     private let menuBarGap: CGFloat = 8
-    private let screenEdgeMargin: CGFloat = 10
+    private let screenEdgeMargin: CGFloat = 8
 
-    func show(deviceName: String, level: Double, maxLevel: Double, isMuted: Bool) {
+    func show(level: Double, maxLevel: Double, isMuted: Bool, isCommitting: Bool = false) {
         hideTask?.cancel()
 
         let view = VolumeHUDView(
-            deviceName: deviceName,
             level: level,
             maxLevel: maxLevel,
-            isMuted: isMuted
+            isMuted: isMuted,
+            isCommitting: isCommitting
         )
 
         let panel = ensurePanel()

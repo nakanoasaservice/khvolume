@@ -5,10 +5,7 @@ struct MenuBarStatusLabel: View {
 
     var body: some View {
         Group {
-            if let volumeText = store.menuBarHotkeyVolumeText {
-                Text(volumeText)
-                    .monospacedDigit()
-            } else if store.status.connection == .disconnected {
+            if store.status.connection == .disconnected {
                 Text("!")
             } else {
                 Image(systemName: "hifispeaker.fill")
