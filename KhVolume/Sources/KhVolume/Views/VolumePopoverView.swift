@@ -24,7 +24,7 @@ struct VolumePopoverView: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 10)
-        .frame(width: 280)
+        .frame(width: 310)
         .background {
             PopoverKeyboardHandler(
                 onMoveUp: { moveFocus(by: -1) },
