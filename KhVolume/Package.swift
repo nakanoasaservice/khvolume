@@ -15,7 +15,12 @@ let package = Package(
             name: "KhVolume",
             dependencies: ["KeyboardShortcuts"],
             path: "Sources/KhVolume",
-            exclude: ["Resources/Info.plist"]
+            exclude: [
+                "Resources/Info.plist",
+                "Resources/AppIcon.icns",
+                "Resources/AppIcon-1024.png",
+                "Resources/AppIcon.iconset",
+            ]
         ),
     ]
 )
