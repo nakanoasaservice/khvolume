@@ -6,7 +6,7 @@ struct MenuBarStatusLabel: View {
     var body: some View {
         Group {
             if store.status.connection == .disconnected {
-                Text("!")
+                Image(systemName: "hifispeaker.badge.minus.fill")
             } else {
                 Image(systemName: "hifispeaker.fill")
             }
