@@ -15,14 +15,16 @@ final class SpeakerStore {
     var pendingVolumeLevel: Double?
 
     private var refreshTask: Task<Void, Never>?
-    private var volumeCommitTask: Task<Void, Never>?
+    private var volumeTrailingTask: Task<Void, Never>?
     private var hotkeyManager: HotkeyManager?
     private var hasStartedUp = false
     private var lastInterfacesLoad: Date?
     /// When volume input arrives during commit, schedule again after the current operation finishes.
     private var volumeCommitPendingAfterBusy = false
     private(set) var isVolumeCommitting = false
-    private let volumeDebounceNanos: UInt64 = 400_000_000
+    private let volumeThrottleInterval: Duration = .milliseconds(200)
+    private let volumeTrailingDelay: Duration = .milliseconds(120)
+    private var lastVolumeCommitStart: ContinuousClock.Instant? = nil
     private let interfacesReloadInterval: TimeInterval = 60
 
     init() {
@@ -257,7 +259,7 @@ final class SpeakerStore {
             volumeCommitPendingAfterBusy = true
             return
         }
-        scheduleVolumeCommit()
+        scheduleThrottledCommit()
     }
 
     /// Relative volume change from a delta (e.g. hotkey step).
@@ -284,19 +286,42 @@ final class SpeakerStore {
     }
 
     func cancelPendingVolume() {
-        volumeCommitTask?.cancel()
-        volumeCommitTask = nil
+        volumeTrailingTask?.cancel()
+        volumeTrailingTask = nil
         volumeCommitPendingAfterBusy = false
         pendingVolumeLevel = nil
     }
 
-    private func scheduleVolumeCommit() {
-        volumeCommitTask?.cancel()
-        volumeCommitTask = Task {
-            try? await Task.sleep(nanoseconds: volumeDebounceNanos)
-            guard !Task.isCancelled else { return }
-            await commitPendingVolume()
+    private func scheduleThrottledCommit() {
+        volumeTrailingTask?.cancel()
+
+        let throttleElapsed = lastVolumeCommitStart.map { ContinuousClock.now - $0 } ?? volumeThrottleInterval
+        if !isVolumeCommitting && throttleElapsed >= volumeThrottleInterval {
+            lastVolumeCommitStart = .now
+            Task { await commitPendingVolume() }
+            scheduleTrailingTask()
+            return
         }
+        scheduleTrailingTask()
+    }
+
+    private func scheduleTrailingTask() {
+        volumeTrailingTask?.cancel()
+        volumeTrailingTask = Task {
+            try? await Task.sleep(for: volumeTrailingDelay)
+            guard !Task.isCancelled else { return }
+            await trailingCommitFire()
+        }
+    }
+
+    private func trailingCommitFire() async {
+        guard pendingVolumeLevel != nil, !isVolumeCommitting else { return }
+        guard !isBusy else {
+            volumeCommitPendingAfterBusy = true
+            return
+        }
+        lastVolumeCommitStart = .now
+        await commitPendingVolume()
     }
 
     private func commitPendingVolume() async {
@@ -305,17 +330,18 @@ final class SpeakerStore {
         let success = await executeVolumeLevelMutation {
             try await $0.setLevel(levelToCommit)
         }
-        guard success else {
-            if pendingVolumeLevel != nil {
-                scheduleVolumeCommit()
-            }
-            return
-        }
 
-        if pendingVolumeLevel == levelToCommit {
-            pendingVolumeLevel = nil
-        } else if pendingVolumeLevel != nil {
-            scheduleVolumeCommit()
+        if success {
+            if pendingVolumeLevel == levelToCommit {
+                pendingVolumeLevel = nil
+            } else if pendingVolumeLevel != nil {
+                lastVolumeCommitStart = .now
+                await commitPendingVolume()
+            }
+        } else {
+            if pendingVolumeLevel != nil {
+                scheduleTrailingTask()
+            }
         }
     }
 
@@ -357,7 +383,7 @@ final class SpeakerStore {
             return
         }
         volumeCommitPendingAfterBusy = false
-        scheduleVolumeCommit()
+        scheduleThrottledCommit()
     }
 
     private func runMutation(_ body: (KhvolClient) async throws -> KhvolJSONStatus) async {
