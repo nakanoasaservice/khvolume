@@ -23,5 +23,11 @@ let package = Package(
             ],
             linkerSettings: [.linkedFramework("Network")]
         ),
+        .testTarget(
+            name: "KhVolumeTests",
+            dependencies: ["KhVolume"],
+            path: "Tests/KhVolumeTests",
+            swiftSettings: [.define("TESTING")]
+        ),
     ]
 )

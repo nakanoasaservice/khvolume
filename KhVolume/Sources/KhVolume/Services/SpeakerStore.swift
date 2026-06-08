@@ -10,7 +10,7 @@ final class SpeakerStore {
     var interfaces: [NetworkInterfaceInfo] = []
     var isBusy = false
     /// True while status refresh, scan, or other non-volume mutations are in flight.
-    private(set) var isStatusLoading = false
+    var isStatusLoading = false
     var launchAtLoginMessage: String?
     /// Uncommitted target level shared by hotkeys, popover slider, and HUD preview.
     var pendingVolumeLevel: Double?
@@ -22,7 +22,7 @@ final class SpeakerStore {
     private var lastInterfacesLoad: Date?
     /// When volume input arrives during commit, schedule again after the current operation finishes.
     private var volumeCommitPendingAfterBusy = false
-    private(set) var isVolumeCommitting = false
+    var isVolumeCommitting = false
     private let volumeThrottleInterval: Duration = .milliseconds(200)
     private let volumeTrailingDelay: Duration = .milliseconds(120)
     private var lastVolumeCommitStart: ContinuousClock.Instant? = nil
@@ -31,10 +31,21 @@ final class SpeakerStore {
     private let pathMonitorQueue = DispatchQueue(label: "com.khvolume.pathmonitor", qos: .utility)
     private var networkRecoveryTask: Task<Void, Never>?
 
+    /// Injected in tests; nil means production path creates KhvolClient directly.
+    private let clientFactory: (() -> any KhvolClientProtocol)?
+
     init() {
         config = AppPaths.loadConfig()
+        clientFactory = nil
         KhVolumeBootstrap.store = self
         Task { await startupIfNeeded() }
+    }
+
+    /// Test-only initializer — skips subprocess setup, hotkeys, and NWPathMonitor.
+    init(config: AppConfig, clientFactory: @escaping () -> any KhvolClientProtocol) {
+        self.config = config
+        self.clientFactory = clientFactory
+        self.hasStartedUp = true   // prevents startupIfNeeded from firing
     }
 
     /// Called at launch so volume and hotkeys work without opening the menu bar popover.
@@ -91,11 +102,11 @@ final class SpeakerStore {
         status.levelMismatch && !config.allowForceOnMismatch
     }
 
-    private func makeClient() -> KhvolClient {
-        KhvolClient(
-            configDir: AppPaths.appSupportURL,
-            interface: interfaceName
-        )
+    private func makeClient() -> any KhvolClientProtocol {
+        if let factory = clientFactory {
+            return factory()
+        }
+        return KhvolClient(configDir: AppPaths.appSupportURL, interface: interfaceName)
     }
 
     func saveConfig() {
@@ -196,7 +207,7 @@ final class SpeakerStore {
         }
     }
 
-    private func shouldRescan(after message: String) -> Bool {
+    func shouldRescan(after message: String) -> Bool {
         if !AppPaths.hasSpeakerCache { return true }
         let lower = message.lowercased()
         return lower.contains("run scan") || lower.contains("no speakers configured")
@@ -360,7 +371,7 @@ final class SpeakerStore {
         await commitPendingVolume()
     }
 
-    private func commitPendingVolume() async {
+    func commitPendingVolume() async {
         guard let levelToCommit = pendingVolumeLevel else { return }
 
         let success = await executeVolumeLevelMutation {
@@ -383,7 +394,7 @@ final class SpeakerStore {
 
     @discardableResult
     private func executeVolumeLevelMutation(
-        _ body: (KhvolClient) async throws -> KhvolJSONStatus
+        _ body: (any KhvolClientProtocol) async throws -> KhvolJSONStatus
     ) async -> Bool {
         guard !isVolumeCommitting else { return false }
 
@@ -424,7 +435,7 @@ final class SpeakerStore {
         scheduleThrottledCommit()
     }
 
-    private func runMutation(_ body: (KhvolClient) async throws -> KhvolJSONStatus) async {
+    private func runMutation(_ body: (any KhvolClientProtocol) async throws -> KhvolJSONStatus) async {
         guard !isBusy else { return }
         await markMenuBarLoading()
         defer {
@@ -448,7 +459,7 @@ final class SpeakerStore {
         }
     }
 
-    private func apply(json: KhvolJSONStatus) {
+    func apply(json: KhvolJSONStatus) {
         status.isMuted = json.muted
         status.levelMismatch = !json.balanced
         status.devices = json.devices.map { key, val in

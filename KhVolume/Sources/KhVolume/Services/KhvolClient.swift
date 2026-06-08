@@ -1,5 +1,13 @@
 import Foundation
 
+protocol KhvolClientProtocol: Sendable {
+    func jsonStatus() async throws -> KhvolJSONStatus
+    func setLevel(_ level: Double) async throws -> KhvolJSONStatus
+    func setMuted(_ muted: Bool) async throws -> KhvolJSONStatus
+    func interfaces() async throws -> [NetworkInterfaceInfo]
+    @discardableResult func scan() async throws -> Int
+}
+
 enum KhvolError: LocalizedError {
     case helperMissing
     case commandFailed(String)
@@ -196,6 +204,8 @@ struct KhvolClient {
     }
     #endif
 }
+
+extension KhvolClient: KhvolClientProtocol {}
 
 
 private enum DispatchTimeout {

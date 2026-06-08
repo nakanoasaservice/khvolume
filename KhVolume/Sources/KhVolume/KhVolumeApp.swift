@@ -1,5 +1,6 @@
 import SwiftUI
 
+#if !TESTING
 @main
 struct KhVolumeApp: App {
     @NSApplicationDelegateAdaptor(KhVolumeAppDelegate.self) private var appDelegate
@@ -20,3 +21,4 @@ struct KhVolumeApp: App {
         .defaultSize(width: 420, height: 440)
     }
 }
+#endif
