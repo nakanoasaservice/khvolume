@@ -23,6 +23,28 @@ private enum PhaseEvent {
     case silentRefreshCompleted(Result<KhvolJSONStatus, any Error>)
 }
 
+private enum VolumeState {
+    case idle
+    case pending(level: Double, lastCommitStart: ContinuousClock.Instant?)
+    case committing(level: Double, commitStart: ContinuousClock.Instant)
+
+    var pendingLevel: Double? {
+        switch self {
+        case .idle: nil
+        case .pending(let level, _): level
+        case .committing(let level, _): level
+        }
+    }
+}
+
+private enum VolumeEvent {
+    case previewSet(Double)
+    case cancelled
+    case throttleExpired
+    case commitSucceeded(KhvolJSONStatus)
+    case commitFailed(any Error)
+}
+
 // MARK: - SpeakerStoreTiming
 
 /// Injectable timing constants — set to `.testing` in unit tests to eliminate real sleeps.
@@ -62,7 +84,16 @@ final class SpeakerStore {
     /// Forwarded from `launchAtLoginCoordinator.errorMessage`.
     var launchAtLoginMessage: String? { launchAtLoginCoordinator.errorMessage }
     /// Uncommitted target level shared by hotkeys, popover slider, and HUD preview.
-    var pendingVolumeLevel: Double?
+    var pendingVolumeLevel: Double? {
+        get { volumeState.pendingLevel }
+        set {
+            if let v = newValue {
+                volumeState = .pending(level: v, lastCommitStart: nil)
+            } else {
+                volumeState = .idle
+            }
+        }
+    }
 
     /// Manages LaunchAtLogin preference and owns its error-message state.
     /// Injected in tests; production init creates a real `LaunchAtLoginCoordinator`.
@@ -74,7 +105,7 @@ final class SpeakerStore {
     private var hotkeyService: (any HotkeyService)?
     private var hasStartedUp = false
     private var lastInterfacesLoad: Date?
-    private var lastVolumeCommitStart: ContinuousClock.Instant? = nil
+    private var volumeState: VolumeState = .idle
     private var networkMonitor: (any NetworkMonitorService)?
     private var networkRecoveryTask: Task<Void, Never>?
 
@@ -201,6 +232,7 @@ final class SpeakerStore {
     /// Status-only refresh that never sets a loading phase — safe to call during active UI interaction.
     private func refreshSilently() async {
         guard case .idle = phase else { return }
+        guard case .idle = volumeState else { return }
         reduce(.silentRefreshCompleted(await fetchStatus(attemptRecovery: true)))
     }
 
@@ -333,10 +365,8 @@ final class SpeakerStore {
             return
         }
 
-        pendingVolumeLevel = requested
         status.lastError = nil
-
-        scheduleVolumeCommit()
+        reduceVolume(.previewSet(requested))
     }
 
     /// Relative volume change from a delta (e.g. hotkey step).
@@ -363,9 +393,7 @@ final class SpeakerStore {
     }
 
     func cancelPendingVolume() {
-        volumeCommitTask?.cancel()
-        volumeCommitTask = nil
-        pendingVolumeLevel = nil
+        reduceVolume(.cancelled)
     }
 
     /// Awaits the current volume commit task to completion.
@@ -377,33 +405,29 @@ final class SpeakerStore {
     // MARK: - Volume commit
 
     private func scheduleVolumeCommit() {
-        volumeCommitTask?.cancel()
         volumeCommitTask = Task {
-            // Throttle: wait out any remaining window from the previous commit
-            if let last = lastVolumeCommitStart {
+            guard !Task.isCancelled else { return }
+            guard case .pending(_, let lastCommitStart) = volumeState else { return }
+            if let last = lastCommitStart {
                 let remaining = timing.volumeThrottleInterval - (ContinuousClock.now - last)
                 if remaining > .zero {
                     try? await Task.sleep(for: remaining)
                     guard !Task.isCancelled else { return }
                 }
             }
-            guard let level = pendingVolumeLevel else { return }
-            lastVolumeCommitStart = .now
-            await executeVolumeCommit(level: level)
+            guard case .pending(let levelToCommit, _) = volumeState else { return }
+            reduceVolume(.throttleExpired)
+            let client = makeClient()
+            do {
+                let json = try await client.setLevel(levelToCommit)
+                reduceVolume(.commitSucceeded(json))
+            } catch {
+                reduceVolume(.commitFailed(error))
+            }
         }
     }
 
-    private func executeVolumeCommit(level: Double) async {
-        let client = makeClient()
-        do {
-            let json = try await client.setLevel(level)
-            reduce(.silentRefreshCompleted(.success(json)))
-            if pendingVolumeLevel == level { pendingVolumeLevel = nil }
-        } catch {
-            lastInterfacesLoad = nil
-            reduce(.silentRefreshCompleted(.failure(error)))
-        }
-    }
+    
 
     // MARK: - FSM reducer
 
@@ -444,6 +468,55 @@ final class SpeakerStore {
 
         default:
             assertionFailure("unexpected transition: \(phase) + \(event)")
+        }
+    }
+
+    private func reduceVolume(_ event: VolumeEvent) {
+        switch (volumeState, event) {
+
+        case (_, .previewSet(let level)):
+            let lastCommitStart: ContinuousClock.Instant?
+            switch volumeState {
+            case .idle:
+                lastCommitStart = nil
+            case .pending(_, let ts):
+                lastCommitStart = ts
+            case .committing(_, let start):
+                lastCommitStart = start
+            }
+            volumeCommitTask?.cancel()
+            volumeState = .pending(level: level, lastCommitStart: lastCommitStart)
+            scheduleVolumeCommit()
+
+        case (_, .cancelled):
+            volumeCommitTask?.cancel()
+            volumeCommitTask = nil
+            volumeState = .idle
+
+        case (.pending(let level, _), .throttleExpired):
+            volumeState = .committing(level: level, commitStart: ContinuousClock.now)
+
+        case (_, .commitSucceeded(let json)):
+            apply(json: json)
+            connectionState = json.balanced ? .ready : .warning
+            status.lastError = nil
+            if case .committing = volumeState { volumeState = .idle }
+
+        case (.committing(let level, _), .commitFailed(let err)):
+            connectionState = .disconnected
+            status.lastError = err.localizedDescription
+            lastInterfacesLoad = nil
+            if err is KhvolError { status.devices = [] }
+            volumeState = .pending(level: level, lastCommitStart: nil)
+
+        case (_, .commitFailed(let err)):
+            connectionState = .disconnected
+            status.lastError = err.localizedDescription
+            lastInterfacesLoad = nil
+            if err is KhvolError { status.devices = [] }
+
+        default:
+            assertionFailure("unexpected volume transition: \(volumeState) + \(event)")
         }
     }
 
