@@ -34,7 +34,7 @@ struct SpeakerStoreVolumePreviewTests {
     @Test("setVolumePreview is no-op when isStatusLoading")
     func setVolumePreviewBlockedByLoading() {
         let store = SpeakerStore.makeForTesting()
-        store.isStatusLoading = true
+        store.phase = .loading(.refresh)
         store.setVolumePreview(50)
         #expect(store.pendingVolumeLevel == nil)
     }

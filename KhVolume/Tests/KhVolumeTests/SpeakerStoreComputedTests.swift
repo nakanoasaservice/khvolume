@@ -105,7 +105,7 @@ struct SpeakerStoreComputedTests {
     @Test("isVolumeSliderDisabled true when isStatusLoading")
     func sliderDisabledWhenLoading() {
         let store = SpeakerStore.makeForTesting()
-        store.isStatusLoading = true
+        store.phase = .loading(.refresh)
         #expect(store.isVolumeSliderDisabled == true)
     }
 
@@ -113,7 +113,6 @@ struct SpeakerStoreComputedTests {
     func sliderEnabledNormally() {
         let store = SpeakerStore.makeForTesting()
         store.status.isMuted = false
-        store.isStatusLoading = false
         #expect(store.isVolumeSliderDisabled == false)
     }
 

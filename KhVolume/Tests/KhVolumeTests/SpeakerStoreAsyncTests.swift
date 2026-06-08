@@ -39,7 +39,7 @@ struct SpeakerStoreAsyncTests {
     func refreshNoOpWhenBusy() async {
         let mock = MockKhvolClient()
         let store = SpeakerStore.makeForTesting(client: mock)
-        store.isBusy = true
+        store.phase = .loading(.refresh)
 
         await store.refresh()
 
