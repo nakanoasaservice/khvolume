@@ -1,5 +1,4 @@
 import Foundation
-import Network
 import Observation
 
 enum StorePhase: Equatable {
@@ -45,13 +44,18 @@ final class SpeakerStore {
     private var connectionState: ConnectionState = .disconnected
     /// Derives `.scanning` from `phase`, so the stored value never needs to be `.scanning`.
     var connection: ConnectionState { phase.isStatusLoading ? .scanning : connectionState }
-    var launchAtLoginMessage: String?
+    /// Forwarded from `launchAtLoginCoordinator.errorMessage`.
+    var launchAtLoginMessage: String? { launchAtLoginCoordinator.errorMessage }
     /// Uncommitted target level shared by hotkeys, popover slider, and HUD preview.
     var pendingVolumeLevel: Double?
 
+    /// Manages LaunchAtLogin preference and owns its error-message state.
+    let launchAtLoginCoordinator = LaunchAtLoginCoordinator()
+
     private var refreshTask: Task<Void, Never>?
     private var volumeTrailingTask: Task<Void, Never>?
-    private var hotkeyManager: HotkeyManager?
+    /// Retained HotkeyService instance (production: HotkeyManager; tests: mock).
+    private var hotkeyService: (any HotkeyService)?
     private var hasStartedUp = false
     private var lastInterfacesLoad: Date?
     var isVolumeCommitting: Bool { phase.isVolumeCommitting }
@@ -59,8 +63,7 @@ final class SpeakerStore {
     private let volumeTrailingDelay: Duration = .milliseconds(120)
     private var lastVolumeCommitStart: ContinuousClock.Instant? = nil
     private let interfacesReloadInterval: TimeInterval = 60
-    private var pathMonitor: NWPathMonitor?
-    private let pathMonitorQueue = DispatchQueue(label: "com.khvolume.pathmonitor", qos: .utility)
+    private var networkMonitor: (any NetworkMonitorService)?
     private var networkRecoveryTask: Task<Void, Never>?
 
     /// Injected in tests; nil means production path creates KhvolClient directly.
@@ -73,26 +76,34 @@ final class SpeakerStore {
         Task { await startupIfNeeded() }
     }
 
-    /// Test-only initializer — skips subprocess setup, hotkeys, and NWPathMonitor.
-    init(config: AppConfig, clientFactory: @escaping () -> any KhvolClientProtocol) {
+    /// Test-only initializer — skips subprocess setup, hotkeys, and network monitoring.
+    init(
+        config: AppConfig,
+        clientFactory: @escaping () -> any KhvolClientProtocol,
+        networkMonitor: (any NetworkMonitorService)? = nil,
+        hotkeyService: (any HotkeyService)? = nil
+    ) {
         self.config = config
         self.clientFactory = clientFactory
+        self.networkMonitor = networkMonitor
+        self.hotkeyService = hotkeyService
         self.hasStartedUp = true   // prevents startupIfNeeded from firing
     }
 
+    /// Called at launch so volume and hotkeys work without opening the menu bar popover.
     /// Called at launch so volume and hotkeys work without opening the menu bar popover.
     func startupIfNeeded() async {
         guard !hasStartedUp else { return }
         hasStartedUp = true
 
-        if hotkeyManager == nil {
+        if hotkeyService == nil {
             let manager = HotkeyManager(store: self)
-            manager.register()
-            hotkeyManager = manager
+            hotkeyService = manager
         }
+        hotkeyService?.register()
 
-        reconcileLaunchAtLoginFromService()
-        startNetworkMonitor()
+        launchAtLoginCoordinator.reconcile(config: &config)
+        setupNetworkMonitor()
         await loadInterfaces()
         scheduleRefresh()
     }
@@ -147,24 +158,11 @@ final class SpeakerStore {
     }
 
     func applyLaunchAtLoginPreference() {
-        let result = LaunchAtLogin.setEnabled(config.launchAtLogin)
-        switch result {
-        case .success:
-            launchAtLoginMessage = nil
-            config.launchAtLogin = LaunchAtLogin.serviceIsEnabled
-        case .unavailable(let message):
-            launchAtLoginMessage = message
-            config.launchAtLogin = false
-            AppPaths.saveConfig(config)
-        }
+        launchAtLoginCoordinator.apply(config: &config)
     }
 
     func reconcileLaunchAtLoginFromService() {
-        let enabled = LaunchAtLogin.serviceIsEnabled
-        if config.launchAtLogin != enabled {
-            config.launchAtLogin = enabled
-            AppPaths.saveConfig(config)
-        }
+        launchAtLoginCoordinator.reconcile(config: &config)
     }
 
 
@@ -252,23 +250,22 @@ final class SpeakerStore {
         await loadInterfaces(force: true)
     }
 
-    private func startNetworkMonitor() {
-        let monitor = NWPathMonitor()
-        monitor.pathUpdateHandler = { [weak self] path in
-            Task { @MainActor [weak self] in
-                self?.handleNetworkPathChange(path)
-            }
+    private func setupNetworkMonitor() {
+        if networkMonitor == nil {
+            networkMonitor = SystemNetworkMonitorService()
         }
-        monitor.start(queue: pathMonitorQueue)
-        pathMonitor = monitor
+        networkMonitor?.onPathChange = { [weak self] isSatisfied in
+            self?.handleNetworkPathChange(isSatisfied: isSatisfied)
+        }
+        networkMonitor?.start()
     }
 
     @MainActor
-    private func handleNetworkPathChange(_ path: NWPath) {
+    private func handleNetworkPathChange(isSatisfied: Bool) {
         // Invalidate the interface cache on any network change
         lastInterfacesLoad = nil
 
-        guard path.status == .satisfied else { return }
+        guard isSatisfied else { return }
 
         // Network restored: debounce 0.5s to absorb rapid back-to-back firings
         networkRecoveryTask?.cancel()
