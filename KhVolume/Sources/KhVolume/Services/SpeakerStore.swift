@@ -10,7 +10,6 @@ enum StorePhase: Equatable {
     enum LoadReason: Equatable {
         case refresh
         case interfaceSelection(name: String)
-        case recovery
         case mutation
     }
 
@@ -27,7 +26,7 @@ enum StorePhase: Equatable {
 
 private enum PhaseEvent {
     case loadBegan(StorePhase.LoadReason)
-    case loadCompleted
+    case loadCompleted(Result<KhvolJSONStatus, any Error>)
     case commitBegan(level: Double)
     case commitCompleted(targetLevel: Double, Result<KhvolJSONStatus, any Error>)
 }
@@ -51,8 +50,6 @@ final class SpeakerStore {
     private var hotkeyManager: HotkeyManager?
     private var hasStartedUp = false
     private var lastInterfacesLoad: Date?
-    /// When volume input arrives during commit, schedule again after the current operation finishes.
-    private var volumeCommitPendingAfterBusy = false
     var isVolumeCommitting: Bool { phase.isVolumeCommitting }
     private let volumeThrottleInterval: Duration = .milliseconds(200)
     private let volumeTrailingDelay: Duration = .milliseconds(120)
@@ -169,16 +166,36 @@ final class SpeakerStore {
 
     func refresh() async {
         guard case .idle = phase else { return }
-        reduce(.loadBegan(.refresh))
-        await Task.yield()
-        await applyStatusFromHelper(attemptRecovery: true)
-        reduce(.loadCompleted)
+        await withLoadPhase(.refresh) {
+            await fetchStatus(attemptRecovery: true)
+        }
     }
 
     /// Status-only refresh that never sets a loading phase — safe to call during active UI interaction.
+    /// Status-only refresh that never sets a loading phase — safe to call during active UI interaction.
     private func refreshSilently() async {
         guard case .idle = phase else { return }
-        await applyStatusFromHelper(attemptRecovery: true)
+        switch await fetchStatus(attemptRecovery: true) {
+        case .success(let json):
+            apply(json: json)
+            status.connection = json.balanced ? .ready : .warning
+            status.lastError = nil
+        case .failure(let err):
+            status.connection = .disconnected
+            status.lastError = err.localizedDescription
+            if err is KhvolError { status.devices = [] }
+        }
+    }
+
+    /// Acquire the load phase, yield for UI, run `fetch`, then release. Caller must guard `.idle` first.
+    private func withLoadPhase(
+        _ reason: StorePhase.LoadReason,
+        _ fetch: () async -> Result<KhvolJSONStatus, any Error>
+    ) async {
+        reduce(.loadBegan(reason))
+        await Task.yield()
+        let result = await fetch()
+        reduce(.loadCompleted(result))
     }
 
     /// Popover open: refresh interface list and status without blocking controls or rescanning.
@@ -188,40 +205,30 @@ final class SpeakerStore {
         await refreshSilently()
     }
 
-    private func applyStatusFromHelper(attemptRecovery: Bool) async {
-        status.lastError = nil
-
+    private func fetchStatus(attemptRecovery: Bool) async -> Result<KhvolJSONStatus, any Error> {
         do {
-            let json = try await makeClient().jsonStatus()
-            apply(json: json)
-            status.connection = json.balanced ? .ready : .warning
+            return .success(try await makeClient().jsonStatus())
         } catch let err as KhvolError {
-            if attemptRecovery, await recoverAfterDeviceError(err) {
-                return
+            if attemptRecovery, let recovered = await recoverAfterDeviceError(err) {
+                return .success(recovered)
             }
-            status.connection = .disconnected
-            status.lastError = err.localizedDescription
-            status.devices = []
+            return .failure(err)
         } catch {
-            status.connection = .disconnected
-            status.lastError = error.localizedDescription
+            return .failure(error)
         }
     }
 
     /// Rescan only when the speaker cache is missing (not on every transient json failure).
-    private func recoverAfterDeviceError(_ err: KhvolError) async -> Bool {
-        guard case .deviceError(let message) = err, shouldRescan(after: message) else { return false }
+    /// Rescan only when the speaker cache is missing (not on every transient json failure).
+    private func recoverAfterDeviceError(_ err: KhvolError) async -> KhvolJSONStatus? {
+        guard case .deviceError(let message) = err, shouldRescan(after: message) else { return nil }
         await loadInterfaces(force: true)
         do {
             let count = try await makeClient().scan()
-            guard count > 0 else { return false }
-            let json = try await makeClient().jsonStatus()
-            apply(json: json)
-            status.lastError = nil
-            status.connection = json.balanced ? .ready : .warning
-            return true
+            guard count > 0 else { return nil }
+            return try await makeClient().jsonStatus()
         } catch {
-            return false
+            return nil
         }
     }
 
@@ -291,26 +298,17 @@ final class SpeakerStore {
         cancelPendingVolume()
         config.networkInterface = name
         saveConfig()
-        status.lastError = nil
-        reduce(.loadBegan(.interfaceSelection(name: name)))
-        await Task.yield()
-        do {
-            _ = try await makeClient().scan()
-            let json = try await makeClient().jsonStatus()
-            status.lastError = nil
-            apply(json: json)
-            status.connection = json.balanced ? .ready : .warning
-        } catch let err as KhvolError {
-            status.lastError = err.localizedDescription
-            status.connection = .disconnected
-            status.devices = []
-        } catch {
-            status.lastError = error.localizedDescription
-            status.connection = .disconnected
+        await withLoadPhase(.interfaceSelection(name: name)) {
+            do {
+                _ = try await makeClient().scan()
+                return .success(try await makeClient().jsonStatus())
+            } catch {
+                return .failure(error)
+            }
         }
-        reduce(.loadCompleted)
     }
 
+    /// Updates the shared preview level and debounces commit to the device.
     /// Updates the shared preview level and debounces commit to the device.
     func setVolumePreview(_ level: Double) {
         guard !isStatusLoading else { return }
@@ -324,10 +322,7 @@ final class SpeakerStore {
         pendingVolumeLevel = requested
         status.lastError = nil
 
-        if isBusy {
-            volumeCommitPendingAfterBusy = true
-            return
-        }
+        if isBusy { return }
         scheduleThrottledCommit()
     }
 
@@ -357,7 +352,6 @@ final class SpeakerStore {
     func cancelPendingVolume() {
         volumeTrailingTask?.cancel()
         volumeTrailingTask = nil
-        volumeCommitPendingAfterBusy = false
         pendingVolumeLevel = nil
     }
 
@@ -384,11 +378,7 @@ final class SpeakerStore {
     }
 
     private func trailingCommitFire() async {
-        guard pendingVolumeLevel != nil, !isVolumeCommitting else { return }
-        guard !isBusy else {
-            volumeCommitPendingAfterBusy = true
-            return
-        }
+        guard pendingVolumeLevel != nil, case .idle = phase else { return }
         lastVolumeCommitStart = .now
         await commitPendingVolume()
     }
@@ -418,11 +408,7 @@ final class SpeakerStore {
     }
 
     private func flushVolumeCommitAfterBusyIfNeeded() {
-        guard volumeCommitPendingAfterBusy, pendingVolumeLevel != nil else {
-            volumeCommitPendingAfterBusy = false
-            return
-        }
-        volumeCommitPendingAfterBusy = false
+        guard pendingVolumeLevel != nil else { return }
         scheduleThrottledCommit()
     }
 
@@ -433,10 +419,26 @@ final class SpeakerStore {
 
         case (.idle, .loadBegan(let reason)):
             refreshTask?.cancel()
+            status.lastError = nil
             phase = .loading(reason)
             status.connection = .scanning
 
-        case (.loading, .loadCompleted):
+        case (.loading, .loadCompleted(.success(let json))):
+            apply(json: json)
+            status.connection = json.balanced ? .ready : .warning
+            status.lastError = nil
+            phase = .idle
+            flushVolumeCommitAfterBusyIfNeeded()
+
+        case (.loading(let reason), .loadCompleted(.failure(let err))):
+            status.connection = .disconnected
+            status.lastError = err.localizedDescription
+            switch reason {
+            case .refresh, .interfaceSelection:
+                if err is KhvolError { status.devices = [] }
+            case .mutation:
+                lastInterfacesLoad = nil
+            }
             phase = .idle
             flushVolumeCommitAfterBusyIfNeeded()
 
@@ -448,7 +450,6 @@ final class SpeakerStore {
             apply(json: json)
             status.connection = json.balanced ? .ready : .warning
             status.lastError = nil
-            volumeCommitPendingAfterBusy = false
             phase = .idle
             if pendingVolumeLevel != target {
                 scheduleThrottledCommit()
@@ -458,7 +459,6 @@ final class SpeakerStore {
 
         case (.committingVolume, .commitCompleted(_, .failure(let err))):
             applyError(err)
-            volumeCommitPendingAfterBusy = false
             phase = .idle
             if pendingVolumeLevel != nil {
                 scheduleTrailingTask()
@@ -471,33 +471,19 @@ final class SpeakerStore {
 
     private func applyError(_ err: any Error) {
         lastInterfacesLoad = nil
-        if let khvolErr = err as? KhvolError {
-            status.lastError = khvolErr.localizedDescription
-        } else {
-            status.lastError = err.localizedDescription
-        }
+        status.lastError = err.localizedDescription
         status.connection = .disconnected
     }
 
     private func runMutation(_ body: (any KhvolClientProtocol) async throws -> KhvolJSONStatus) async {
         guard case .idle = phase else { return }
-        reduce(.loadBegan(.mutation))
-        await Task.yield()
-        do {
-            let json = try await body(makeClient())
-            status.lastError = nil
-            apply(json: json)
-            status.connection = json.balanced ? .ready : .warning
-        } catch let err as KhvolError {
-            lastInterfacesLoad = nil
-            status.lastError = err.localizedDescription
-            status.connection = .disconnected
-        } catch {
-            lastInterfacesLoad = nil
-            status.lastError = error.localizedDescription
-            status.connection = .disconnected
+        await withLoadPhase(.mutation) {
+            do {
+                return .success(try await body(makeClient()))
+            } catch {
+                return .failure(error)
+            }
         }
-        reduce(.loadCompleted)
     }
 
     func apply(json: KhvolJSONStatus) {
