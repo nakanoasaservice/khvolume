@@ -1,4 +1,5 @@
 import Foundation
+import Network
 import Observation
 
 @Observable
@@ -26,6 +27,9 @@ final class SpeakerStore {
     private let volumeTrailingDelay: Duration = .milliseconds(120)
     private var lastVolumeCommitStart: ContinuousClock.Instant? = nil
     private let interfacesReloadInterval: TimeInterval = 60
+    private var pathMonitor: NWPathMonitor?
+    private let pathMonitorQueue = DispatchQueue(label: "com.khvolume.pathmonitor", qos: .utility)
+    private var networkRecoveryTask: Task<Void, Never>?
 
     init() {
         config = AppPaths.loadConfig()
@@ -45,6 +49,7 @@ final class SpeakerStore {
         }
 
         reconcileLaunchAtLoginFromService()
+        startNetworkMonitor()
         await loadInterfaces()
         scheduleRefresh()
     }
@@ -204,6 +209,37 @@ final class SpeakerStore {
             return
         }
         await loadInterfaces(force: true)
+    }
+
+    private func startNetworkMonitor() {
+        let monitor = NWPathMonitor()
+        monitor.pathUpdateHandler = { [weak self] path in
+            Task { @MainActor [weak self] in
+                self?.handleNetworkPathChange(path)
+            }
+        }
+        monitor.start(queue: pathMonitorQueue)
+        pathMonitor = monitor
+    }
+
+    @MainActor
+    private func handleNetworkPathChange(_ path: NWPath) {
+        // Invalidate the interface cache on any network change
+        lastInterfacesLoad = nil
+
+        guard path.status == .satisfied else { return }
+
+        // Network restored: debounce 0.5s to absorb rapid back-to-back firings
+        networkRecoveryTask?.cancel()
+        networkRecoveryTask = Task {
+            try? await Task.sleep(nanoseconds: 500_000_000)
+            guard !Task.isCancelled else { return }
+            await loadInterfaces()
+            // Auto-refresh only when disconnected to avoid interrupting normal operation
+            if status.connection == .disconnected && !interfaces.isEmpty && !isBusy {
+                await refresh(showBusy: false)
+            }
+        }
     }
 
     func loadInterfaces(force: Bool = false) async {
@@ -367,10 +403,12 @@ final class SpeakerStore {
             status.connection = json.balanced ? .ready : .warning
             return true
         } catch let err as KhvolError {
+            lastInterfacesLoad = nil
             status.lastError = err.localizedDescription
             status.connection = .disconnected
             return false
         } catch {
+            lastInterfacesLoad = nil
             status.lastError = error.localizedDescription
             status.connection = .disconnected
             return false
@@ -400,9 +438,11 @@ final class SpeakerStore {
             apply(json: json)
             status.connection = json.balanced ? .ready : .warning
         } catch let err as KhvolError {
+            lastInterfacesLoad = nil
             status.lastError = err.localizedDescription
             status.connection = .disconnected
         } catch {
+            lastInterfacesLoad = nil
             status.lastError = error.localizedDescription
             status.connection = .disconnected
         }

@@ -20,7 +20,8 @@ let package = Package(
                 "Resources/AppIcon.icns",
                 "Resources/AppIcon-1024.png",
                 "Resources/AppIcon.iconset",
-            ]
+            ],
+            linkerSettings: [.linkedFramework("Network")]
         ),
     ]
 )
