@@ -5,6 +5,8 @@ import Testing
 @MainActor
 struct SpeakerStoreShouldRescanTests {
 
+    // MARK: Message-based triggers (cache present)
+
     @Test("returns true for message containing 'run scan' (case insensitive)", arguments: [
         "please run scan now",
         "RUN SCAN REQUIRED",
@@ -12,7 +14,7 @@ struct SpeakerStoreShouldRescanTests {
         "you must run scan",
     ])
     func runScanMessageTriggersRescan(message: String) {
-        let store = SpeakerStore.makeForTesting()
+        let store = SpeakerStore.makeForTesting()  // hasSpeakerCache = { true }
         #expect(store.shouldRescan(after: message) == true)
     }
 
@@ -22,24 +24,31 @@ struct SpeakerStoreShouldRescanTests {
         "NO SPEAKERS CONFIGURED",
     ])
     func noSpeakersMessageTriggersRescan(message: String) {
-        let store = SpeakerStore.makeForTesting()
+        let store = SpeakerStore.makeForTesting()  // hasSpeakerCache = { true }
         #expect(store.shouldRescan(after: message) == true)
     }
 
-    @Test("returns false for unrelated message (when no cache present in test environment)")
+    @Test("returns false for unrelated message when cache exists")
     func unrelatedMessageNoRescan() {
-        // In a clean test environment, AppPaths.hasSpeakerCache is false,
-        // so this test documents the case where message alone doesn't match.
-        // When hasSpeakerCache == false the function returns true regardless —
-        // so we verify the negative case only when a cache happens to exist.
-        // This test asserts the message-based logic: a message that matches neither
-        // keyword must not independently trigger rescan.
-        let message = "connection timed out"
-        // We only assert the message doesn't match the keyword criteria:
-        let lower = message.lowercased()
-        #expect(!lower.contains("run scan"))
-        #expect(!lower.contains("no speakers configured"))
-        // The actual return value depends on AppPaths.hasSpeakerCache (filesystem state).
-        // Full integration of the cache branch is exercised by running the app.
+        let store = SpeakerStore.makeForTesting()  // hasSpeakerCache = { true }
+        #expect(store.shouldRescan(after: "connection timed out") == false)
+        #expect(store.shouldRescan(after: "device busy") == false)
+        #expect(store.shouldRescan(after: "") == false)
+    }
+
+    // MARK: Cache-absent short-circuit
+
+    @Test("returns true for any message when no speaker cache")
+    func noCacheAlwaysRescan() {
+        let store = SpeakerStore.makeForTesting(hasSpeakerCache: { false })
+        // Even a completely unrelated message triggers a rescan when the cache is absent
+        #expect(store.shouldRescan(after: "connection timed out") == true)
+        #expect(store.shouldRescan(after: "") == true)
+    }
+
+    @Test("returns true for matching message regardless of cache state", arguments: [true, false])
+    func matchingMessageAlwaysRescan(cacheExists: Bool) {
+        let store = SpeakerStore.makeForTesting(hasSpeakerCache: { cacheExists })
+        #expect(store.shouldRescan(after: "please run scan now") == true)
     }
 }

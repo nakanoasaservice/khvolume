@@ -30,6 +30,32 @@ private enum PhaseEvent {
     case commitCompleted(targetLevel: Double, Result<KhvolJSONStatus, any Error>)
 }
 
+// MARK: - SpeakerStoreTiming
+
+/// Injectable timing constants — set to `.testing` in unit tests to eliminate real sleeps.
+struct SpeakerStoreTiming {
+    /// Minimum interval between consecutive volume commits to the device.
+    var volumeThrottleInterval: Duration = .milliseconds(200)
+    /// Trailing-debounce delay before the final volume commit fires.
+    var volumeTrailingDelay: Duration = .milliseconds(120)
+    /// Debounce applied after a network path change before attempting recovery.
+    var networkRecoveryDelay: Duration = .milliseconds(500)
+    /// How long a cached interface list is considered fresh before reloading.
+    var interfacesReloadInterval: TimeInterval = 60
+}
+
+extension SpeakerStoreTiming {
+    /// All delays zeroed out so tests run without real sleeps.
+    static let testing = SpeakerStoreTiming(
+        volumeThrottleInterval: .zero,
+        volumeTrailingDelay: .zero,
+        networkRecoveryDelay: .zero,
+        interfacesReloadInterval: 0
+    )
+}
+
+// MARK: - SpeakerStore
+
 @Observable
 @MainActor
 final class SpeakerStore {
@@ -50,7 +76,8 @@ final class SpeakerStore {
     var pendingVolumeLevel: Double?
 
     /// Manages LaunchAtLogin preference and owns its error-message state.
-    let launchAtLoginCoordinator = LaunchAtLoginCoordinator()
+    /// Injected in tests; production init creates a real `LaunchAtLoginCoordinator`.
+    let launchAtLoginCoordinator: any LaunchAtLoginManaging
 
     private var refreshTask: Task<Void, Never>?
     private var volumeTrailingTask: Task<Void, Never>?
@@ -59,38 +86,62 @@ final class SpeakerStore {
     private var hasStartedUp = false
     private var lastInterfacesLoad: Date?
     var isVolumeCommitting: Bool { phase.isVolumeCommitting }
-    private let volumeThrottleInterval: Duration = .milliseconds(200)
-    private let volumeTrailingDelay: Duration = .milliseconds(120)
     private var lastVolumeCommitStart: ContinuousClock.Instant? = nil
-    private let interfacesReloadInterval: TimeInterval = 60
     private var networkMonitor: (any NetworkMonitorService)?
     private var networkRecoveryTask: Task<Void, Never>?
 
     /// Injected in tests; nil means production path creates KhvolClient directly.
     private let clientFactory: (() -> any KhvolClientProtocol)?
+    /// Timing constants — replaced with `.testing` in unit tests to eliminate real sleeps.
+    private let timing: SpeakerStoreTiming
+    /// Returns whether a speaker-config cache file exists on disk.
+    /// Injected in tests to decouple `shouldRescan` from the filesystem.
+    private let hasSpeakerCache: () -> Bool
+    /// Returns the current date/time.
+    /// Injected in tests to make interface-cache TTL logic deterministic.
+    private let now: () -> Date
 
     init() {
         config = AppPaths.loadConfig()
         clientFactory = nil
+        launchAtLoginCoordinator = LaunchAtLoginCoordinator()
+        hasSpeakerCache = { AppPaths.hasSpeakerCache }
+        now = { Date() }
+        timing = SpeakerStoreTiming()
         KhVolumeBootstrap.store = self
         Task { await startupIfNeeded() }
     }
 
-    /// Test-only initializer — skips subprocess setup, hotkeys, and network monitoring.
+    /// Testing initializer — all infrastructure dependencies are injectable.
+    ///
+    /// - Parameters:
+    ///   - suppressStartup: When `true` (the default), sets `hasStartedUp = true` so that
+    ///     `startupIfNeeded()` is a no-op even if called manually.
+    ///     Pass `false` and call `startupIfNeeded()` explicitly to test the startup path.
     init(
         config: AppConfig,
         clientFactory: @escaping () -> any KhvolClientProtocol,
         networkMonitor: (any NetworkMonitorService)? = nil,
-        hotkeyService: (any HotkeyService)? = nil
+        hotkeyService: (any HotkeyService)? = nil,
+        launchAtLoginCoordinator: (any LaunchAtLoginManaging)? = nil,
+        hasSpeakerCache: @escaping () -> Bool = { AppPaths.hasSpeakerCache },
+        now: @escaping () -> Date = { Date() },
+        timing: SpeakerStoreTiming = SpeakerStoreTiming(),
+        suppressStartup: Bool = true
     ) {
         self.config = config
         self.clientFactory = clientFactory
         self.networkMonitor = networkMonitor
         self.hotkeyService = hotkeyService
-        self.hasStartedUp = true   // prevents startupIfNeeded from firing
+        self.launchAtLoginCoordinator = launchAtLoginCoordinator ?? LaunchAtLoginCoordinator()
+        self.hasSpeakerCache = hasSpeakerCache
+        self.now = now
+        self.timing = timing
+        if suppressStartup { self.hasStartedUp = true }
     }
 
-    /// Called at launch so volume and hotkeys work without opening the menu bar popover.
+    // MARK: - Startup
+
     /// Called at launch so volume and hotkeys work without opening the menu bar popover.
     func startupIfNeeded() async {
         guard !hasStartedUp else { return }
@@ -107,6 +158,8 @@ final class SpeakerStore {
         await loadInterfaces()
         scheduleRefresh()
     }
+
+    // MARK: - Computed properties
 
     var interfaceName: String? {
         config.networkInterface
@@ -125,12 +178,16 @@ final class SpeakerStore {
         status.levelMismatch && !config.allowForceOnMismatch
     }
 
+    // MARK: - Client
+
     private func makeClient() -> any KhvolClientProtocol {
         if let factory = clientFactory {
             return factory()
         }
         return KhvolClient(configDir: AppPaths.appSupportURL, interface: interfaceName)
     }
+
+    // MARK: - Config persistence
 
     func saveConfig() {
         AppPaths.saveConfig(config)
@@ -144,6 +201,7 @@ final class SpeakerStore {
         launchAtLoginCoordinator.reconcile(config: &config)
     }
 
+    // MARK: - Status refresh
 
     func refresh() async {
         guard case .idle = phase else { return }
@@ -152,8 +210,6 @@ final class SpeakerStore {
         }
     }
 
-    /// Status-only refresh that never sets a loading phase — safe to call during active UI interaction.
-    /// Status-only refresh that never sets a loading phase — safe to call during active UI interaction.
     /// Status-only refresh that never sets a loading phase — safe to call during active UI interaction.
     private func refreshSilently() async {
         guard case .idle = phase else { return }
@@ -181,7 +237,6 @@ final class SpeakerStore {
     }
 
     /// Popover open: refresh interface list and status without blocking controls or rescanning.
-    /// Popover open: refresh interface list and status without blocking controls or rescanning.
     func preparePopover() async {
         await loadInterfacesIfNeeded()
         await refreshSilently()
@@ -200,8 +255,7 @@ final class SpeakerStore {
         }
     }
 
-    /// Rescan only when the speaker cache is missing (not on every transient json failure).
-    /// Rescan only when the speaker cache is missing (not on every transient json failure).
+    /// Rescan only when the speaker cache is missing or a rescan keyword is in the error message.
     private func recoverAfterDeviceError(_ err: KhvolError) async -> KhvolJSONStatus? {
         guard case .deviceError(let message) = err, shouldRescan(after: message) else { return nil }
         await loadInterfaces(force: true)
@@ -215,19 +269,38 @@ final class SpeakerStore {
     }
 
     func shouldRescan(after message: String) -> Bool {
-        if !AppPaths.hasSpeakerCache { return true }
+        if !hasSpeakerCache() { return true }
         let lower = message.lowercased()
         return lower.contains("run scan") || lower.contains("no speakers configured")
     }
 
+    // MARK: - Interface loading
+
     func loadInterfacesIfNeeded() async {
         if !interfaces.isEmpty,
            let last = lastInterfacesLoad,
-           Date().timeIntervalSince(last) < interfacesReloadInterval {
+           now().timeIntervalSince(last) < timing.interfacesReloadInterval {
             return
         }
         await loadInterfaces(force: true)
     }
+
+    func loadInterfaces(force: Bool = false) async {
+        if !force,
+           !interfaces.isEmpty,
+           let last = lastInterfacesLoad,
+           now().timeIntervalSince(last) < timing.interfacesReloadInterval {
+            return
+        }
+        do {
+            interfaces = try await makeClient().interfaces()
+            lastInterfacesLoad = now()
+        } catch {
+            interfaces = []
+        }
+    }
+
+    // MARK: - Network monitoring
 
     private func setupNetworkMonitor() {
         if networkMonitor == nil {
@@ -246,10 +319,10 @@ final class SpeakerStore {
 
         guard isSatisfied else { return }
 
-        // Network restored: debounce 0.5s to absorb rapid back-to-back firings
+        // Network restored: debounce to absorb rapid back-to-back firings
         networkRecoveryTask?.cancel()
         networkRecoveryTask = Task {
-            try? await Task.sleep(nanoseconds: 500_000_000)
+            try? await Task.sleep(for: timing.networkRecoveryDelay)
             guard !Task.isCancelled else { return }
             await loadInterfaces()
             // Auto-refresh only when disconnected to avoid interrupting normal operation
@@ -259,20 +332,7 @@ final class SpeakerStore {
         }
     }
 
-    func loadInterfaces(force: Bool = false) async {
-        if !force,
-           !interfaces.isEmpty,
-           let last = lastInterfacesLoad,
-           Date().timeIntervalSince(last) < interfacesReloadInterval {
-            return
-        }
-        do {
-            interfaces = try await makeClient().interfaces()
-            lastInterfacesLoad = Date()
-        } catch {
-            interfaces = []
-        }
-    }
+    // MARK: - Interface selection
 
     func selectInterface(_ name: String) async {
         guard case .idle = phase else { return }
@@ -289,7 +349,8 @@ final class SpeakerStore {
         }
     }
 
-    /// Updates the shared preview level and debounces commit to the device.
+    // MARK: - Volume preview / adjust
+
     /// Updates the shared preview level and debounces commit to the device.
     func setVolumePreview(_ level: Double) {
         guard !isStatusLoading else { return }
@@ -336,11 +397,13 @@ final class SpeakerStore {
         pendingVolumeLevel = nil
     }
 
+    // MARK: - Volume commit throttle
+
     private func scheduleThrottledCommit() {
         volumeTrailingTask?.cancel()
 
-        let throttleElapsed = lastVolumeCommitStart.map { ContinuousClock.now - $0 } ?? volumeThrottleInterval
-        if !isVolumeCommitting && throttleElapsed >= volumeThrottleInterval {
+        let throttleElapsed = lastVolumeCommitStart.map { ContinuousClock.now - $0 } ?? timing.volumeThrottleInterval
+        if !isVolumeCommitting && throttleElapsed >= timing.volumeThrottleInterval {
             lastVolumeCommitStart = .now
             Task { await commitPendingVolume() }
             scheduleTrailingTask()
@@ -352,7 +415,7 @@ final class SpeakerStore {
     private func scheduleTrailingTask() {
         volumeTrailingTask?.cancel()
         volumeTrailingTask = Task {
-            try? await Task.sleep(for: volumeTrailingDelay)
+            try? await Task.sleep(for: timing.volumeTrailingDelay)
             guard !Task.isCancelled else { return }
             await trailingCommitFire()
         }
@@ -393,7 +456,7 @@ final class SpeakerStore {
         scheduleThrottledCommit()
     }
 
-    // MARK: – FSM reducer
+    // MARK: - FSM reducer
 
     private func reduce(_ event: PhaseEvent) {
         switch (phase, event) {
@@ -484,5 +547,4 @@ final class SpeakerStore {
         refreshTask?.cancel()
         refreshTask = Task { await refresh() }
     }
-
 }

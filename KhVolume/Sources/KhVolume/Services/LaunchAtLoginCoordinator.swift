@@ -2,9 +2,20 @@ import Observation
 
 /// Manages the LaunchAtLogin preference — owns the error-message state
 /// and delegates to LaunchAtLogin to read/write SMAppService.
+/// Injectable interface for LaunchAtLogin coordination — isolates SMAppService calls from SpeakerStore.
+@MainActor
+protocol LaunchAtLoginManaging: AnyObject {
+    /// Error message from the last `apply` call, if any.
+    var errorMessage: String? { get }
+    /// Reads live SMAppService state and corrects `config` if it diverged.
+    func reconcile(config: inout AppConfig)
+    /// Writes `config.launchAtLogin` to SMAppService and updates `config` and `errorMessage`.
+    func apply(config: inout AppConfig)
+}
+
 @Observable
 @MainActor
-final class LaunchAtLoginCoordinator {
+final class LaunchAtLoginCoordinator: LaunchAtLoginManaging {
     private(set) var errorMessage: String?
 
     /// Reads the live SMAppService state and reconciles it with `config`.
