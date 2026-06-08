@@ -94,64 +94,63 @@ struct SpeakerStoreAsyncTests {
         #expect(store.status.isMuted == true)
     }
 
-    // MARK: commitPendingVolume
+    // MARK: Volume commit
 
-    @Test("commitPendingVolume calls setLevel with pending value")
+    @Test("setVolumePreview commits pending level via setLevel")
     func commitCallsSetLevel() async {
         let mock = MockKhvolClient()
         mock.setLevelResult = .success(.stub(levels: [75]))
         let store = SpeakerStore.makeForTesting(client: mock)
-        store.pendingVolumeLevel = 75
 
-        await store.commitPendingVolume()
+        store.setVolumePreview(75)
+        await store.awaitVolumeCommit()
 
         #expect(mock.lastSetLevelArg == 75)
     }
 
-    @Test("commitPendingVolume clears pendingVolumeLevel on success")
+    @Test("pendingVolumeLevel is cleared after successful commit")
     func commitClearsPendingOnSuccess() async {
         let mock = MockKhvolClient()
         let store = SpeakerStore.makeForTesting(client: mock)
-        store.pendingVolumeLevel = 75
 
-        await store.commitPendingVolume()
+        store.setVolumePreview(75)
+        await store.awaitVolumeCommit()
 
         #expect(store.pendingVolumeLevel == nil)
     }
 
-    @Test("commitPendingVolume retains pendingVolumeLevel on failure")
+    @Test("pendingVolumeLevel is retained after failed commit")
     func commitRetainsPendingOnFailure() async {
         let mock = MockKhvolClient()
         mock.setLevelResult = .failure(KhvolError.commandFailed("device error"))
         let store = SpeakerStore.makeForTesting(client: mock)
-        store.pendingVolumeLevel = 75
 
-        await store.commitPendingVolume()
+        store.setVolumePreview(75)
+        await store.awaitVolumeCommit()
 
-        // On failure pending is kept (trailing task reschedules)
+        #expect(store.pendingVolumeLevel == 75)
         #expect(store.status.lastError != nil)
         #expect(store.connection == .disconnected)
-        #expect(store.isVolumeCommitting == false)
+        #expect(store.isBusy == false)
     }
 
-    @Test("commitPendingVolume is no-op when nothing pending")
+    @Test("no commit occurs when no pending level")
     func commitNoOpWhenNoPending() async {
         let mock = MockKhvolClient()
-        let store = SpeakerStore.makeForTesting(client: mock)
-
-        await store.commitPendingVolume()
-
+        _ = SpeakerStore.makeForTesting(client: mock)
+        // pendingVolumeLevel is nil by default — nothing to commit
         #expect(mock.lastSetLevelArg == nil)
     }
 
-    @Test("commitPendingVolume resets isVolumeCommitting to false after success")
-    func commitResetsCommittingFlag() async {
+    @Test("volume commit does not affect loading phase")
+    func commitDoesNotAffectLoadingPhase() async {
         let mock = MockKhvolClient()
         let store = SpeakerStore.makeForTesting(client: mock)
-        store.pendingVolumeLevel = 50
 
-        await store.commitPendingVolume()
+        store.setVolumePreview(50)
+        await store.awaitVolumeCommit()
 
-        #expect(store.isVolumeCommitting == false)
+        #expect(store.isBusy == false)
+        #expect(store.isStatusLoading == false)
     }
 }

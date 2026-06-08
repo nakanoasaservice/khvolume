@@ -4,7 +4,6 @@ import Observation
 enum StorePhase: Equatable {
     case idle
     case loading(LoadReason)
-    case committingVolume(level: Double)
 
     enum LoadReason: Equatable {
         case refresh
@@ -17,17 +16,12 @@ enum StorePhase: Equatable {
         if case .loading = self { return true }
         return false
     }
-    var isVolumeCommitting: Bool {
-        if case .committingVolume = self { return true }
-        return false
-    }
 }
 
 private enum PhaseEvent {
     case loadBegan(StorePhase.LoadReason)
     case loadCompleted(Result<KhvolJSONStatus, any Error>)
-    case commitBegan(level: Double)
-    case commitCompleted(targetLevel: Double, Result<KhvolJSONStatus, any Error>)
+    case silentRefreshCompleted(Result<KhvolJSONStatus, any Error>)
 }
 
 // MARK: - SpeakerStoreTiming
@@ -80,12 +74,11 @@ final class SpeakerStore {
     let launchAtLoginCoordinator: any LaunchAtLoginManaging
 
     private var refreshTask: Task<Void, Never>?
-    private var volumeTrailingTask: Task<Void, Never>?
+    var volumeCommitTask: Task<Void, Never>?
     /// Retained HotkeyService instance (production: HotkeyManager; tests: mock).
     private var hotkeyService: (any HotkeyService)?
     private var hasStartedUp = false
     private var lastInterfacesLoad: Date?
-    var isVolumeCommitting: Bool { phase.isVolumeCommitting }
     private var lastVolumeCommitStart: ContinuousClock.Instant? = nil
     private var networkMonitor: (any NetworkMonitorService)?
     private var networkRecoveryTask: Task<Void, Never>?
@@ -213,16 +206,7 @@ final class SpeakerStore {
     /// Status-only refresh that never sets a loading phase — safe to call during active UI interaction.
     private func refreshSilently() async {
         guard case .idle = phase else { return }
-        switch await fetchStatus(attemptRecovery: true) {
-        case .success(let json):
-            apply(json: json)
-            connectionState = json.balanced ? .ready : .warning
-            status.lastError = nil
-        case .failure(let err):
-            connectionState = .disconnected
-            status.lastError = err.localizedDescription
-            if err is KhvolError { status.devices = [] }
-        }
+        reduce(.silentRefreshCompleted(await fetchStatus(attemptRecovery: true)))
     }
 
     /// Acquire the load phase, yield for UI, run `fetch`, then release. Caller must guard `.idle` first.
@@ -260,9 +244,10 @@ final class SpeakerStore {
         guard case .deviceError(let message) = err, shouldRescan(after: message) else { return nil }
         await loadInterfaces(force: true)
         do {
-            let count = try await makeClient().scan()
+            let client = makeClient()
+            let count = try await client.scan()
             guard count > 0 else { return nil }
-            return try await makeClient().jsonStatus()
+            return try await client.jsonStatus()
         } catch {
             return nil
         }
@@ -341,8 +326,9 @@ final class SpeakerStore {
         saveConfig()
         await withLoadPhase(.interfaceSelection(name: name)) {
             do {
-                _ = try await makeClient().scan()
-                return .success(try await makeClient().jsonStatus())
+                let client = makeClient()
+                _ = try await client.scan()
+                return .success(try await client.jsonStatus())
             } catch {
                 return .failure(error)
             }
@@ -364,8 +350,7 @@ final class SpeakerStore {
         pendingVolumeLevel = requested
         status.lastError = nil
 
-        if isBusy { return }
-        scheduleThrottledCommit()
+        scheduleVolumeCommit()
     }
 
     /// Relative volume change from a delta (e.g. hotkey step).
@@ -392,68 +377,50 @@ final class SpeakerStore {
     }
 
     func cancelPendingVolume() {
-        volumeTrailingTask?.cancel()
-        volumeTrailingTask = nil
+        volumeCommitTask?.cancel()
+        volumeCommitTask = nil
         pendingVolumeLevel = nil
     }
 
-    // MARK: - Volume commit throttle
+    // MARK: - Volume commit
 
-    private func scheduleThrottledCommit() {
-        volumeTrailingTask?.cancel()
+    private func scheduleVolumeCommit() {
+        volumeCommitTask?.cancel()
+        volumeCommitTask = Task {
+            // Throttle: wait out any remaining window from the previous commit
+            if let last = lastVolumeCommitStart {
+                let remaining = timing.volumeThrottleInterval - (ContinuousClock.now - last)
+                if remaining > .zero {
+                    try? await Task.sleep(for: remaining)
+                    guard !Task.isCancelled else { return }
+                }
+            }
+            guard let level = pendingVolumeLevel else { return }
 
-        let throttleElapsed = lastVolumeCommitStart.map { ContinuousClock.now - $0 } ?? timing.volumeThrottleInterval
-        if !isVolumeCommitting && throttleElapsed >= timing.volumeThrottleInterval {
+            // Primary commit
             lastVolumeCommitStart = .now
-            Task { await commitPendingVolume() }
-            scheduleTrailingTask()
-            return
-        }
-        scheduleTrailingTask()
-    }
+            await executeVolumeCommit(level: level)
 
-    private func scheduleTrailingTask() {
-        volumeTrailingTask?.cancel()
-        volumeTrailingTask = Task {
+            // Trailing: if the target changed during the commit, send the final value
             try? await Task.sleep(for: timing.volumeTrailingDelay)
-            guard !Task.isCancelled else { return }
-            await trailingCommitFire()
+            guard !Task.isCancelled, let finalLevel = pendingVolumeLevel else { return }
+            if finalLevel != level {
+                lastVolumeCommitStart = .now
+                await executeVolumeCommit(level: finalLevel)
+            }
         }
     }
 
-    private func trailingCommitFire() async {
-        guard pendingVolumeLevel != nil, case .idle = phase else { return }
-        lastVolumeCommitStart = .now
-        await commitPendingVolume()
-    }
-
-    func commitPendingVolume() async {
-        guard let levelToCommit = pendingVolumeLevel else { return }
-        await executeVolumeLevelMutation(level: levelToCommit) {
-            try await $0.setLevel(levelToCommit)
-        }
-    }
-
-    @discardableResult
-    private func executeVolumeLevelMutation(
-        level: Double,
-        _ body: (any KhvolClientProtocol) async throws -> KhvolJSONStatus
-    ) async -> Bool {
-        guard case .idle = phase else { return false }
-        reduce(.commitBegan(level: level))
+    private func executeVolumeCommit(level: Double) async {
+        let client = makeClient()
         do {
-            let json = try await body(makeClient())
-            reduce(.commitCompleted(targetLevel: level, .success(json)))
-            return true
+            let json = try await client.setLevel(level)
+            reduce(.silentRefreshCompleted(.success(json)))
+            if pendingVolumeLevel == level { pendingVolumeLevel = nil }
         } catch {
-            reduce(.commitCompleted(targetLevel: level, .failure(error)))
-            return false
+            lastInterfacesLoad = nil
+            reduce(.silentRefreshCompleted(.failure(error)))
         }
-    }
-
-    private func flushVolumeCommitAfterBusyIfNeeded() {
-        guard pendingVolumeLevel != nil else { return }
-        scheduleThrottledCommit()
     }
 
     // MARK: - FSM reducer
@@ -471,7 +438,6 @@ final class SpeakerStore {
             connectionState = json.balanced ? .ready : .warning
             status.lastError = nil
             phase = .idle
-            flushVolumeCommitAfterBusyIfNeeded()
 
         case (.loading(let reason), .loadCompleted(.failure(let err))):
             connectionState = .disconnected
@@ -483,39 +449,20 @@ final class SpeakerStore {
                 lastInterfacesLoad = nil
             }
             phase = .idle
-            flushVolumeCommitAfterBusyIfNeeded()
 
-        case (.idle, .commitBegan(let level)):
-            phase = .committingVolume(level: level)
-
-        case (.committingVolume(let inFlight), .commitCompleted(let target, .success(let json)))
-             where inFlight == target:
+        case (_, .silentRefreshCompleted(.success(let json))):
             apply(json: json)
             connectionState = json.balanced ? .ready : .warning
             status.lastError = nil
-            phase = .idle
-            if pendingVolumeLevel != target {
-                scheduleThrottledCommit()
-            } else {
-                pendingVolumeLevel = nil
-            }
 
-        case (.committingVolume, .commitCompleted(_, .failure(let err))):
-            applyError(err)
-            phase = .idle
-            if pendingVolumeLevel != nil {
-                scheduleTrailingTask()
-            }
+        case (_, .silentRefreshCompleted(.failure(let err))):
+            connectionState = .disconnected
+            status.lastError = err.localizedDescription
+            if err is KhvolError { status.devices = [] }
 
         default:
             assertionFailure("unexpected transition: \(phase) + \(event)")
         }
-    }
-
-    private func applyError(_ err: any Error) {
-        lastInterfacesLoad = nil
-        status.lastError = err.localizedDescription
-        connectionState = .disconnected
     }
 
     private func runMutation(_ body: (any KhvolClientProtocol) async throws -> KhvolJSONStatus) async {

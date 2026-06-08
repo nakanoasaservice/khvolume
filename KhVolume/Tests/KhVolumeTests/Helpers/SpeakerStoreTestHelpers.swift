@@ -6,7 +6,7 @@ extension SpeakerStore {
     ///
     /// Defaults chosen for test isolation:
     /// - `hasSpeakerCache` returns `true` so `shouldRescan` tests only exercise message matching.
-    /// - `timing` uses production defaults so existing async tests are unaffected.
+    /// - `timing` is `.testing` (all delays zero) so tests run without real sleeps.
     /// - `suppressStartup: true` prevents `startupIfNeeded()` from running automatically.
     ///
     /// To test the startup path, pass `suppressStartup: false` directly to `SpeakerStore.init`
@@ -19,7 +19,7 @@ extension SpeakerStore {
         launchAtLoginCoordinator: MockLaunchAtLoginCoordinator? = nil,
         hasSpeakerCache: @escaping () -> Bool = { true },
         now: @escaping () -> Date = { Date() },
-        timing: SpeakerStoreTiming = SpeakerStoreTiming()
+        timing: SpeakerStoreTiming = .testing
     ) -> SpeakerStore {
         SpeakerStore(
             config: config,
@@ -31,5 +31,11 @@ extension SpeakerStore {
             now: now,
             timing: timing
         )
+    }
+
+    /// Awaits the current `volumeCommitTask` to completion.
+    /// Use after `setVolumePreview(_:)` in tests to synchronise with the commit task.
+    func awaitVolumeCommit() async {
+        await volumeCommitTask?.value
     }
 }
