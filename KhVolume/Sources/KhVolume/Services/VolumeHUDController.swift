@@ -21,6 +21,7 @@ final class VolumeHUDController {
     /// Shows or refreshes the HUD. Content updates reactively from `SpeakerStore`.
     func present() {
         guard let store else { return }
+        guard NSApp.keyWindow == nil else { return }
         hideTask?.cancel()
 
         let panel = ensurePanel(store: store)
