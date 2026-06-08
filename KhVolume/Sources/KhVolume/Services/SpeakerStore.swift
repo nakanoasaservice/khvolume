@@ -29,8 +29,6 @@ private enum PhaseEvent {
 struct SpeakerStoreTiming {
     /// Minimum interval between consecutive volume commits to the device.
     var volumeThrottleInterval: Duration = .milliseconds(200)
-    /// Trailing-debounce delay before the final volume commit fires.
-    var volumeTrailingDelay: Duration = .milliseconds(120)
     /// Debounce applied after a network path change before attempting recovery.
     var networkRecoveryDelay: Duration = .milliseconds(500)
     /// How long a cached interface list is considered fresh before reloading.
@@ -41,7 +39,6 @@ extension SpeakerStoreTiming {
     /// All delays zeroed out so tests run without real sleeps.
     static let testing = SpeakerStoreTiming(
         volumeThrottleInterval: .zero,
-        volumeTrailingDelay: .zero,
         networkRecoveryDelay: .zero,
         interfacesReloadInterval: 0
     )
@@ -391,18 +388,8 @@ final class SpeakerStore {
                 }
             }
             guard let level = pendingVolumeLevel else { return }
-
-            // Primary commit
             lastVolumeCommitStart = .now
             await executeVolumeCommit(level: level)
-
-            // Trailing: if the target changed during the commit, send the final value
-            try? await Task.sleep(for: timing.volumeTrailingDelay)
-            guard !Task.isCancelled, let finalLevel = pendingVolumeLevel else { return }
-            if finalLevel != level {
-                lastVolumeCommitStart = .now
-                await executeVolumeCommit(level: finalLevel)
-            }
         }
     }
 
