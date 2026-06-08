@@ -11,6 +11,7 @@ struct SoundSettingsView: View {
                 Toggle("Open KH Volume at login", isOn: $store.config.launchAtLogin)
                     .onChange(of: store.config.launchAtLogin) { _, _ in
                         store.saveConfig()
+                        store.applyLaunchAtLoginPreference()
                     }
                 if let message = store.launchAtLoginMessage {
                     Text(message)

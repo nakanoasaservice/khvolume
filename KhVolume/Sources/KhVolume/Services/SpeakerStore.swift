@@ -117,26 +117,6 @@ final class SpeakerStore {
         pendingVolumeLevel ?? status.averageLevel
     }
 
-    /// Formatted level label shared by HUD and popover.
-    func volumeLevelText(for level: Double) -> String {
-        if status.isMuted { return "—" }
-        return "\(Int(level.rounded()))"
-    }
-
-    var volumeLevelText: String {
-        volumeLevelText(for: previewAverageLevel)
-    }
-
-    /// Normalized slider position (0...1) shared by HUD and popover.
-    var volumeFraction: Double {
-        guard config.effectiveMax > 0, !status.isMuted else { return 0 }
-        return min(1, max(0, previewAverageLevel / config.effectiveMax))
-    }
-
-    var isVolumeSliderDisabled: Bool {
-        status.isMuted || isStatusLoading
-    }
-
     private func clampVolume(_ level: Double) -> Double {
         min(config.effectiveMax, max(0, level))
     }
@@ -154,7 +134,6 @@ final class SpeakerStore {
 
     func saveConfig() {
         AppPaths.saveConfig(config)
-        applyLaunchAtLoginPreference()
     }
 
     func applyLaunchAtLoginPreference() {
