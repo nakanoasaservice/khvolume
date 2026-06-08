@@ -41,6 +41,10 @@ final class SpeakerStore {
     var isBusy: Bool { phase.isBusy }
     /// True while status refresh, scan, or other non-volume mutations are in flight.
     var isStatusLoading: Bool { phase.isStatusLoading }
+    /// Terminal connection state (ready/warning/disconnected). Use `connection` for display.
+    private var connectionState: ConnectionState = .disconnected
+    /// Derives `.scanning` from `phase`, so the stored value never needs to be `.scanning`.
+    var connection: ConnectionState { phase.isStatusLoading ? .scanning : connectionState }
     var launchAtLoginMessage: String?
     /// Uncommitted target level shared by hotkeys, popover slider, and HUD preview.
     var pendingVolumeLevel: Double?
@@ -173,15 +177,16 @@ final class SpeakerStore {
 
     /// Status-only refresh that never sets a loading phase — safe to call during active UI interaction.
     /// Status-only refresh that never sets a loading phase — safe to call during active UI interaction.
+    /// Status-only refresh that never sets a loading phase — safe to call during active UI interaction.
     private func refreshSilently() async {
         guard case .idle = phase else { return }
         switch await fetchStatus(attemptRecovery: true) {
         case .success(let json):
             apply(json: json)
-            status.connection = json.balanced ? .ready : .warning
+            connectionState = json.balanced ? .ready : .warning
             status.lastError = nil
         case .failure(let err):
-            status.connection = .disconnected
+            connectionState = .disconnected
             status.lastError = err.localizedDescription
             if err is KhvolError { status.devices = [] }
         }
@@ -272,7 +277,7 @@ final class SpeakerStore {
             guard !Task.isCancelled else { return }
             await loadInterfaces()
             // Auto-refresh only when disconnected to avoid interrupting normal operation
-            if status.connection == .disconnected && !interfaces.isEmpty {
+            if connectionState == .disconnected && !interfaces.isEmpty {
                 await refreshSilently()
             }
         }
@@ -421,17 +426,16 @@ final class SpeakerStore {
             refreshTask?.cancel()
             status.lastError = nil
             phase = .loading(reason)
-            status.connection = .scanning
 
         case (.loading, .loadCompleted(.success(let json))):
             apply(json: json)
-            status.connection = json.balanced ? .ready : .warning
+            connectionState = json.balanced ? .ready : .warning
             status.lastError = nil
             phase = .idle
             flushVolumeCommitAfterBusyIfNeeded()
 
         case (.loading(let reason), .loadCompleted(.failure(let err))):
-            status.connection = .disconnected
+            connectionState = .disconnected
             status.lastError = err.localizedDescription
             switch reason {
             case .refresh, .interfaceSelection:
@@ -448,7 +452,7 @@ final class SpeakerStore {
         case (.committingVolume(let inFlight), .commitCompleted(let target, .success(let json)))
              where inFlight == target:
             apply(json: json)
-            status.connection = json.balanced ? .ready : .warning
+            connectionState = json.balanced ? .ready : .warning
             status.lastError = nil
             phase = .idle
             if pendingVolumeLevel != target {
@@ -472,7 +476,7 @@ final class SpeakerStore {
     private func applyError(_ err: any Error) {
         lastInterfacesLoad = nil
         status.lastError = err.localizedDescription
-        status.connection = .disconnected
+        connectionState = .disconnected
     }
 
     private func runMutation(_ body: (any KhvolClientProtocol) async throws -> KhvolJSONStatus) async {

@@ -16,7 +16,7 @@ struct SpeakerStoreAsyncTests {
         await store.refresh()
 
         #expect(store.status.averageLevel == 80)
-        #expect(store.status.connection == .ready)
+        #expect(store.connection == .ready)
         #expect(store.isBusy == false)
         #expect(store.isStatusLoading == false)
     }
@@ -29,7 +29,7 @@ struct SpeakerStoreAsyncTests {
 
         await store.refresh()
 
-        #expect(store.status.connection == .disconnected)
+        #expect(store.connection == .disconnected)
         #expect(store.status.lastError != nil)
         #expect(store.isBusy == false)
         #expect(store.isStatusLoading == false)
@@ -54,7 +54,7 @@ struct SpeakerStoreAsyncTests {
 
         await store.refresh()
 
-        #expect(store.status.connection == .warning)
+        #expect(store.connection == .warning)
     }
 
     // MARK: toggleMute
@@ -130,7 +130,7 @@ struct SpeakerStoreAsyncTests {
 
         // On failure pending is kept (trailing task reschedules)
         #expect(store.status.lastError != nil)
-        #expect(store.status.connection == .disconnected)
+        #expect(store.connection == .disconnected)
         #expect(store.isVolumeCommitting == false)
     }
 

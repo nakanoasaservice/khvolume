@@ -15,7 +15,6 @@ struct DeviceLevel: Identifiable, Equatable {
 }
 
 struct SpeakerStatus: Equatable {
-    var connection: ConnectionState = .disconnected
     var devices: [DeviceLevel] = []
     var averageLevel: Double = 0
     var isMuted: Bool = false
