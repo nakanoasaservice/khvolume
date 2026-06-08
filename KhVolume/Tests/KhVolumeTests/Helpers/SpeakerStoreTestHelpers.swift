@@ -32,10 +32,4 @@ extension SpeakerStore {
             timing: timing
         )
     }
-
-    /// Awaits the current `volumeCommitTask` to completion.
-    /// Use after `setVolumePreview(_:)` in tests to synchronise with the commit task.
-    func awaitVolumeCommit() async {
-        await volumeCommitTask?.value
-    }
 }

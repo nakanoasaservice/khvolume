@@ -11,7 +11,6 @@ enum StorePhase: Equatable {
         case mutation
     }
 
-    var isBusy: Bool { self != .idle }
     var isStatusLoading: Bool {
         if case .loading = self { return true }
         return false
@@ -57,7 +56,6 @@ final class SpeakerStore {
     var status = SpeakerStatus()
     var interfaces: [NetworkInterfaceInfo] = []
     var phase: StorePhase = .idle
-    var isBusy: Bool { phase.isBusy }
     /// True while status refresh, scan, or other non-volume mutations are in flight.
     var isStatusLoading: Bool { phase.isStatusLoading }
     /// Terminal connection state (ready/warning/disconnected). Use `connection` for display.
@@ -74,7 +72,7 @@ final class SpeakerStore {
     let launchAtLoginCoordinator: any LaunchAtLoginManaging
 
     private var refreshTask: Task<Void, Never>?
-    var volumeCommitTask: Task<Void, Never>?
+    private var volumeCommitTask: Task<Void, Never>?
     /// Retained HotkeyService instance (production: HotkeyManager; tests: mock).
     private var hotkeyService: (any HotkeyService)?
     private var hasStartedUp = false
@@ -221,8 +219,9 @@ final class SpeakerStore {
     }
 
     /// Popover open: refresh interface list and status without blocking controls or rescanning.
+    /// Popover open: refresh interface list and status without blocking controls or rescanning.
     func preparePopover() async {
-        await loadInterfacesIfNeeded()
+        await loadInterfaces()
         await refreshSilently()
     }
 
@@ -261,15 +260,6 @@ final class SpeakerStore {
 
     // MARK: - Interface loading
 
-    func loadInterfacesIfNeeded() async {
-        if !interfaces.isEmpty,
-           let last = lastInterfacesLoad,
-           now().timeIntervalSince(last) < timing.interfacesReloadInterval {
-            return
-        }
-        await loadInterfaces(force: true)
-    }
-
     func loadInterfaces(force: Bool = false) async {
         if !force,
            !interfaces.isEmpty,
@@ -297,7 +287,6 @@ final class SpeakerStore {
         networkMonitor?.start()
     }
 
-    @MainActor
     private func handleNetworkPathChange(isSatisfied: Bool) {
         // Invalidate the interface cache on any network change
         lastInterfacesLoad = nil
@@ -380,6 +369,12 @@ final class SpeakerStore {
         volumeCommitTask?.cancel()
         volumeCommitTask = nil
         pendingVolumeLevel = nil
+    }
+
+    /// Awaits the current volume commit task to completion.
+    /// Use after `setVolumePreview(_:)` to synchronise with the commit task.
+    func awaitVolumeCommit() async {
+        await volumeCommitTask?.value
     }
 
     // MARK: - Volume commit
@@ -476,7 +471,7 @@ final class SpeakerStore {
         }
     }
 
-    func apply(json: KhvolJSONStatus) {
+    private func apply(json: KhvolJSONStatus) {
         status.isMuted = json.muted
         status.levelMismatch = !json.balanced
         status.devices = json.devices.map { key, val in

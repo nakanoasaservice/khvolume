@@ -64,7 +64,7 @@ struct VolumePopoverView: View {
     private func isNavItemEnabled(_ item: PopoverNavItem) -> Bool {
         switch item {
         case .mute, .interface:
-            return !store.isBusy
+            return !store.isStatusLoading
         case .soundSettings, .quit:
             return true
         }
@@ -229,7 +229,7 @@ struct VolumePopoverView: View {
                     title: interfaceRowTitle(iface),
                     isSelected: store.interfaceName == iface.name,
                     isKeyboardFocused: isKeyboardFocused(.interface(iface.name)),
-                    isEnabled: !store.isBusy
+                    isEnabled: !store.isStatusLoading
                 ) {
                     Task { await store.selectInterface(iface.name) }
                 }

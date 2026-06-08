@@ -17,7 +17,7 @@ struct SpeakerStoreAsyncTests {
 
         #expect(store.status.averageLevel == 80)
         #expect(store.connection == .ready)
-        #expect(store.isBusy == false)
+        #expect(store.isStatusLoading == false)
         #expect(store.isStatusLoading == false)
     }
 
@@ -31,7 +31,7 @@ struct SpeakerStoreAsyncTests {
 
         #expect(store.connection == .disconnected)
         #expect(store.status.lastError != nil)
-        #expect(store.isBusy == false)
+        #expect(store.isStatusLoading == false)
         #expect(store.isStatusLoading == false)
     }
 
@@ -131,7 +131,7 @@ struct SpeakerStoreAsyncTests {
         #expect(store.pendingVolumeLevel == 75)
         #expect(store.status.lastError != nil)
         #expect(store.connection == .disconnected)
-        #expect(store.isBusy == false)
+        #expect(store.isStatusLoading == false)
     }
 
     @Test("no commit occurs when no pending level")
@@ -150,7 +150,7 @@ struct SpeakerStoreAsyncTests {
         store.setVolumePreview(50)
         await store.awaitVolumeCommit()
 
-        #expect(store.isBusy == false)
+        #expect(store.isStatusLoading == false)
         #expect(store.isStatusLoading == false)
     }
 }
