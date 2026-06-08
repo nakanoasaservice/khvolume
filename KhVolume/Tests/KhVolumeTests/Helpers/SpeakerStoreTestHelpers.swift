@@ -13,7 +13,7 @@ extension SpeakerStore {
     /// and call `await store.startupIfNeeded()` explicitly.
     static func makeForTesting(
         config: AppConfig = AppConfig(),
-        client: MockKhvolClient = MockKhvolClient(),
+        client: any KhvolClientProtocol = MockKhvolClient(),
         networkMonitor: MockNetworkMonitorService? = nil,
         hotkeyService: MockHotkeyService? = nil,
         launchAtLoginCoordinator: MockLaunchAtLoginCoordinator? = nil,
