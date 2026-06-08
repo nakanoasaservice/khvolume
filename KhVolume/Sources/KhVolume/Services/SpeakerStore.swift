@@ -41,8 +41,8 @@ private enum VolumeEvent {
     case previewSet(Double)
     case cancelled
     case throttleExpired
-    case commitSucceeded(KhvolJSONStatus)
-    case commitFailed(any Error)
+    case commitSucceeded(level: Double, KhvolJSONStatus)
+    case commitFailed(level: Double, any Error)
 }
 
 // MARK: - SpeakerStoreTiming
@@ -420,9 +420,9 @@ final class SpeakerStore {
             let client = makeClient()
             do {
                 let json = try await client.setLevel(levelToCommit)
-                reduceVolume(.commitSucceeded(json))
+                reduceVolume(.commitSucceeded(level: levelToCommit, json))
             } catch {
-                reduceVolume(.commitFailed(error))
+                reduceVolume(.commitFailed(level: levelToCommit, error))
             }
         }
     }
@@ -496,24 +496,24 @@ final class SpeakerStore {
         case (.pending(let level, _), .throttleExpired):
             volumeState = .committing(level: level, commitStart: ContinuousClock.now)
 
-        case (_, .commitSucceeded(let json)):
+        case (.committing(let committingLevel, _), .commitSucceeded(let level, let json))
+                where committingLevel == level:
             apply(json: json)
             connectionState = json.balanced ? .ready : .warning
             status.lastError = nil
-            if case .committing = volumeState { volumeState = .idle }
+            volumeState = .idle
 
-        case (.committing(let level, _), .commitFailed(let err)):
+        case (.committing(let committingLevel, _), .commitFailed(let level, let err))
+                where committingLevel == level:
             connectionState = .disconnected
             status.lastError = err.localizedDescription
             lastInterfacesLoad = nil
             if err is KhvolError { status.devices = [] }
-            volumeState = .pending(level: level, lastCommitStart: nil)
+            volumeState = .pending(level: committingLevel, lastCommitStart: nil)
 
-        case (_, .commitFailed(let err)):
-            connectionState = .disconnected
-            status.lastError = err.localizedDescription
-            lastInterfacesLoad = nil
-            if err is KhvolError { status.devices = [] }
+        case (_, .commitSucceeded), (_, .commitFailed):
+            // Stale result from a superseded commit; discard silently.
+            break
 
         default:
             assertionFailure("unexpected volume transition: \(volumeState) + \(event)")
