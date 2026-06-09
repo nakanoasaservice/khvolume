@@ -19,8 +19,8 @@ enum StorePhase: Equatable {
 
 private enum PhaseEvent {
     case loadBegan(StorePhase.LoadReason)
-    case loadCompleted(Result<KhvolJSONStatus, any Error>)
-    case silentRefreshCompleted(Result<KhvolJSONStatus, any Error>)
+    case loadCompleted(Result<KhvolJSONStatus, KhvolError>)
+    case silentRefreshCompleted(Result<KhvolJSONStatus, KhvolError>)
 }
 
 private enum VolumeState {
@@ -239,7 +239,7 @@ final class SpeakerStore {
     /// Acquire the load phase, yield for UI, run `fetch`, then release. Caller must guard `.idle` first.
     private func withLoadPhase(
         _ reason: StorePhase.LoadReason,
-        _ fetch: () async -> Result<KhvolJSONStatus, any Error>
+        _ fetch: () async -> Result<KhvolJSONStatus, KhvolError>
     ) async {
         reduce(.loadBegan(reason))
         await Task.yield()
@@ -254,15 +254,13 @@ final class SpeakerStore {
         await refreshSilently()
     }
 
-    private func fetchStatus(attemptRecovery: Bool) async -> Result<KhvolJSONStatus, any Error> {
+    private func fetchStatus(attemptRecovery: Bool) async -> Result<KhvolJSONStatus, KhvolError> {
         do {
             return .success(try await makeClient().jsonStatus())
-        } catch let err as KhvolError {
-            if attemptRecovery, let recovered = await recoverAfterDeviceError(err) {
+        } catch {
+            if attemptRecovery, let recovered = await recoverAfterDeviceError(error) {
                 return .success(recovered)
             }
-            return .failure(err)
-        } catch {
             return .failure(error)
         }
     }
@@ -347,8 +345,11 @@ final class SpeakerStore {
                 let client = makeClient()
                 _ = try await client.scan()
                 return .success(try await client.jsonStatus())
-            } catch {
+            } catch let error as KhvolError {
                 return .failure(error)
+            } catch {
+                assertionFailure("Unreachable: all KhvolClientProtocol methods throw KhvolError, got \(error)")
+                return .failure(.commandFailed(error.localizedDescription))
             }
         }
     }
@@ -389,7 +390,9 @@ final class SpeakerStore {
     func toggleMute() async {
         cancelPendingVolume()
         let targetMuted = !status.isMuted
-        await runMutation { try await $0.setMuted(targetMuted) }
+        await runMutation { (client: any KhvolClientProtocol) async throws(KhvolError) in
+            try await client.setMuted(targetMuted)
+        }
     }
 
     func cancelPendingVolume() {
@@ -450,7 +453,7 @@ final class SpeakerStore {
             status.lastError = err.localizedDescription
             switch reason {
             case .refresh, .interfaceSelection:
-                if err is KhvolError { status.devices = [] }
+                status.devices = []
             case .mutation:
                 lastInterfacesLoad = nil
             }
@@ -464,7 +467,7 @@ final class SpeakerStore {
         case (_, .silentRefreshCompleted(.failure(let err))):
             connectionState = .disconnected
             status.lastError = err.localizedDescription
-            if err is KhvolError { status.devices = [] }
+            status.devices = []
 
         default:
             assertionFailure("unexpected transition: \(phase) + \(event)")
@@ -520,13 +523,16 @@ final class SpeakerStore {
         }
     }
 
-    private func runMutation(_ body: (any KhvolClientProtocol) async throws -> KhvolJSONStatus) async {
+    private func runMutation(_ body: (any KhvolClientProtocol) async throws(KhvolError) -> KhvolJSONStatus) async {
         guard case .idle = phase else { return }
         await withLoadPhase(.mutation) {
             do {
                 return .success(try await body(makeClient()))
-            } catch {
+            } catch let error as KhvolError {
                 return .failure(error)
+            } catch {
+                assertionFailure("Unreachable: all KhvolClientProtocol methods throw KhvolError, got \(error)")
+                return .failure(.commandFailed(error.localizedDescription))
             }
         }
     }

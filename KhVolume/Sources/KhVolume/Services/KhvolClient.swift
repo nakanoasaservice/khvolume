@@ -1,11 +1,11 @@
 import Foundation
 
 protocol KhvolClientProtocol: Sendable {
-    func jsonStatus() async throws -> KhvolJSONStatus
-    func setLevel(_ level: Double) async throws -> KhvolJSONStatus
-    func setMuted(_ muted: Bool) async throws -> KhvolJSONStatus
-    func interfaces() async throws -> [NetworkInterfaceInfo]
-    @discardableResult func scan() async throws -> Int
+    func jsonStatus() async throws(KhvolError) -> KhvolJSONStatus
+    func setLevel(_ level: Double) async throws(KhvolError) -> KhvolJSONStatus
+    func setMuted(_ muted: Bool) async throws(KhvolError) -> KhvolJSONStatus
+    func interfaces() async throws(KhvolError) -> [NetworkInterfaceInfo]
+    @discardableResult func scan() async throws(KhvolError) -> Int
 }
 
 enum KhvolError: LocalizedError {
@@ -35,7 +35,7 @@ struct KhvolClient {
     let configDir: URL
     let interface: String?
 
-    func run(_ command: [String], timeoutSeconds: TimeInterval = 45) async throws -> String {
+    func run(_ command: [String], timeoutSeconds: TimeInterval = 45) async throws(KhvolError) -> String {
         let helper = try resolveHelperURL()
         var extraEnv: [String: String] = [:]
         #if DEBUG
@@ -60,23 +60,30 @@ struct KhvolClient {
             timeoutSeconds: timeoutSeconds
         )
 
-        return try await withCheckedThrowingContinuation { continuation in
+        let result: Result<String, KhvolError> = await withCheckedContinuation { continuation in
             DispatchQueue.global(qos: .userInitiated).async {
                 do {
-                    let result = try KhvolClient.execute(configuration)
-                    continuation.resume(returning: result)
+                    let value = try KhvolClient.execute(configuration)
+                    continuation.resume(returning: .success(value))
+                } catch let error as KhvolError {
+                    continuation.resume(returning: .failure(error))
                 } catch {
-                    continuation.resume(throwing: error)
+                    assertionFailure("Unreachable: execute only throws KhvolError, got \(error)")
+                    continuation.resume(returning: .failure(.commandFailed(error.localizedDescription)))
                 }
             }
         }
+        switch result {
+        case .success(let value): return value
+        case .failure(let error): throw error
+        }
     }
 
-    func jsonStatus() async throws -> KhvolJSONStatus {
+    func jsonStatus() async throws(KhvolError) -> KhvolJSONStatus {
         try decodeStatusJSON(from: try await run(["json"]))
     }
 
-    func setLevel(_ level: Double) async throws -> KhvolJSONStatus {
+    func setLevel(_ level: Double) async throws(KhvolError) -> KhvolJSONStatus {
         let raw = try await run([
             "set",
             String(format: "%.1f", level),
@@ -84,29 +91,41 @@ struct KhvolClient {
         return try decodeStatusJSON(from: raw)
     }
 
-    func setMuted(_ muted: Bool) async throws -> KhvolJSONStatus {
+    func setMuted(_ muted: Bool) async throws(KhvolError) -> KhvolJSONStatus {
         try decodeStatusJSON(from: try await run([muted ? "mute" : "unmute"]))
     }
 
-    private func decodeStatusJSON(from raw: String) throws -> KhvolJSONStatus {
+    private func decodeStatusJSON(from raw: String) throws(KhvolError) -> KhvolJSONStatus {
         guard let data = raw.data(using: .utf8) else { throw KhvolError.parseFailed }
-        return try JSONDecoder().decode(KhvolJSONStatus.self, from: data)
+        do {
+            return try JSONDecoder().decode(KhvolJSONStatus.self, from: data)
+        } catch {
+            throw KhvolError.parseFailed
+        }
     }
 
-    func interfaces() async throws -> [NetworkInterfaceInfo] {
+    func interfaces() async throws(KhvolError) -> [NetworkInterfaceInfo] {
         let raw = try await run(["interfaces"])
         guard let data = raw.data(using: .utf8) else { throw KhvolError.parseFailed }
-        return try JSONDecoder().decode([NetworkInterfaceInfo].self, from: data)
+        do {
+            return try JSONDecoder().decode([NetworkInterfaceInfo].self, from: data)
+        } catch {
+            throw KhvolError.parseFailed
+        }
     }
 
     @discardableResult
-    func scan() async throws -> Int {
+    func scan() async throws(KhvolError) -> Int {
         let raw = try await run(["scan"])
         guard let data = raw.data(using: .utf8) else { throw KhvolError.parseFailed }
-        return try JSONDecoder().decode(KhvolScanResult.self, from: data).speakerCount
+        do {
+            return try JSONDecoder().decode(KhvolScanResult.self, from: data).speakerCount
+        } catch {
+            throw KhvolError.parseFailed
+        }
     }
 
-    private static func execute(_ configuration: KhvolRunConfiguration) throws -> String {
+    private static func execute(_ configuration: KhvolRunConfiguration) throws(KhvolError) -> String {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: configuration.helperPath)
         process.currentDirectoryURL = URL(fileURLWithPath: configuration.configDirPath, isDirectory: true)
@@ -129,7 +148,11 @@ struct KhvolClient {
         }
         process.environment = env
 
-        try process.run()
+        do {
+            try process.run()
+        } catch {
+            throw KhvolError.commandFailed(error.localizedDescription)
+        }
 
         let waitResult = DispatchTimeout.wait(for: process, seconds: configuration.timeoutSeconds)
         if waitResult == .timedOut {
@@ -152,7 +175,7 @@ struct KhvolClient {
         }
     }
 
-    private func resolveHelperURL() throws -> URL {
+    private func resolveHelperURL() throws(KhvolError) -> URL {
         for url in helperCandidateURLs() {
             var isDirectory = ObjCBool(false)
             guard FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory),
