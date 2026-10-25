@@ -2,10 +2,10 @@
 
 ## Swift app
 
-- Swift 5.9+ (`swift-tools-version: 5.9`), macOS 14+ target
+- Swift 5 language mode, macOS 14+ deployment target, built with Xcode 26+ (newer SDK enables Liquid Glass on macOS 26+)
 - Swift Observation (`@Observable`) — NOT `ObservableObject`
-- Package: `KhVolume/Package.swift`
-- Dependencies:
+- Project: `KhVolume/KhVolume.xcodeproj` (targets `KhVolume` app, `KhVolumeTests` hosted unit tests). Do not build with SwiftPM: `swift build` records the deployment target as the SDK version, which disables the current system design
+- Dependencies (Swift packages added in the Xcode project):
   - `KeyboardShortcuts` ≥ 2.0 (sindresorhus/KeyboardShortcuts) — global hotkeys
   - `Network` framework (linked explicitly via `linkerSettings`)
 
@@ -20,5 +20,5 @@
 ## Build tooling
 
 - `mise` for Python/uv version management (`mise.toml` at repo root)
-- PyInstaller bundles helper into `KhVolume/Helpers/khvol-bundle/` (onedir)
+- PyInstaller bundles helper into `KhVolume/Helpers/khvol-bundle/` (onedir); the Release build copies it to `Contents/Resources/khvol-bundle/` in the app
 - Shell scripts in `scripts/`: `build-khvol-helper.sh`, `build-app-bundle.sh`, `sign-app.sh`, `smoke-test.sh`

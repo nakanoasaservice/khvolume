@@ -189,15 +189,15 @@ struct KhvolClient {
 
     private func helperCandidateURLs() -> [URL] {
         var urls: [URL] = []
-        let bundleURL = Bundle.main.bundleURL
 
         if let auxiliary = Bundle.main.url(forAuxiliaryExecutable: "khvol") {
             urls.append(auxiliary)
         }
 
-        let helpers = bundleURL.appendingPathComponent("Contents/Helpers", isDirectory: true)
-        urls.append(helpers.appendingPathComponent("khvol-bundle/khvol"))
-        urls.append(helpers.appendingPathComponent("khvol"))
+        // The PyInstaller onedir bundle holds data files, so it lives in Resources rather than Helpers.
+        if let resources = Bundle.main.resourceURL {
+            urls.append(resources.appendingPathComponent("khvol-bundle/khvol"))
+        }
 
         #if DEBUG
         if !AppPaths.useBundledHelperOnly, let root = devRepoRoot() {

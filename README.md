@@ -36,7 +36,7 @@ If your KH monitors are connected to your local network via Ethernet (built-in p
 - **macOS 14** or later
 - Neumann KH DSP monitors reachable on your LAN via SSC (IPv6 link-local)
 - A Mac network interface capable of reaching the speakers (e.g., USB–Ethernet adapter, `en15`, `en0`)
-- To **build from source:** Xcode Command Line Tools / Swift 5.9+, Python 3.12+ (for the bundled helper only)
+- To **build from source:** Xcode 26+, Python 3.12+ (for the bundled helper only)
 
 ## Install (release)
 
@@ -56,8 +56,11 @@ For distribution signing and notarization, see `scripts/sign-app.sh`.
 # Build PyInstaller helper (first time or after KhVolume/Helper/ changes)
 ./scripts/build-khvol-helper.sh
 
-# Run the app
-cd KhVolume && swift run
+# Open in Xcode and run the KhVolume scheme
+open KhVolume/KhVolume.xcodeproj
+
+# Run tests
+xcodebuild test -project KhVolume/KhVolume.xcodeproj -scheme KhVolume -destination 'platform=macOS'
 
 # Optional: run helper CLI from source
 ./KhVolume/Scripts/khvol-dev interfaces
@@ -86,8 +89,10 @@ export KHVOL_INTERFACE=en15   # your USB-LAN interface name
 ## Project layout
 
 ```
-KhVolume/              Swift menu bar app (Swift Package Manager)
+KhVolume/              Swift menu bar app
+  KhVolume.xcodeproj   Xcode project (app + unit tests)
   Sources/             App UI and logic
+  Tests/               Unit tests (Swift Testing)
   Helper/              khvol CLI + vendor/khtool (bundled into the app)
   Scripts/             khvol-dev — run CLI from source without PyInstaller
 scripts/               build-app-bundle.sh, sign-app.sh, smoke-test.sh
