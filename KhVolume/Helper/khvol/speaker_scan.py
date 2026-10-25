@@ -8,7 +8,6 @@ from typing import TypedDict
 from khvol.errors import EXIT_DEVICE, EXIT_OK
 from khvol.settings import Settings
 from khvol.khtool_json import khtool_payload_has_devices
-from khvol.ssc_scan import scan_ssc_setup
 
 
 class ScanResult(TypedDict):
@@ -17,10 +16,10 @@ class ScanResult(TypedDict):
 
 def scan_device_count(settings: Settings) -> int:
     settings.config_dir.mkdir(parents=True, exist_ok=True)
-    iface = settings.interface
-    setup = scan_ssc_setup(scan_time_seconds=12.0, interface=iface)
-    if not setup.ssc_devices and iface is not None:
-        setup = scan_ssc_setup(scan_time_seconds=12.0, interface=None)
+
+    import pyssc as ssc
+
+    setup = ssc.scan(scan_time_seconds=12)
     if setup.ssc_devices:
         setup.to_json(str(settings.khtool_json))
     return len(setup.ssc_devices)
