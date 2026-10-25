@@ -3,9 +3,9 @@ import KeyboardShortcuts
 import Foundation
 
 extension KeyboardShortcuts.Name {
-    static let volumeUp = Self("volumeUp", default: .init(.equal, modifiers: [.option]))
-    static let volumeDown = Self("volumeDown", default: .init(.minus, modifiers: [.option]))
-    static let muteToggle = Self("muteToggle", default: .init(.m, modifiers: [.control, .option]))
+    static let volumeUp = Self("volumeUp", initial: .init(.equal, modifiers: [.option]))
+    static let volumeDown = Self("volumeDown", initial: .init(.minus, modifiers: [.option]))
+    static let muteToggle = Self("muteToggle", initial: .init(.m, modifiers: [.control, .option]))
 }
 
 @MainActor
