@@ -315,8 +315,10 @@ final class SpeakerStore {
     }
 
     private func handleNetworkPathChange(isSatisfied: Bool) {
-        // Invalidate the interface cache on any network change
+        // Invalidate the interface cache and speaker connections on any network change
         lastInterfacesLoad = nil
+        let client = makeClient()
+        Task { await client.resetConnections() }
 
         guard isSatisfied else { return }
 

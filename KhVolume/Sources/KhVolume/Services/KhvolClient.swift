@@ -6,10 +6,15 @@ protocol KhvolClientProtocol: Sendable {
     func setMuted(_ muted: Bool) async throws(KhvolError) -> KhvolJSONStatus
     func interfaces() async throws(KhvolError) -> [NetworkInterfaceInfo]
     @discardableResult func scan() async throws(KhvolError) -> Int
+    /// Drops open speaker connections so the next request reconnects (e.g. after a network change).
+    func resetConnections() async
+}
+
+extension KhvolClientProtocol {
+    func resetConnections() async {}
 }
 
 enum KhvolError: LocalizedError {
-    case helperMissing
     case commandFailed(String)
     case deviceError(String)
     case parseFailed
@@ -17,246 +22,94 @@ enum KhvolError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .helperMissing:
-            return "khvol helper not found"
         case .commandFailed(let msg):
             return msg
         case .deviceError(let msg):
             return msg
         case .parseFailed:
-            return "Failed to parse khvol output"
+            return "Failed to parse speaker response"
         case .timedOut:
-            return "khvol timed out"
+            return "Speaker did not respond in time"
         }
     }
 }
 
+/// Talks SSC to the speakers listed in `khtool.json`, over connections kept in `SSCSpeakerPool`.
 struct KhvolClient {
+    static let maxLevel = 120.0
+
     let configDir: URL
     let interface: String?
+    var pool: SSCSpeakerPool = .shared
 
-    func run(_ command: [String], timeoutSeconds: TimeInterval = 45) async throws(KhvolError) -> String {
-        let helper = try resolveHelperURL()
-        var extraEnv: [String: String] = [:]
-        #if DEBUG
-        if !AppPaths.useBundledHelperOnly, let root = devRepoRoot() {
-            let helperRoot = root.appendingPathComponent("KhVolume/Helper", isDirectory: true)
-            if FileManager.default.fileExists(atPath: helperRoot.appendingPathComponent("khvol_cli.py").path) {
-                extraEnv["KHVOL_ROOT"] = helperRoot.path
-            }
-            let venvPython = root.appendingPathComponent(".venv/bin/python")
-            if FileManager.default.fileExists(atPath: venvPython.path) {
-                extraEnv["KHVOL_PYTHON"] = venvPython.path
-            }
-        }
-        #endif
-
-        let configuration = KhvolRunConfiguration(
-            helperPath: helper.path,
-            configDirPath: configDir.path,
-            interface: interface,
-            command: command,
-            extraEnv: extraEnv,
-            timeoutSeconds: timeoutSeconds
-        )
-
-        let result: Result<String, KhvolError> = await withCheckedContinuation { continuation in
-            DispatchQueue.global(qos: .userInitiated).async {
-                do {
-                    let value = try KhvolClient.execute(configuration)
-                    continuation.resume(returning: .success(value))
-                } catch let error as KhvolError {
-                    continuation.resume(returning: .failure(error))
-                } catch {
-                    assertionFailure("Unreachable: execute only throws KhvolError, got \(error)")
-                    continuation.resume(returning: .failure(.commandFailed(error.localizedDescription)))
-                }
-            }
-        }
-        switch result {
-        case .success(let value): return value
-        case .failure(let error): throw error
-        }
+    private var directory: SpeakerDirectory {
+        SpeakerDirectory(url: configDir.appendingPathComponent("khtool.json"))
     }
 
     func jsonStatus() async throws(KhvolError) -> KhvolJSONStatus {
-        try decodeStatusJSON(from: try await run(["json"]))
+        let replies = try await sendToAll(SSCMessage.outputQuery)
+        var readings: [(name: String, output: KhvolJSONStatus.DeviceInfo)] = []
+        for reply in replies {
+            guard let output = SSCMessage.parseOutput(reply.reply) else {
+                throw .deviceError("\(reply.name): unexpected reply \(reply.reply)")
+            }
+            readings.append((reply.name, output))
+        }
+        return try SpeakerStatusBuilder.status(from: readings)
     }
 
     func setLevel(_ level: Double) async throws(KhvolError) -> KhvolJSONStatus {
-        let raw = try await run([
-            "set",
-            String(format: "%.1f", level),
-        ])
-        return try decodeStatusJSON(from: raw)
+        let clamped = min(max(level, 0), Self.maxLevel)
+        try await sendToAll(SSCMessage.setLevel(clamped))
+        return try await jsonStatus()
     }
 
     func setMuted(_ muted: Bool) async throws(KhvolError) -> KhvolJSONStatus {
-        try decodeStatusJSON(from: try await run([muted ? "mute" : "unmute"]))
-    }
-
-    private func decodeStatusJSON(from raw: String) throws(KhvolError) -> KhvolJSONStatus {
-        guard let data = raw.data(using: .utf8) else { throw KhvolError.parseFailed }
-        do {
-            return try JSONDecoder().decode(KhvolJSONStatus.self, from: data)
-        } catch {
-            throw KhvolError.parseFailed
-        }
+        try await sendToAll(SSCMessage.setMuted(muted))
+        return try await jsonStatus()
     }
 
     func interfaces() async throws(KhvolError) -> [NetworkInterfaceInfo] {
-        let raw = try await run(["interfaces"])
-        guard let data = raw.data(using: .utf8) else { throw KhvolError.parseFailed }
+        NetworkInterfaceLister.list()
+    }
+
+    /// Browses for speakers on the configured interface and stores them in `khtool.json`.
+    @discardableResult
+    func scan() async throws(KhvolError) -> Int {
+        let interface = try configuredInterface()
+        pool.closeAll()
+        let found = await SSCBrowser.scan(interface: interface)
         do {
-            return try JSONDecoder().decode([NetworkInterfaceInfo].self, from: data)
+            try directory.store(found)
         } catch {
-            throw KhvolError.parseFailed
+            throw .commandFailed("cannot write speaker list: \(error.localizedDescription)")
         }
+        guard !found.isEmpty else { throw .deviceError("no speakers found on \(interface)") }
+        return found.count
+    }
+
+    func resetConnections() async {
+        pool.closeAll()
+    }
+
+    private func configuredInterface() throws(KhvolError) -> String {
+        guard let interface, !interface.isEmpty else {
+            throw .commandFailed("network interface not configured")
+        }
+        return interface
     }
 
     @discardableResult
-    func scan() async throws(KhvolError) -> Int {
-        let raw = try await run(["scan"])
-        guard let data = raw.data(using: .utf8) else { throw KhvolError.parseFailed }
-        do {
-            return try JSONDecoder().decode(KhvolScanResult.self, from: data).speakerCount
-        } catch {
-            throw KhvolError.parseFailed
+    private func sendToAll(_ message: String) async throws(KhvolError) -> [SSCSpeakerPool.Reply] {
+        let interface = try configuredInterface()
+        let addresses = directory.load()
+        guard !addresses.isEmpty else { throw .deviceError("no speakers configured; run scan") }
+        let replies = try await pool.send(message, to: addresses, interface: interface)
+        if let failed = replies.first(where: { SSCMessage.isError($0.reply) }) {
+            throw .deviceError("\(failed.name): \(failed.reply)")
         }
+        return replies
     }
-
-    private static func execute(_ configuration: KhvolRunConfiguration) throws(KhvolError) -> String {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: configuration.helperPath)
-        process.currentDirectoryURL = URL(fileURLWithPath: configuration.configDirPath, isDirectory: true)
-
-        var args = ["--config-dir", configuration.configDirPath]
-        if let interface = configuration.interface, !interface.isEmpty {
-            args.append(contentsOf: ["--interface", interface])
-        }
-        args.append(contentsOf: configuration.command)
-        process.arguments = args
-
-        let outPipe = Pipe()
-        let errPipe = Pipe()
-        process.standardOutput = outPipe
-        process.standardError = errPipe
-
-        var env = ProcessInfo.processInfo.environment
-        for (key, value) in configuration.extraEnv {
-            env[key] = value
-        }
-        process.environment = env
-
-        do {
-            try process.run()
-        } catch {
-            throw KhvolError.commandFailed(error.localizedDescription)
-        }
-
-        let waitResult = DispatchTimeout.wait(for: process, seconds: configuration.timeoutSeconds)
-        if waitResult == .timedOut {
-            process.terminate()
-            throw KhvolError.timedOut
-        }
-
-        let outData = outPipe.fileHandleForReading.readDataToEndOfFile()
-        let errData = errPipe.fileHandleForReading.readDataToEndOfFile()
-        let stdout = String(data: outData, encoding: .utf8) ?? ""
-        let stderr = String(data: errData, encoding: .utf8) ?? ""
-
-        switch process.terminationStatus {
-        case 0:
-            return stdout.trimmingCharacters(in: .whitespacesAndNewlines)
-        case 2:
-            throw KhvolError.deviceError(stderr.isEmpty ? stdout : stderr)
-        default:
-            throw KhvolError.commandFailed(stderr.isEmpty ? stdout : stderr)
-        }
-    }
-
-    private func resolveHelperURL() throws(KhvolError) -> URL {
-        for url in helperCandidateURLs() {
-            var isDirectory = ObjCBool(false)
-            guard FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory),
-                  !isDirectory.boolValue,
-                  FileManager.default.isExecutableFile(atPath: url.path)
-            else { continue }
-            return url
-        }
-        throw KhvolError.helperMissing
-    }
-
-    private func helperCandidateURLs() -> [URL] {
-        var urls: [URL] = []
-
-        if let auxiliary = Bundle.main.url(forAuxiliaryExecutable: "khvol") {
-            urls.append(auxiliary)
-        }
-
-        // The PyInstaller onedir bundle holds data files, so it lives in Resources rather than Helpers.
-        if let resources = Bundle.main.resourceURL {
-            urls.append(resources.appendingPathComponent("khvol-bundle/khvol"))
-        }
-
-        #if DEBUG
-        if !AppPaths.useBundledHelperOnly, let root = devRepoRoot() {
-            urls.append(root.appendingPathComponent("KhVolume/Scripts/khvol-dev"))
-            urls.append(root.appendingPathComponent("KhVolume/Helpers/khvol"))
-        }
-        #endif
-
-        return urls
-    }
-
-    #if DEBUG
-    private func devRepoRoot() -> URL? {
-        let cwd = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
-        let marker = "KhVolume/Helper/khvol_cli.py"
-        if FileManager.default.fileExists(atPath: cwd.appendingPathComponent(marker).path) {
-            return cwd
-        }
-        var url = Bundle.main.bundleURL
-        for _ in 0..<8 {
-            if FileManager.default.fileExists(atPath: url.appendingPathComponent(marker).path) {
-                return url
-            }
-            url.deleteLastPathComponent()
-        }
-        return nil
-    }
-    #endif
 }
 
 extension KhvolClient: KhvolClientProtocol {}
-
-
-private enum DispatchTimeout {
-    enum WaitResult {
-        case finished
-        case timedOut
-    }
-
-    static func wait(for process: Process, seconds: TimeInterval) -> WaitResult {
-        let group = DispatchGroup()
-        group.enter()
-        DispatchQueue.global(qos: .utility).async {
-            process.waitUntilExit()
-            group.leave()
-        }
-        return group.wait(timeout: .now() + seconds) == .success ? .finished : .timedOut
-    }
-}
-
-private struct KhvolRunConfiguration: Sendable {
-    let helperPath: String
-    let configDirPath: String
-    let interface: String?
-    let command: [String]
-    let extraEnv: [String: String]
-    let timeoutSeconds: TimeInterval
-}
-
-private struct KhvolScanResult: Codable {
-    let speakerCount: Int
-}

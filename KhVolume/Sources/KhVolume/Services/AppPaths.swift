@@ -39,10 +39,4 @@ enum AppPaths {
         guard let data = try? JSONEncoder().encode(config) else { return }
         try? data.write(to: configURL, options: .atomic)
     }
-
-    #if DEBUG
-    static var useBundledHelperOnly: Bool {
-        ProcessInfo.processInfo.environment["KHVOL_USE_BUNDLED"] == "1"
-    }
-    #endif
 }
