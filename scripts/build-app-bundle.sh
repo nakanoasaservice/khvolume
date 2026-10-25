@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build "KH Volume.app" with bundled khvol helper (Release).
+# Build "KH Volume.app" (Release).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -9,16 +9,6 @@ APP_BUNDLE_NAME="KH Volume"
 DERIVED_DATA="$ROOT/build/DerivedData"
 BUILT_APP="$DERIVED_DATA/Build/Products/Release/${APP_BUNDLE_NAME}.app"
 APP_DIR="$ROOT/dist/${APP_BUNDLE_NAME}.app"
-
-if [[ ! -x "$ROOT/KhVolume/Helpers/khvol-bundle/khvol" ]]; then
-  echo "build-app-bundle: building khvol helper..." >&2
-  "$ROOT/scripts/build-khvol-helper.sh"
-fi
-
-if [[ ! -x "$ROOT/KhVolume/Helpers/khvol-bundle/khvol" ]]; then
-  echo "build-app-bundle: khvol helper missing; run scripts/build-khvol-helper.sh" >&2
-  exit 1
-fi
 
 echo "Building release app with xcodebuild..."
 xcodebuild \

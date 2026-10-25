@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Sign "KH Volume.app" and bundled khvol helper for distribution.
+# Sign "KH Volume.app" for distribution.
 # Usage:
 #   export SIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)"
 #   ./scripts/sign-app.sh "dist/KH Volume.app"
@@ -27,7 +27,6 @@ if [[ -z "$IDENTITY" ]]; then
   exit 1
 fi
 
-HELPER_BUNDLE="$APP_PATH/Contents/Resources/khvol-bundle"
 ENTITLEMENTS="${ENTITLEMENTS:-}"
 
 sign_file() {
@@ -38,13 +37,6 @@ sign_file() {
     codesign --force --options runtime --timestamp --sign "$IDENTITY" "$target"
   fi
 }
-
-if [[ -d "$HELPER_BUNDLE" ]]; then
-  find "$HELPER_BUNDLE" -type f \( -name "*.so" -o -name "*.dylib" \) -print0 | while IFS= read -r -d '' lib; do
-    sign_file "$lib"
-  done
-  sign_file "$HELPER_BUNDLE/khvol"
-fi
 
 sign_file "$APP_PATH/Contents/MacOS/KhVolume"
 sign_file "$APP_PATH"

@@ -13,22 +13,7 @@ xcodebuild test -project KhVolume/KhVolume.xcodeproj -scheme KhVolume -destinati
 ## Build / distribute
 
 ```bash
-./scripts/build-khvol-helper.sh   # Build Python helper (needed first time or after Helper/ changes)
-./scripts/build-app-bundle.sh     # Build distributable .app (auto-builds helper if needed)
-```
-
-## Python helper (dev, no PyInstaller needed)
-
-```bash
-./KhVolume/Scripts/khvol-dev interfaces
-./KhVolume/Scripts/khvol-dev scan --config-dir ~/.khvol-test -i en15
-```
-
-## Smoke test (requires real hardware)
-
-```bash
-export KHVOL_INTERFACE=en15
-./scripts/smoke-test.sh
+./scripts/build-app-bundle.sh     # Build distributable .app
 ```
 
 ## App data location

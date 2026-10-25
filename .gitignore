@@ -2,23 +2,7 @@
 .DS_Store
 ._*
 
-# Python (helper build venv)
-.venv/
-venv/
-env/
-__pycache__/
-*.py[cod]
-*$py.class
-*.egg-info/
-*.egg
-.mypy_cache/
-.pytest_cache/
-.coverage
-htmlcov/
-.tox/
-.nox/
-
-# PyInstaller / local build
+# Local build
 build/
 dist/
 
@@ -33,16 +17,8 @@ timeline.xctimeline
 playground.xcworkspace
 
 # Local config & runtime data
-khvolume.local.env
-*.local.env
 khtool.json
-khtool_commands.json
 logs/
-.smoke-config/
-
-# Bundled khvol helper (regenerate: ./scripts/build-khvol-helper.sh)
-KhVolume/Helpers/khvol
-KhVolume/Helpers/khvol-bundle/
 
 # IDE
 .idea/
