@@ -55,6 +55,7 @@
 		F3A4893950BCF4D68E72AFC8 /* FakeSSCServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = E051B41F44DDAE0EF241490E /* FakeSSCServer.swift */; };
 		71EAC0BA5AB6F15FC0B87EC1 /* NetworkInterfaceLister.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD7942A8C4F432D733170215 /* NetworkInterfaceLister.swift */; };
 		FEACA20AD497CC365B4CD900 /* SSCBrowser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5771223DDA2CF9ABDAB91762 /* SSCBrowser.swift */; };
+		9881E7C457119B02A635D61C /* SSCHardwareTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD23BA754934FC345531A26D /* SSCHardwareTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -117,6 +118,7 @@
 		E051B41F44DDAE0EF241490E /* FakeSSCServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FakeSSCServer.swift; sourceTree = "<group>"; };
 		CD7942A8C4F432D733170215 /* NetworkInterfaceLister.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkInterfaceLister.swift; sourceTree = "<group>"; };
 		5771223DDA2CF9ABDAB91762 /* SSCBrowser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSCBrowser.swift; sourceTree = "<group>"; };
+		CD23BA754934FC345531A26D /* SSCHardwareTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSCHardwareTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -184,6 +186,7 @@
 			children = (
 				34D442D215FE9FE7377D43AC /* AppConfigTests.swift */,
 				EFC6EB8432502459D66F30FE /* KhvolErrorTests.swift */,
+				CD23BA754934FC345531A26D /* SSCHardwareTests.swift */,
 				D2994EDB7D86E8336899ED5F /* SSCSpeakerPoolTests.swift */,
 				A34AA1C391FCE9441A18BC7A /* SSCMessageTests.swift */,
 				79385C3DE8B0927B6014BBC3 /* SpeakerStoreAsyncTests.swift */,
@@ -418,6 +421,7 @@
 				0FA58754E5470673263DA6EC /* SpeakerStoreVolumeConcurrencyTests.swift in Sources */,
 				DA2A25A5F1F40DA4ED24B998 /* SpeakerStoreVolumePreviewTests.swift in Sources */,
 				D35A0CB9E5EE9BFB0E6E3223 /* SuspendingKhvolClient.swift in Sources */,
+				9881E7C457119B02A635D61C /* SSCHardwareTests.swift in Sources */,
 				F3A4893950BCF4D68E72AFC8 /* FakeSSCServer.swift in Sources */,
 				56CBF8D1EE1FD38268D4E5EC /* SSCSpeakerPoolTests.swift in Sources */,
 				010B867E4427BCD86A47FEA2 /* SSCMessageTests.swift in Sources */,

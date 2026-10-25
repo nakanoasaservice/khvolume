@@ -99,3 +99,29 @@ struct SpeakerDirectoryTests {
         #expect(!FileManager.default.fileExists(atPath: directory.url.path))
     }
 }
+
+@Suite("KhvolClient — configuration errors")
+struct KhvolClientConfigurationTests {
+
+    @Test("missing interface fails before reading the speaker list")
+    func missingInterface() async {
+        let client = KhvolClient(configDir: FileManager.default.temporaryDirectory, interface: nil, pool: SSCSpeakerPool())
+        await #expect {
+            _ = try await client.jsonStatus()
+        } throws: { error in
+            (error as? KhvolError)?.errorDescription == "network interface not configured"
+        }
+    }
+
+    @Test("missing speaker list asks for a scan")
+    func missingSpeakerList() async {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let client = KhvolClient(configDir: dir, interface: "en0", pool: SSCSpeakerPool())
+        await #expect {
+            _ = try await client.jsonStatus()
+        } throws: { error in
+            guard case .deviceError(let message) = error as? KhvolError else { return false }
+            return message == "no speakers configured; run scan"
+        }
+    }
+}

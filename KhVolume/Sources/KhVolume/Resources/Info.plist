@@ -24,5 +24,11 @@
     <true/>
     <key>NSHighResolutionCapable</key>
     <true/>
+    <key>NSLocalNetworkUsageDescription</key>
+    <string>KH Volume finds and controls your Neumann KH speakers on the local network.</string>
+    <key>NSBonjourServices</key>
+    <array>
+        <string>_ssc._tcp</string>
+    </array>
 </dict>
 </plist>
