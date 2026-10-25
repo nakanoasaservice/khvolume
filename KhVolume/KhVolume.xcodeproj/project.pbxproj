@@ -54,6 +54,7 @@
 		56CBF8D1EE1FD38268D4E5EC /* SSCSpeakerPoolTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2994EDB7D86E8336899ED5F /* SSCSpeakerPoolTests.swift */; };
 		F3A4893950BCF4D68E72AFC8 /* FakeSSCServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = E051B41F44DDAE0EF241490E /* FakeSSCServer.swift */; };
 		71EAC0BA5AB6F15FC0B87EC1 /* NetworkInterfaceLister.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD7942A8C4F432D733170215 /* NetworkInterfaceLister.swift */; };
+		FEACA20AD497CC365B4CD900 /* SSCBrowser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5771223DDA2CF9ABDAB91762 /* SSCBrowser.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -115,6 +116,7 @@
 		D2994EDB7D86E8336899ED5F /* SSCSpeakerPoolTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSCSpeakerPoolTests.swift; sourceTree = "<group>"; };
 		E051B41F44DDAE0EF241490E /* FakeSSCServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FakeSSCServer.swift; sourceTree = "<group>"; };
 		CD7942A8C4F432D733170215 /* NetworkInterfaceLister.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkInterfaceLister.swift; sourceTree = "<group>"; };
+		5771223DDA2CF9ABDAB91762 /* SSCBrowser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSCBrowser.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -271,6 +273,7 @@
 		9665954A49A0A14986C291AA /* SSC */ = {
 			isa = PBXGroup;
 			children = (
+				5771223DDA2CF9ABDAB91762 /* SSCBrowser.swift */,
 				CFECB178B737A17D6E766F36 /* SSCMessages.swift */,
 				9A95A1B06C0C327A94EC7EEC /* SSCSocket.swift */,
 				211ED026CBDAF236A6E2B01A /* SSCSpeakerPool.swift */,
@@ -433,6 +436,7 @@
 				F5AEBFA69892BBD957D43E02 /* KhVolumeApp.swift in Sources */,
 				1CFD59481C3E52ED38CB7D71 /* KhVolumeAppDelegate.swift in Sources */,
 				7E23CB66EBBE7BE06D8A8493 /* KhvolClient.swift in Sources */,
+				FEACA20AD497CC365B4CD900 /* SSCBrowser.swift in Sources */,
 				71EAC0BA5AB6F15FC0B87EC1 /* NetworkInterfaceLister.swift in Sources */,
 				CA4A1D7EFD1F66DDB792C15D /* SpeakerDirectory.swift in Sources */,
 				C5E31AF8C2F395765BC37A7E /* SSCSpeakerPool.swift in Sources */,
