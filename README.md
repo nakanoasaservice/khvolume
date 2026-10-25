@@ -4,7 +4,7 @@
 
 Instead of adjusting the system volume slider, KH Volume directly drives the **network DSP level** of your speakers using Sennheiser Sound Control (SSC) over IPv6. This provides a practical and precise way to change the listening level and toggle mute directly from your Mac's menu bar.
 
-**Thanks to [Thorsten Schwinn](https://github.com/schwinn)** and the contributors of [**khtool**](https://github.com/schwinn/khtool) — the open-source Python tool that communicates with Georg Neumann KH speakers over SSC. KH Volume is a native macOS shell around a bundled `khvol` helper that builds on vendored khtool (MIT). Without that project, this app would not exist.
+**Thanks to [Thorsten Schwinn](https://github.com/schwinn)** and the contributors of [**khtool**](https://github.com/schwinn/khtool) — the open-source Python tool that communicates with Georg Neumann KH speakers over SSC. Earlier versions of KH Volume bundled khtool; the app now speaks SSC natively in Swift, but without that project it would not exist.
 
 ![KH Volume menu bar popover showing volume slider and network picker](image/screenshot.png)
 
@@ -15,7 +15,7 @@ If your KH monitors are connected to your local network via Ethernet (built-in p
 ## How it works
 
 1. Your Mac and the speakers share a network connection (usually Ethernet to the speaker’s RJ45 port).
-2. KH Volume runs a bundled **`khvol`** helper (Python + [khtool](KhVolume/Helper/vendor/)) to send SSC commands over the LAN.
+2. KH Volume finds the speakers via Bonjour (`_ssc._tcp`) and keeps one SSC connection open to each, sending commands over the LAN.
 3. The app displays the current DSP level in the menu bar, featuring a popover similar to the native macOS Sound interface.
 4. Optional global shortcuts (default **⌥=** / **⌥-**) allow you to adjust the level without opening the popover.
 
@@ -36,14 +36,13 @@ If your KH monitors are connected to your local network via Ethernet (built-in p
 - **macOS 14** or later
 - Neumann KH DSP monitors reachable on your LAN via SSC (IPv6 link-local)
 - A Mac network interface capable of reaching the speakers (e.g., USB–Ethernet adapter, `en15`, `en0`)
-- To **build from source:** Xcode 26+, Python 3.12+ (for the bundled helper only)
+- To **build from source:** Xcode 26+
 
 ## Install (release)
 
 Pre-built signed releases may be published separately. To build locally:
 
 ```bash
-./scripts/build-khvol-helper.sh
 ./scripts/build-app-bundle.sh
 open "dist/KH Volume.app"
 ```
@@ -53,28 +52,14 @@ For distribution signing and notarization, see `scripts/sign-app.sh`.
 ## Development
 
 ```bash
-# Build PyInstaller helper (first time or after KhVolume/Helper/ changes)
-./scripts/build-khvol-helper.sh
-
 # Open in Xcode and run the KhVolume scheme
 open KhVolume/KhVolume.xcodeproj
 
 # Run tests
 xcodebuild test -project KhVolume/KhVolume.xcodeproj -scheme KhVolume -destination 'platform=macOS'
-
-# Optional: run helper CLI from source
-./KhVolume/Scripts/khvol-dev interfaces
-./KhVolume/Scripts/khvol-dev scan --config-dir ~/.khvol-test -i en15
 ```
 
 App data and scan cache: `~/Library/Application Support/KHVolume/`
-
-Smoke test (hardware or offline-tolerant):
-
-```bash
-export KHVOL_INTERFACE=en15   # your USB-LAN interface name
-./scripts/smoke-test.sh
-```
 
 ## Troubleshooting
 
@@ -82,7 +67,7 @@ export KHVOL_INTERFACE=en15   # your USB-LAN interface name
 |--------|------------------|
 | Menu bar shows `!` | Speaker off, wrong network interface, or no route to the speaker |
 | No speakers in **Network** list | Cable/link down; pick the interface that has link (`ifconfig`) |
-| Level does not change | Confirm `--scan` finds devices; try the interface where `khtool` works |
+| Level does not change | Pick the network interface again to rescan; allow **Local Network** access for KH Volume in System Settings → Privacy & Security |
 | **Open at Login** fails | Install a **Developer ID–signed** `KH Volume.app` in `/Applications` |
 | Left/right levels differ | Use decrease-only until matched, or enable “allow increase when mismatched” in settings |
 
@@ -93,19 +78,17 @@ KhVolume/              Swift menu bar app
   KhVolume.xcodeproj   Xcode project (app + unit tests)
   Sources/             App UI and logic
   Tests/               Unit tests (Swift Testing)
-  Helper/              khvol CLI + vendor/khtool (bundled into the app)
-  Scripts/             khvol-dev — run CLI from source without PyInstaller
-scripts/               build-app-bundle.sh, sign-app.sh, smoke-test.sh
+scripts/               build-app-bundle.sh, sign-app.sh
 ```
 
 ## Credits
 
 - Speaker control protocol: **SSC** (Sennheiser Sound Control), used by **Georg Neumann GmbH** KH DSP products.
-- Low-level tool: [khtool](https://github.com/schwinn/khtool) by **Thorsten Schwinn** et al. (vendored under `KhVolume/Helper/vendor/`).
-- App: native SwiftUI menu bar shell around the bundled `khvol` helper.
+- Protocol reference: [khtool](https://github.com/schwinn/khtool) by **Thorsten Schwinn** et al. and [pyssc](https://github.com/schwinn/pyssc).
+- App: native SwiftUI menu bar app with a built-in SSC client.
 
 ## License
 
-KH Volume is released under the [MIT License](LICENSE). See [NOTICES](NOTICES) for bundled third-party components (including [khtool](https://github.com/schwinn/khtool) and [pyssc](https://github.com/schwinn/pyssc)).
+KH Volume is released under the [MIT License](LICENSE). See [NOTICES](NOTICES) for third-party components and acknowledgements.
 
 This project is **not affiliated with** Georg Neumann GmbH, Sennheiser, or Neumann. Neumann product names are trademarks of their respective owners. Use of SSC to control your hardware is at your own risk.

@@ -2,8 +2,6 @@
     "cSpell.words": [
         "bitstream",
         "checkmark",
-        "dimm",
-        "distpath",
         "Georg",
         "hifispeaker",
         "iface",
@@ -12,24 +10,16 @@
         "khvol",
         "khvolume",
         "miniaturizable",
-        "networksetup",
         "Neumann",
-        "noconfirm",
-        "onedir",
         "PDIF",
-        "pyinstaller",
         "pyssc",
         "queriable",
         "rescan",
         "rescanning",
         "Resizability",
         "Sennheiser",
-        "specpath",
         "subheadline",
         "Thorsten",
-        "unmute",
-        "venv",
-        "workpath",
-        "zeroconf"
+        "unmute"
     ]
 }

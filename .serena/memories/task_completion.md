@@ -8,15 +8,4 @@ xcodebuild test -project KhVolume/KhVolume.xcodeproj -scheme KhVolume -destinati
 
 No linter or formatter is configured (no SwiftLint/SwiftFormat in the project).
 
-For changes to the Python helper (`KhVolume/Helper/`), rebuild it before testing the full app:
-
-```bash
-./scripts/build-khvol-helper.sh
-```
-
-For hardware-dependent behaviour, use the smoke test (requires `KHVOL_INTERFACE` set to a real interface):
-
-```bash
-export KHVOL_INTERFACE=en15
-./scripts/smoke-test.sh
-```
+Hardware-dependent behaviour (SSC, scanning) needs real speakers: run the app and check status, level, mute and rescan.

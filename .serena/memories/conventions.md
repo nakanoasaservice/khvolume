@@ -13,14 +13,14 @@
 - Enums for states and events; `reduce(_:)` / `reduceVolume(_:)` are pure functions on `SpeakerStore`
 - Phase FSM serialises load operations (idle ↔ loading); Volume FSM throttles slider drags
 
-## Python helper interface
+## KhvolClientProtocol
 
-`KhvolClient` calls these subcommands; stdout is always JSON:
-- `json` → status (levels, muted, balanced, devices)
-- `scan` → rescan LAN, write `khtool.json`; exit 2 if no speakers found
-- `interfaces` → list of network interfaces with link status
-- `set LEVEL` → set absolute dB level, emit status JSON
-- `mute` / `unmute` → toggle mute, emit status JSON
+- `jsonStatus()` → status (levels, muted, balanced, devices keyed by SSC device name)
+- `scan()` → Bonjour scan, write `khtool.json`; throws `.deviceError` if no speakers found
+- `interfaces()` → network interfaces with link status
+- `setLevel(_:)` / `setMuted(_:)` → send to all speakers, then return fresh status
+- `resetConnections()` → drop pooled connections (called on network path changes)
+- Error messages containing "run scan" trigger an automatic rescan in `SpeakerStore.shouldRescan`
 
 ## File organisation
 

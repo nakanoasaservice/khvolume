@@ -7,15 +7,3 @@ updates:
     commit-message:
       prefix: "chore"
       include: "scope"
-
-  - package-ecosystem: "uv"
-    directory: "/KhVolume/Helper"
-    schedule:
-      interval: "weekly"
-    commit-message:
-      prefix: "chore"
-      include: "scope"
-    groups:
-      python:
-        patterns:
-          - "*"
