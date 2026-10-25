@@ -19,17 +19,17 @@ final class LaunchAtLoginCoordinator: LaunchAtLoginManaging {
     private(set) var errorMessage: String?
 
     /// Reads the live SMAppService state and reconciles it with `config`.
-    /// Saves to disk when a correction is needed.
+    /// Saves the config when a correction is needed.
     func reconcile(config: inout AppConfig) {
         let enabled = LaunchAtLogin.serviceIsEnabled
         guard config.launchAtLogin != enabled else { return }
         config.launchAtLogin = enabled
-        AppPaths.saveConfig(config)
+        AppDefaults.saveConfig(config)
     }
 
     /// Applies `config.launchAtLogin` to SMAppService.
     /// Updates `config` and `errorMessage` based on the result.
-    /// Saves to disk on failure.
+    /// Saves the config on failure.
     func apply(config: inout AppConfig) {
         let result = LaunchAtLogin.setEnabled(config.launchAtLogin)
         switch result {
@@ -39,7 +39,7 @@ final class LaunchAtLoginCoordinator: LaunchAtLoginManaging {
         case .unavailable(let message):
             errorMessage = message
             config.launchAtLogin = false
-            AppPaths.saveConfig(config)
+            AppDefaults.saveConfig(config)
         }
     }
 }

@@ -18,4 +18,4 @@ xcodebuild test -project KhVolume/KhVolume.xcodeproj -scheme KhVolume -destinati
 
 ## App data location
 
-`~/Library/Application Support/KHVolume/` — settings + scan cache
+UserDefaults (standard domain of the app bundle id): `config` (AppConfig as a plist dictionary) and `speakers` (`{mDNS name: IPv6}`)

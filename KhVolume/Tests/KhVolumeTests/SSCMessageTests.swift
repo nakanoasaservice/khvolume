@@ -68,35 +68,27 @@ struct SpeakerStatusBuilderTests {
     }
 }
 
-@Suite("SpeakerDirectory — khtool.json")
+@Suite("SpeakerDirectory — UserDefaults")
 struct SpeakerDirectoryTests {
 
-    private func makeDirectory() -> SpeakerDirectory {
-        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        return SpeakerDirectory(url: dir.appendingPathComponent("khtool.json"))
-    }
-
-    @Test("reads the khtool/pyssc format sorted by name")
-    func readsLegacyFormat() throws {
-        let directory = makeDirectory()
-        try FileManager.default.createDirectory(at: directory.url.deletingLastPathComponent(), withIntermediateDirectories: true)
-        try Data(#"{"Right-2": "fe80::2", "Left-1": "fe80::1"}"#.utf8).write(to: directory.url)
+    @Test("loads addresses sorted by mDNS name")
+    func loadsSorted() {
+        let directory = SpeakerDirectory(defaults: .makeForTesting())
+        directory.store(["Right-2": "fe80::2", "Left-1": "fe80::1"])
         #expect(directory.load() == ["fe80::1", "fe80::2"])
     }
 
     @Test("empty scan keeps an existing list")
-    func emptyScanKeepsList() throws {
-        let directory = makeDirectory()
-        try directory.store(["Left-1": "fe80::1"])
-        try directory.store([:])
+    func emptyScanKeepsList() {
+        let directory = SpeakerDirectory(defaults: .makeForTesting())
+        directory.store(["Left-1": "fe80::1"])
+        directory.store([:])
         #expect(directory.load() == ["fe80::1"])
     }
 
-    @Test("empty scan without a list leaves no file")
-    func emptyScanNoFile() throws {
-        let directory = makeDirectory()
-        try directory.store([:])
-        #expect(!FileManager.default.fileExists(atPath: directory.url.path))
+    @Test("nothing scanned yet loads an empty list")
+    func emptyByDefault() {
+        #expect(SpeakerDirectory(defaults: .makeForTesting()).load().isEmpty)
     }
 }
 
@@ -105,7 +97,7 @@ struct KhvolClientConfigurationTests {
 
     @Test("missing interface fails before reading the speaker list")
     func missingInterface() async {
-        let client = KhvolClient(configDir: FileManager.default.temporaryDirectory, interface: nil, pool: SSCSpeakerPool())
+        let client = KhvolClient(interface: nil, speakers: SpeakerDirectory(defaults: .makeForTesting()), pool: SSCSpeakerPool())
         await #expect {
             _ = try await client.jsonStatus()
         } throws: { error in
@@ -115,8 +107,7 @@ struct KhvolClientConfigurationTests {
 
     @Test("missing speaker list asks for a scan")
     func missingSpeakerList() async {
-        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        let client = KhvolClient(configDir: dir, interface: "en0", pool: SSCSpeakerPool())
+        let client = KhvolClient(interface: "en0", speakers: SpeakerDirectory(defaults: .makeForTesting()), pool: SSCSpeakerPool())
         await #expect {
             _ = try await client.jsonStatus()
         } throws: { error in

@@ -1,28 +1,19 @@
 import Foundation
 
-/// The scanned speaker list in `khtool.json`: `{"<mDNS name>": "<IPv6 address>", …}`.
-/// Same format khtool/pyssc wrote, so existing installs keep working without a rescan.
+/// The scanned speaker list in UserDefaults: `{"<mDNS name>": "<IPv6 address>", …}`.
 struct SpeakerDirectory {
-    let url: URL
+    var defaults: UserDefaults = .standard
+    var key: String = AppDefaults.speakersKey
 
-    /// Speaker addresses sorted by mDNS name; empty when the file is missing or unreadable.
+    /// Speaker addresses sorted by mDNS name; empty when nothing has been scanned yet.
     func load() -> [String] {
-        guard let data = try? Data(contentsOf: url),
-              let entries = try? JSONDecoder().decode([String: String].self, from: data)
-        else { return [] }
+        let entries = defaults.dictionary(forKey: key) as? [String: String] ?? [:]
         return entries.sorted { $0.key < $1.key }.map(\.value)
     }
 
-    /// Stores a scan result. An empty result keeps an existing non-empty list (the speakers may just
-    /// be off) and otherwise removes the file so the next status read asks for a scan.
-    func store(_ found: [String: String]) throws {
-        if found.isEmpty {
-            if load().isEmpty { try? FileManager.default.removeItem(at: url) }
-            return
-        }
-        try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = .sortedKeys
-        try encoder.encode(found).write(to: url, options: .atomic)
+    /// Stores a scan result. An empty result keeps the existing list (the speakers may just be off).
+    func store(_ found: [String: String]) {
+        guard !found.isEmpty else { return }
+        defaults.set(found, forKey: key)
     }
 }

@@ -14,12 +14,11 @@ import Testing
 )
 struct SSCHardwareTests {
     private let interface = ProcessInfo.processInfo.environment["KHVOL_HARDWARE_INTERFACE"] ?? ""
-    private let configDir = FileManager.default.temporaryDirectory.appendingPathComponent("khvol-hw-\(UUID().uuidString)")
 
     @Test("scan, read, set level, mute, and many requests over pooled connections")
     func endToEnd() async throws {
         let pool = SSCSpeakerPool()
-        let client = KhvolClient(configDir: configDir, interface: interface, pool: pool)
+        let client = KhvolClient(interface: interface, speakers: SpeakerDirectory(defaults: .makeForTesting()), pool: pool)
 
         let interfaces = try await client.interfaces()
         print("interfaces:", interfaces.map { "\($0.name)=\($0.label)/\($0.status)" })

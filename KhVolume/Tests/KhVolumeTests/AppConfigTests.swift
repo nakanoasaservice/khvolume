@@ -1,3 +1,4 @@
+import Foundation
 import Testing
 @testable import KhVolume
 
@@ -36,5 +37,25 @@ struct AppConfigTests {
         var config = AppConfig()
         config.maxVolumeLimit = limit
         #expect(config.effectiveMax == expected)
+    }
+}
+
+@Suite("AppDefaults — config persistence")
+struct AppDefaultsTests {
+
+    @Test("config round-trips through UserDefaults")
+    func roundTrip() {
+        let defaults = UserDefaults.makeForTesting()
+        var config = AppConfig()
+        config.networkInterface = "en15"
+        config.maxVolumeLimit = 75
+        config.hotkeyMuteToggle = "control+option+m"
+        AppDefaults.saveConfig(config, to: defaults)
+        #expect(AppDefaults.loadConfig(from: defaults) == config)
+    }
+
+    @Test("missing config loads defaults")
+    func missingConfig() {
+        #expect(AppDefaults.loadConfig(from: .makeForTesting()) == AppConfig())
     }
 }

@@ -16,7 +16,7 @@
 ## KhvolClientProtocol
 
 - `jsonStatus()` → status (levels, muted, balanced, devices keyed by SSC device name)
-- `scan()` → Bonjour scan, write `khtool.json`; throws `.deviceError` if no speakers found
+- `scan()` → Bonjour scan, store the speaker list in UserDefaults; throws `.deviceError` if no speakers found
 - `interfaces()` → network interfaces with link status
 - `setLevel(_:)` / `setMuted(_:)` → send to all speakers, then return fresh status
 - `resetConnections()` → drop pooled connections (called on network path changes)

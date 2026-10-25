@@ -34,17 +34,13 @@ enum KhvolError: LocalizedError {
     }
 }
 
-/// Talks SSC to the speakers listed in `khtool.json`, over connections kept in `SSCSpeakerPool`.
+/// Talks SSC to the scanned speakers in `SpeakerDirectory`, over connections kept in `SSCSpeakerPool`.
 struct KhvolClient {
     static let maxLevel = 120.0
 
-    let configDir: URL
     let interface: String?
+    var speakers = SpeakerDirectory()
     var pool: SSCSpeakerPool = .shared
-
-    private var directory: SpeakerDirectory {
-        SpeakerDirectory(url: configDir.appendingPathComponent("khtool.json"))
-    }
 
     func jsonStatus() async throws(KhvolError) -> KhvolJSONStatus {
         let replies = try await sendToAll(SSCMessage.outputQuery)
@@ -73,17 +69,13 @@ struct KhvolClient {
         NetworkInterfaceLister.list()
     }
 
-    /// Browses for speakers on the configured interface and stores them in `khtool.json`.
+    /// Browses for speakers on the configured interface and stores them in `SpeakerDirectory`.
     @discardableResult
     func scan() async throws(KhvolError) -> Int {
         let interface = try configuredInterface()
         pool.closeAll()
         let found = await SSCBrowser.scan(interface: interface)
-        do {
-            try directory.store(found)
-        } catch {
-            throw .commandFailed("cannot write speaker list: \(error.localizedDescription)")
-        }
+        speakers.store(found)
         guard !found.isEmpty else { throw .deviceError("no speakers found on \(interface)") }
         return found.count
     }
@@ -102,7 +94,7 @@ struct KhvolClient {
     @discardableResult
     private func sendToAll(_ message: String) async throws(KhvolError) -> [SSCSpeakerPool.Reply] {
         let interface = try configuredInterface()
-        let addresses = directory.load()
+        let addresses = speakers.load()
         guard !addresses.isEmpty else { throw .deviceError("no speakers configured; run scan") }
         let replies = try await pool.send(message, to: addresses, interface: interface)
         if let failed = replies.first(where: { SSCMessage.isError($0.reply) }) {

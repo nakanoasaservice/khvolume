@@ -121,10 +121,10 @@ final class SpeakerStore {
     private let now: () -> Date
 
     init() {
-        config = AppPaths.loadConfig()
+        config = AppDefaults.loadConfig()
         clientFactory = nil
         launchAtLoginCoordinator = LaunchAtLoginCoordinator()
-        hasSpeakerCache = { AppPaths.hasSpeakerCache }
+        hasSpeakerCache = { AppDefaults.hasSpeakerCache }
         now = { Date() }
         timing = SpeakerStoreTiming()
         KhVolumeBootstrap.store = self
@@ -143,7 +143,7 @@ final class SpeakerStore {
         networkMonitor: (any NetworkMonitorService)? = nil,
         hotkeyService: (any HotkeyService)? = nil,
         launchAtLoginCoordinator: (any LaunchAtLoginManaging)? = nil,
-        hasSpeakerCache: @escaping () -> Bool = { AppPaths.hasSpeakerCache },
+        hasSpeakerCache: @escaping () -> Bool = { AppDefaults.hasSpeakerCache },
         now: @escaping () -> Date = { Date() },
         timing: SpeakerStoreTiming = SpeakerStoreTiming(),
         suppressStartup: Bool = true
@@ -203,13 +203,13 @@ final class SpeakerStore {
         if let factory = clientFactory {
             return factory()
         }
-        return KhvolClient(configDir: AppPaths.appSupportURL, interface: interfaceName)
+        return KhvolClient(interface: interfaceName)
     }
 
     // MARK: - Config persistence
 
     func saveConfig() {
-        AppPaths.saveConfig(config)
+        AppDefaults.saveConfig(config)
     }
 
     func applyLaunchAtLoginPreference() {
