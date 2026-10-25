@@ -26,7 +26,7 @@
 		6228280FA10ED8D11D0890BF /* VolumeHUDController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8F29B1EFC8141001C78955B /* VolumeHUDController.swift */; };
 		69A5498ED7FBFB9ABC3C2E32 /* SpeakerStoreJSONMappingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A8B151312045C08CCF1D27 /* SpeakerStoreJSONMappingTests.swift */; };
 		69E60156AD7DE07AA42428CF /* VolumePopoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD8F77905869BE58F7A43C85 /* VolumePopoverView.swift */; };
-		6B74A1EDF66DEB734AF7CCCD /* AppPaths.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0572A62B659E31B297B14CEE /* AppPaths.swift */; };
+		6B74A1EDF66DEB734AF7CCCD /* AppDefaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0572A62B659E31B297B14CEE /* AppDefaults.swift */; };
 		76CEF1DEC3DEF4B2AC34B572 /* KhvolErrorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFC6EB8432502459D66F30FE /* KhvolErrorTests.swift */; };
 		77ABD2A70B4717217C6E1F94 /* AppConfigTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34D442D215FE9FE7377D43AC /* AppConfigTests.swift */; };
 		7E23CB66EBBE7BE06D8A8493 /* KhvolClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD295A7B75C37830941D9E8B /* KhvolClient.swift */; };
@@ -56,6 +56,7 @@
 		56CBF8D1EE1FD38268D4E5EC /* SSCSpeakerPoolTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2994EDB7D86E8336899ED5F /* SSCSpeakerPoolTests.swift */; };
 		F3A4893950BCF4D68E72AFC8 /* FakeSSCServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = E051B41F44DDAE0EF241490E /* FakeSSCServer.swift */; };
 		9881E7C457119B02A635D61C /* SSCHardwareTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD23BA754934FC345531A26D /* SSCHardwareTests.swift */; };
+		00B58510DCF0BD00BE792159 /* UserDefaults+Testing.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8D22C7FCEBC76B670CDCC6F /* UserDefaults+Testing.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -69,7 +70,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		0572A62B659E31B297B14CEE /* AppPaths.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppPaths.swift; sourceTree = "<group>"; };
+		0572A62B659E31B297B14CEE /* AppDefaults.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDefaults.swift; sourceTree = "<group>"; };
 		0EACC9ABDE7C661F68426BAF /* MockKhvolClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockKhvolClient.swift; sourceTree = "<group>"; };
 		161AA6DA806B6748E4D32455 /* PopoverKeyboardHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopoverKeyboardHandler.swift; sourceTree = "<group>"; };
 		16570D1BD86AB04E28B33E35 /* MockHotkeyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockHotkeyService.swift; sourceTree = "<group>"; };
@@ -119,6 +120,7 @@
 		D2994EDB7D86E8336899ED5F /* SSCSpeakerPoolTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSCSpeakerPoolTests.swift; sourceTree = "<group>"; };
 		E051B41F44DDAE0EF241490E /* FakeSSCServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FakeSSCServer.swift; sourceTree = "<group>"; };
 		CD23BA754934FC345531A26D /* SSCHardwareTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSCHardwareTests.swift; sourceTree = "<group>"; };
+		D8D22C7FCEBC76B670CDCC6F /* UserDefaults+Testing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UserDefaults+Testing.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -160,6 +162,7 @@
 				8719BA50AFCFA05772BF7B52 /* MockNetworkMonitorService.swift */,
 				E35BE4E8BB5D613C8EA7C8A4 /* SpeakerStoreTestHelpers.swift */,
 				DE2FB7FCFE5689548784F209 /* SuspendingKhvolClient.swift */,
+				D8D22C7FCEBC76B670CDCC6F /* UserDefaults+Testing.swift */,
 			);
 			path = Helpers;
 			sourceTree = "<group>";
@@ -255,7 +258,7 @@
 		F2BA4B6B887BBFB1C5CD5491 /* Services */ = {
 			isa = PBXGroup;
 			children = (
-				0572A62B659E31B297B14CEE /* AppPaths.swift */,
+				0572A62B659E31B297B14CEE /* AppDefaults.swift */,
 				29BF772FA72D56E61509E97E /* HotkeyManager.swift */,
 				1AA083F6C63C815E04E3F7A8 /* HotkeyService.swift */,
 				F60CC07A65FB714EABAF2531 /* HotkeyVolumeInteraction.swift */,
@@ -398,6 +401,7 @@
 				0FA58754E5470673263DA6EC /* SpeakerStoreVolumeConcurrencyTests.swift in Sources */,
 				DA2A25A5F1F40DA4ED24B998 /* SpeakerStoreVolumePreviewTests.swift in Sources */,
 				D35A0CB9E5EE9BFB0E6E3223 /* SuspendingKhvolClient.swift in Sources */,
+				00B58510DCF0BD00BE792159 /* UserDefaults+Testing.swift in Sources */,
 				9881E7C457119B02A635D61C /* SSCHardwareTests.swift in Sources */,
 				F3A4893950BCF4D68E72AFC8 /* FakeSSCServer.swift in Sources */,
 				56CBF8D1EE1FD38268D4E5EC /* SSCSpeakerPoolTests.swift in Sources */,
@@ -410,7 +414,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				4D1D449826F7DAED3E54CEB3 /* AppConfig.swift in Sources */,
-				6B74A1EDF66DEB734AF7CCCD /* AppPaths.swift in Sources */,
+				6B74A1EDF66DEB734AF7CCCD /* AppDefaults.swift in Sources */,
 				17A53D9687D7D0FF723CFC9E /* HotkeyManager.swift in Sources */,
 				4443BA0DECE6126FA4671952 /* HotkeyService.swift in Sources */,
 				40398FC47F8CC4B0E3631FE6 /* HotkeyVolumeInteraction.swift in Sources */,

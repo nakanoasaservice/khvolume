@@ -71,7 +71,7 @@ enum SSCBrowser {
     private static func ipv6Address(of endpoint: NWEndpoint?, interface: String) -> String? {
         guard case .hostPort(.ipv6(let ip), _) = endpoint else { return nil }
         if let scope = ip.interface, scope.name != interface { return nil }
-        // khtool.json stores bare addresses; the scope is added back when connecting.
+        // Store bare addresses; the scope is added back when connecting.
         return "\(ip)".split(separator: "%").first.map(String.init)
     }
 }

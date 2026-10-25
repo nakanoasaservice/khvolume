@@ -20,7 +20,8 @@ Pure Swift app (`KhVolume/Sources/KhVolume/`): UI + state machine on top of a na
 | `Services/SSC/SSCSpeakerPool.swift` | Shared persistent connections, one per speaker, per-speaker serial queue, one retry on a stale connection |
 | `Services/SSC/SSCMessages.swift` | SSC JSON messages/parsing + `SpeakerStatusBuilder` |
 | `Services/SSC/SSCBrowser.swift` | Bonjour `_ssc._tcp` scan via NWBrowser; resolves with a UDP NWConnection (no TCP slot used) |
-| `Services/SSC/SpeakerDirectory.swift` | `khtool.json` speaker list (`{mDNS name: IPv6}`) |
+| `Services/SSC/SpeakerDirectory.swift` | Scanned speaker list in UserDefaults (`speakers`: `{mDNS name: IPv6}`) |
+| `Services/AppDefaults.swift` | `AppConfig` load/save in UserDefaults (`config`) |
 | `Services/NetworkInterfaceLister.swift` | Hardware ports via SystemConfiguration + SIOCGIFMEDIA link state |
 | `Services/VolumeAdjustable.swift` | Protocol used by hotkey and HUD paths |
 | `Services/HotkeyService.swift` / `HotkeyManager.swift` | Global shortcuts via `KeyboardShortcuts` package |

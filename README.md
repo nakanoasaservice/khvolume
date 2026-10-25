@@ -59,7 +59,7 @@ open KhVolume/KhVolume.xcodeproj
 xcodebuild test -project KhVolume/KhVolume.xcodeproj -scheme KhVolume -destination 'platform=macOS'
 ```
 
-App data and scan cache: `~/Library/Application Support/KHVolume/`
+Settings and the scanned speaker list are stored in UserDefaults (`defaults read <bundle id>`).
 
 ## Troubleshooting
 
