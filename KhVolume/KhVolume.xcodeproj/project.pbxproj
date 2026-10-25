@@ -1,0 +1,685 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		00A3A07FC6160E7123180B37 /* SpeakerStoreShouldRescanTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 191F58C2C957D01F428EFD6B /* SpeakerStoreShouldRescanTests.swift */; };
+		0C85F51E795110A6F43660A1 /* MenuBarStatusLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56C17E2CDC83A87B63CC9CA6 /* MenuBarStatusLabel.swift */; };
+		0FA58754E5470673263DA6EC /* SpeakerStoreVolumeConcurrencyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBC811D438C7684D2325AE9C /* SpeakerStoreVolumeConcurrencyTests.swift */; };
+		0FF259952B80B2B54B352EAF /* SpeakerStoreAsyncTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79385C3DE8B0927B6014BBC3 /* SpeakerStoreAsyncTests.swift */; };
+		1054B5061C33F95FF54B7A8F /* LaunchAtLogin.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4D2CAE41B892D1ECA887C5D /* LaunchAtLogin.swift */; };
+		17A53D9687D7D0FF723CFC9E /* HotkeyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29BF772FA72D56E61509E97E /* HotkeyManager.swift */; };
+		17A5A4CFDA03C4B137C23F7C /* SpeakerStoreTestHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = E35BE4E8BB5D613C8EA7C8A4 /* SpeakerStoreTestHelpers.swift */; };
+		1CFD59481C3E52ED38CB7D71 /* KhVolumeAppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 596AB633109B1698D8963C49 /* KhVolumeAppDelegate.swift */; };
+		2D285D19D99E574FB77B36D5 /* SpeakerStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF19B73105D54E33739E3AEA /* SpeakerStore.swift */; };
+		2F8045E65E43A4A76F2E26A5 /* LaunchAtLoginCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79FB9581A39CB7F3448BBBA9 /* LaunchAtLoginCoordinator.swift */; };
+		3A5AE5DAC491D754BF73316D /* SpeakerStoreComputedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A71E9A32E328389A6576A551 /* SpeakerStoreComputedTests.swift */; };
+		40398FC47F8CC4B0E3631FE6 /* HotkeyVolumeInteraction.swift in Sources */ = {isa = PBXBuildFile; fileRef = F60CC07A65FB714EABAF2531 /* HotkeyVolumeInteraction.swift */; };
+		4443BA0DECE6126FA4671952 /* HotkeyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AA083F6C63C815E04E3F7A8 /* HotkeyService.swift */; };
+		4844500565DC88FCACA03AC0 /* MockHotkeyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16570D1BD86AB04E28B33E35 /* MockHotkeyService.swift */; };
+		4D1D449826F7DAED3E54CEB3 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB8DB8AC5768B2A2B07B7CB3 /* AppConfig.swift */; };
+		5CF6BE010AB431B17A1D5DB2 /* PopoverMenuRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F6BDF558358FF89E6D0F712 /* PopoverMenuRow.swift */; };
+		6228280FA10ED8D11D0890BF /* VolumeHUDController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8F29B1EFC8141001C78955B /* VolumeHUDController.swift */; };
+		69A5498ED7FBFB9ABC3C2E32 /* SpeakerStoreJSONMappingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A8B151312045C08CCF1D27 /* SpeakerStoreJSONMappingTests.swift */; };
+		69E60156AD7DE07AA42428CF /* VolumePopoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD8F77905869BE58F7A43C85 /* VolumePopoverView.swift */; };
+		6B74A1EDF66DEB734AF7CCCD /* AppPaths.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0572A62B659E31B297B14CEE /* AppPaths.swift */; };
+		76CEF1DEC3DEF4B2AC34B572 /* KhvolErrorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFC6EB8432502459D66F30FE /* KhvolErrorTests.swift */; };
+		77ABD2A70B4717217C6E1F94 /* AppConfigTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34D442D215FE9FE7377D43AC /* AppConfigTests.swift */; };
+		7E23CB66EBBE7BE06D8A8493 /* KhvolClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD295A7B75C37830941D9E8B /* KhvolClient.swift */; };
+		872AE82AEE5878B541118DD0 /* MockNetworkMonitorService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8719BA50AFCFA05772BF7B52 /* MockNetworkMonitorService.swift */; };
+		892B86479A5E81441250597E /* MockKhvolClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EACC9ABDE7C661F68426BAF /* MockKhvolClient.swift */; };
+		8E1AC97B4FC7096F96465C63 /* SpeakerStoreDisplayProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82962EB5CA865A4DB866B0CE /* SpeakerStoreDisplayProperties.swift */; };
+		90DDED2056DEDB3619C7DED4 /* MockLaunchAtLoginCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44F11151CE70C93F41E2A216 /* MockLaunchAtLoginCoordinator.swift */; };
+		949415CC6B8DB2DD58C9AD25 /* NetworkMonitorService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90B415F0371D08D1D1C5E042 /* NetworkMonitorService.swift */; };
+		9DEC965985DDD7751278D8CC /* VolumeHUDView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC92CE43BE483BEF4D289127 /* VolumeHUDView.swift */; };
+		9E3F09785DBCBA3B8C71CD1B /* PopoverKeyboardHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 161AA6DA806B6748E4D32455 /* PopoverKeyboardHandler.swift */; };
+		AA883786E5F067AE3E7A8FCD /* VolumeAdjustable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B7B3E8FE91B710F9E6E27B0 /* VolumeAdjustable.swift */; };
+		B0A9526BF159F6FB9A441AA7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9A587CEA7F52E299A3CAC850 /* Assets.xcassets */; };
+		D35A0CB9E5EE9BFB0E6E3223 /* SuspendingKhvolClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE2FB7FCFE5689548784F209 /* SuspendingKhvolClient.swift */; };
+		DA2A25A5F1F40DA4ED24B998 /* SpeakerStoreVolumePreviewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 894C915C42DE45F9DC8C7C12 /* SpeakerStoreVolumePreviewTests.swift */; };
+		E81E92CE2D67F10CAC9355D3 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = E24847FEC26E547FE62A7D78 /* KeyboardShortcuts */; };
+		EABA73BA9212AB13233FD56C /* SoundSettingsPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1FBAA4FABA087107B1CBD09 /* SoundSettingsPresenter.swift */; };
+		EE824148EC4A60D83089CDCF /* SpeakerModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BF466FE41707E5AFA292429 /* SpeakerModels.swift */; };
+		F5AEBFA69892BBD957D43E02 /* KhVolumeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C492CD0E97B6A5400A0C6E84 /* KhVolumeApp.swift */; };
+		F821D31C55E4560B5C7FA85E /* SoundSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98FAF50FF39E541B26028080 /* SoundSettingsView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		D81EFE06790D7683BE4FA613 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F0F77D332894BAAC81AAAFE7 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A5366A4E256C4C34542498B1;
+			remoteInfo = KhVolume;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		0572A62B659E31B297B14CEE /* AppPaths.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppPaths.swift; sourceTree = "<group>"; };
+		0EACC9ABDE7C661F68426BAF /* MockKhvolClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockKhvolClient.swift; sourceTree = "<group>"; };
+		161AA6DA806B6748E4D32455 /* PopoverKeyboardHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopoverKeyboardHandler.swift; sourceTree = "<group>"; };
+		16570D1BD86AB04E28B33E35 /* MockHotkeyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockHotkeyService.swift; sourceTree = "<group>"; };
+		191F58C2C957D01F428EFD6B /* SpeakerStoreShouldRescanTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeakerStoreShouldRescanTests.swift; sourceTree = "<group>"; };
+		1AA083F6C63C815E04E3F7A8 /* HotkeyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyService.swift; sourceTree = "<group>"; };
+		29BF772FA72D56E61509E97E /* HotkeyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyManager.swift; sourceTree = "<group>"; };
+		2B7B3E8FE91B710F9E6E27B0 /* VolumeAdjustable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VolumeAdjustable.swift; sourceTree = "<group>"; };
+		2F6BDF558358FF89E6D0F712 /* PopoverMenuRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopoverMenuRow.swift; sourceTree = "<group>"; };
+		34D442D215FE9FE7377D43AC /* AppConfigTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfigTests.swift; sourceTree = "<group>"; };
+		44F11151CE70C93F41E2A216 /* MockLaunchAtLoginCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockLaunchAtLoginCoordinator.swift; sourceTree = "<group>"; };
+		5332559AF4F6F90788A47985 /* KhVolumeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = KhVolumeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		56C17E2CDC83A87B63CC9CA6 /* MenuBarStatusLabel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarStatusLabel.swift; sourceTree = "<group>"; };
+		596AB633109B1698D8963C49 /* KhVolumeAppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KhVolumeAppDelegate.swift; sourceTree = "<group>"; };
+		79385C3DE8B0927B6014BBC3 /* SpeakerStoreAsyncTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeakerStoreAsyncTests.swift; sourceTree = "<group>"; };
+		79FB9581A39CB7F3448BBBA9 /* LaunchAtLoginCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchAtLoginCoordinator.swift; sourceTree = "<group>"; };
+		82962EB5CA865A4DB866B0CE /* SpeakerStoreDisplayProperties.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeakerStoreDisplayProperties.swift; sourceTree = "<group>"; };
+		8719BA50AFCFA05772BF7B52 /* MockNetworkMonitorService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockNetworkMonitorService.swift; sourceTree = "<group>"; };
+		894C915C42DE45F9DC8C7C12 /* SpeakerStoreVolumePreviewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeakerStoreVolumePreviewTests.swift; sourceTree = "<group>"; };
+		8BF466FE41707E5AFA292429 /* SpeakerModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeakerModels.swift; sourceTree = "<group>"; };
+		90B415F0371D08D1D1C5E042 /* NetworkMonitorService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkMonitorService.swift; sourceTree = "<group>"; };
+		91C8D9DD0860192036B3A779 /* KH Volume.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "KH Volume.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		98FAF50FF39E541B26028080 /* SoundSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundSettingsView.swift; sourceTree = "<group>"; };
+		9A587CEA7F52E299A3CAC850 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A1FBAA4FABA087107B1CBD09 /* SoundSettingsPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundSettingsPresenter.swift; sourceTree = "<group>"; };
+		A71E9A32E328389A6576A551 /* SpeakerStoreComputedTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeakerStoreComputedTests.swift; sourceTree = "<group>"; };
+		A8F29B1EFC8141001C78955B /* VolumeHUDController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VolumeHUDController.swift; sourceTree = "<group>"; };
+		AD8F77905869BE58F7A43C85 /* VolumePopoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VolumePopoverView.swift; sourceTree = "<group>"; };
+		BC92CE43BE483BEF4D289127 /* VolumeHUDView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VolumeHUDView.swift; sourceTree = "<group>"; };
+		C492CD0E97B6A5400A0C6E84 /* KhVolumeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KhVolumeApp.swift; sourceTree = "<group>"; };
+		D4D2CAE41B892D1ECA887C5D /* LaunchAtLogin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchAtLogin.swift; sourceTree = "<group>"; };
+		DB8DB8AC5768B2A2B07B7CB3 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
+		DD295A7B75C37830941D9E8B /* KhvolClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KhvolClient.swift; sourceTree = "<group>"; };
+		DE2FB7FCFE5689548784F209 /* SuspendingKhvolClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuspendingKhvolClient.swift; sourceTree = "<group>"; };
+		E35BE4E8BB5D613C8EA7C8A4 /* SpeakerStoreTestHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeakerStoreTestHelpers.swift; sourceTree = "<group>"; };
+		EFC6EB8432502459D66F30FE /* KhvolErrorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KhvolErrorTests.swift; sourceTree = "<group>"; };
+		F1A8B151312045C08CCF1D27 /* SpeakerStoreJSONMappingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeakerStoreJSONMappingTests.swift; sourceTree = "<group>"; };
+		F60CC07A65FB714EABAF2531 /* HotkeyVolumeInteraction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyVolumeInteraction.swift; sourceTree = "<group>"; };
+		FBC811D438C7684D2325AE9C /* SpeakerStoreVolumeConcurrencyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeakerStoreVolumeConcurrencyTests.swift; sourceTree = "<group>"; };
+		FF19B73105D54E33739E3AEA /* SpeakerStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeakerStore.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		78F50A5D8102914BEA8991F6 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E81E92CE2D67F10CAC9355D3 /* KeyboardShortcuts in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		2BDD30FA819271275C1C15D0 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				91C8D9DD0860192036B3A779 /* KH Volume.app */,
+				5332559AF4F6F90788A47985 /* KhVolumeTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		3B5A8B9F1C4FFFB3038BCBE4 /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				7B31B6DC3A7841749CEC1412 /* KhVolumeTests */,
+			);
+			path = Tests;
+			sourceTree = "<group>";
+		};
+		49F2B7345E6798D8EC06F6D3 /* Helpers */ = {
+			isa = PBXGroup;
+			children = (
+				16570D1BD86AB04E28B33E35 /* MockHotkeyService.swift */,
+				0EACC9ABDE7C661F68426BAF /* MockKhvolClient.swift */,
+				44F11151CE70C93F41E2A216 /* MockLaunchAtLoginCoordinator.swift */,
+				8719BA50AFCFA05772BF7B52 /* MockNetworkMonitorService.swift */,
+				E35BE4E8BB5D613C8EA7C8A4 /* SpeakerStoreTestHelpers.swift */,
+				DE2FB7FCFE5689548784F209 /* SuspendingKhvolClient.swift */,
+			);
+			path = Helpers;
+			sourceTree = "<group>";
+		};
+		64359953DBF5E47CB1F34366 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				9A587CEA7F52E299A3CAC850 /* Assets.xcassets */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		69EBF20405809956F3CA73CF = {
+			isa = PBXGroup;
+			children = (
+				A4A2330597ED3BB22AC407D6 /* Sources */,
+				3B5A8B9F1C4FFFB3038BCBE4 /* Tests */,
+				2BDD30FA819271275C1C15D0 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		7B31B6DC3A7841749CEC1412 /* KhVolumeTests */ = {
+			isa = PBXGroup;
+			children = (
+				34D442D215FE9FE7377D43AC /* AppConfigTests.swift */,
+				EFC6EB8432502459D66F30FE /* KhvolErrorTests.swift */,
+				79385C3DE8B0927B6014BBC3 /* SpeakerStoreAsyncTests.swift */,
+				A71E9A32E328389A6576A551 /* SpeakerStoreComputedTests.swift */,
+				F1A8B151312045C08CCF1D27 /* SpeakerStoreJSONMappingTests.swift */,
+				191F58C2C957D01F428EFD6B /* SpeakerStoreShouldRescanTests.swift */,
+				FBC811D438C7684D2325AE9C /* SpeakerStoreVolumeConcurrencyTests.swift */,
+				894C915C42DE45F9DC8C7C12 /* SpeakerStoreVolumePreviewTests.swift */,
+				49F2B7345E6798D8EC06F6D3 /* Helpers */,
+			);
+			path = KhVolumeTests;
+			sourceTree = "<group>";
+		};
+		8179A2452F8BB8223F1BF134 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				56C17E2CDC83A87B63CC9CA6 /* MenuBarStatusLabel.swift */,
+				161AA6DA806B6748E4D32455 /* PopoverKeyboardHandler.swift */,
+				2F6BDF558358FF89E6D0F712 /* PopoverMenuRow.swift */,
+				98FAF50FF39E541B26028080 /* SoundSettingsView.swift */,
+				82962EB5CA865A4DB866B0CE /* SpeakerStoreDisplayProperties.swift */,
+				BC92CE43BE483BEF4D289127 /* VolumeHUDView.swift */,
+				AD8F77905869BE58F7A43C85 /* VolumePopoverView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		A4A2330597ED3BB22AC407D6 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				C2120EA49AAA17F8578ABB9E /* KhVolume */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		AEFB38894C4738ACD99A370D /* App */ = {
+			isa = PBXGroup;
+			children = (
+				596AB633109B1698D8963C49 /* KhVolumeAppDelegate.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		C2120EA49AAA17F8578ABB9E /* KhVolume */ = {
+			isa = PBXGroup;
+			children = (
+				C492CD0E97B6A5400A0C6E84 /* KhVolumeApp.swift */,
+				AEFB38894C4738ACD99A370D /* App */,
+				E0307448FE8FE6E1011666ED /* Models */,
+				64359953DBF5E47CB1F34366 /* Resources */,
+				F2BA4B6B887BBFB1C5CD5491 /* Services */,
+				8179A2452F8BB8223F1BF134 /* Views */,
+			);
+			path = KhVolume;
+			sourceTree = "<group>";
+		};
+		E0307448FE8FE6E1011666ED /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				DB8DB8AC5768B2A2B07B7CB3 /* AppConfig.swift */,
+				8BF466FE41707E5AFA292429 /* SpeakerModels.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		F2BA4B6B887BBFB1C5CD5491 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				0572A62B659E31B297B14CEE /* AppPaths.swift */,
+				29BF772FA72D56E61509E97E /* HotkeyManager.swift */,
+				1AA083F6C63C815E04E3F7A8 /* HotkeyService.swift */,
+				F60CC07A65FB714EABAF2531 /* HotkeyVolumeInteraction.swift */,
+				DD295A7B75C37830941D9E8B /* KhvolClient.swift */,
+				D4D2CAE41B892D1ECA887C5D /* LaunchAtLogin.swift */,
+				79FB9581A39CB7F3448BBBA9 /* LaunchAtLoginCoordinator.swift */,
+				90B415F0371D08D1D1C5E042 /* NetworkMonitorService.swift */,
+				A1FBAA4FABA087107B1CBD09 /* SoundSettingsPresenter.swift */,
+				FF19B73105D54E33739E3AEA /* SpeakerStore.swift */,
+				2B7B3E8FE91B710F9E6E27B0 /* VolumeAdjustable.swift */,
+				A8F29B1EFC8141001C78955B /* VolumeHUDController.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		410E7500FE956D6A0873E7BC /* KhVolumeTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 2E88DA1F70682E9A9191E896 /* Build configuration list for PBXNativeTarget "KhVolumeTests" */;
+			buildPhases = (
+				92B1CE9A097ACA8185013913 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				C0F2D893937DE271DE812A23 /* PBXTargetDependency */,
+			);
+			name = KhVolumeTests;
+			packageProductDependencies = (
+			);
+			productName = KhVolumeTests;
+			productReference = 5332559AF4F6F90788A47985 /* KhVolumeTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		A5366A4E256C4C34542498B1 /* KhVolume */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = ED763E79973096D2ED47044B /* Build configuration list for PBXNativeTarget "KhVolume" */;
+			buildPhases = (
+				DB882B9B6E4C2CDA3F0DD295 /* Sources */,
+				9D6B0D64E4374F0995341C1B /* Resources */,
+				78F50A5D8102914BEA8991F6 /* Frameworks */,
+				D6ED7B2C21DD114036A19E74 /* Embed khvol Helper */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = KhVolume;
+			packageProductDependencies = (
+				E24847FEC26E547FE62A7D78 /* KeyboardShortcuts */,
+			);
+			productName = KhVolume;
+			productReference = 91C8D9DD0860192036B3A779 /* KH Volume.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		F0F77D332894BAAC81AAAFE7 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					410E7500FE956D6A0873E7BC = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Manual;
+					};
+					A5366A4E256C4C34542498B1 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Manual;
+					};
+				};
+			};
+			buildConfigurationList = 3AD5F04477477CA9D6D622B5 /* Build configuration list for PBXProject "KhVolume" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 69EBF20405809956F3CA73CF;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				96FEB4FD9DC537F63C926DE1 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 2BDD30FA819271275C1C15D0 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A5366A4E256C4C34542498B1 /* KhVolume */,
+				410E7500FE956D6A0873E7BC /* KhVolumeTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		9D6B0D64E4374F0995341C1B /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B0A9526BF159F6FB9A441AA7 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		D6ED7B2C21DD114036A19E74 /* Embed khvol Helper */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Embed khvol Helper";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -euo pipefail\n# Release bundles the PyInstaller helper; Debug uses KhVolume/Scripts/khvol-dev instead.\nif [ \"${CONFIGURATION}\" != \"Release\" ]; then\n  exit 0\nfi\nSRC=\"${PROJECT_DIR}/Helpers\"\nDEST=\"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/khvol-bundle\"\nif [ ! -x \"${SRC}/khvol-bundle/khvol\" ]; then\n  echo \"error: khvol helper missing; run scripts/build-khvol-helper.sh\"\n  exit 1\nfi\nrm -rf \"${DEST}\"\ncp -R \"${SRC}/khvol-bundle\" \"${DEST}\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		92B1CE9A097ACA8185013913 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				77ABD2A70B4717217C6E1F94 /* AppConfigTests.swift in Sources */,
+				76CEF1DEC3DEF4B2AC34B572 /* KhvolErrorTests.swift in Sources */,
+				4844500565DC88FCACA03AC0 /* MockHotkeyService.swift in Sources */,
+				892B86479A5E81441250597E /* MockKhvolClient.swift in Sources */,
+				90DDED2056DEDB3619C7DED4 /* MockLaunchAtLoginCoordinator.swift in Sources */,
+				872AE82AEE5878B541118DD0 /* MockNetworkMonitorService.swift in Sources */,
+				0FF259952B80B2B54B352EAF /* SpeakerStoreAsyncTests.swift in Sources */,
+				3A5AE5DAC491D754BF73316D /* SpeakerStoreComputedTests.swift in Sources */,
+				69A5498ED7FBFB9ABC3C2E32 /* SpeakerStoreJSONMappingTests.swift in Sources */,
+				00A3A07FC6160E7123180B37 /* SpeakerStoreShouldRescanTests.swift in Sources */,
+				17A5A4CFDA03C4B137C23F7C /* SpeakerStoreTestHelpers.swift in Sources */,
+				0FA58754E5470673263DA6EC /* SpeakerStoreVolumeConcurrencyTests.swift in Sources */,
+				DA2A25A5F1F40DA4ED24B998 /* SpeakerStoreVolumePreviewTests.swift in Sources */,
+				D35A0CB9E5EE9BFB0E6E3223 /* SuspendingKhvolClient.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DB882B9B6E4C2CDA3F0DD295 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4D1D449826F7DAED3E54CEB3 /* AppConfig.swift in Sources */,
+				6B74A1EDF66DEB734AF7CCCD /* AppPaths.swift in Sources */,
+				17A53D9687D7D0FF723CFC9E /* HotkeyManager.swift in Sources */,
+				4443BA0DECE6126FA4671952 /* HotkeyService.swift in Sources */,
+				40398FC47F8CC4B0E3631FE6 /* HotkeyVolumeInteraction.swift in Sources */,
+				F5AEBFA69892BBD957D43E02 /* KhVolumeApp.swift in Sources */,
+				1CFD59481C3E52ED38CB7D71 /* KhVolumeAppDelegate.swift in Sources */,
+				7E23CB66EBBE7BE06D8A8493 /* KhvolClient.swift in Sources */,
+				1054B5061C33F95FF54B7A8F /* LaunchAtLogin.swift in Sources */,
+				2F8045E65E43A4A76F2E26A5 /* LaunchAtLoginCoordinator.swift in Sources */,
+				0C85F51E795110A6F43660A1 /* MenuBarStatusLabel.swift in Sources */,
+				949415CC6B8DB2DD58C9AD25 /* NetworkMonitorService.swift in Sources */,
+				9E3F09785DBCBA3B8C71CD1B /* PopoverKeyboardHandler.swift in Sources */,
+				5CF6BE010AB431B17A1D5DB2 /* PopoverMenuRow.swift in Sources */,
+				EABA73BA9212AB13233FD56C /* SoundSettingsPresenter.swift in Sources */,
+				F821D31C55E4560B5C7FA85E /* SoundSettingsView.swift in Sources */,
+				EE824148EC4A60D83089CDCF /* SpeakerModels.swift in Sources */,
+				2D285D19D99E574FB77B36D5 /* SpeakerStore.swift in Sources */,
+				8E1AC97B4FC7096F96465C63 /* SpeakerStoreDisplayProperties.swift in Sources */,
+				AA883786E5F067AE3E7A8FCD /* VolumeAdjustable.swift in Sources */,
+				6228280FA10ED8D11D0890BF /* VolumeHUDController.swift in Sources */,
+				9DEC965985DDD7751278D8CC /* VolumeHUDView.swift in Sources */,
+				69E60156AD7DE07AA42428CF /* VolumePopoverView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		C0F2D893937DE271DE812A23 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A5366A4E256C4C34542498B1 /* KhVolume */;
+			targetProxy = D81EFE06790D7683BE4FA613 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		79E03001C5E573D356AB6CF5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 3;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.3.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		A3437BE99A7CE488DBAD836A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				EXECUTABLE_NAME = KhVolume;
+				INFOPLIST_FILE = Sources/KhVolume/Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.khvolume.app;
+				PRODUCT_MODULE_NAME = KhVolume;
+				PRODUCT_NAME = "KH Volume";
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		B564EBA63F92A407B57BE44D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				EXECUTABLE_NAME = KhVolume;
+				INFOPLIST_FILE = Sources/KhVolume/Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.khvolume.app;
+				PRODUCT_MODULE_NAME = KhVolume;
+				PRODUCT_NAME = "KH Volume";
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		C4DBCFC122EFCB935F766BEE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.khvolume.app.tests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/KH Volume.app/Contents/MacOS/KhVolume";
+			};
+			name = Release;
+		};
+		D526F88539CBE3AE4F4BFFAD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 3;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.3.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		EDF2F57BA0CDB025A9BDE91D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.khvolume.app.tests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/KH Volume.app/Contents/MacOS/KhVolume";
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		2E88DA1F70682E9A9191E896 /* Build configuration list for PBXNativeTarget "KhVolumeTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				EDF2F57BA0CDB025A9BDE91D /* Debug */,
+				C4DBCFC122EFCB935F766BEE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		3AD5F04477477CA9D6D622B5 /* Build configuration list for PBXProject "KhVolume" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				79E03001C5E573D356AB6CF5 /* Debug */,
+				D526F88539CBE3AE4F4BFFAD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		ED763E79973096D2ED47044B /* Build configuration list for PBXNativeTarget "KhVolume" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A3437BE99A7CE488DBAD836A /* Debug */,
+				B564EBA63F92A407B57BE44D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		96FEB4FD9DC537F63C926DE1 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sindresorhus/KeyboardShortcuts";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.1.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		E24847FEC26E547FE62A7D78 /* KeyboardShortcuts */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 96FEB4FD9DC537F63C926DE1 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */;
+			productName = KeyboardShortcuts;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = F0F77D332894BAAC81AAAFE7 /* Project object */;
+}

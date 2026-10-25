@@ -11,7 +11,7 @@ macOS 14+ menu bar app controlling Neumann KH DSP studio monitors (KH 80/120 II/
 
 | Path (relative to `KhVolume/Sources/KhVolume/`) | Role |
 |---|---|
-| `KhVolumeApp.swift` | `@main` entry; wires `MenuBarExtra` + `Settings` scenes |
+| `KhVolumeApp.swift` | `@main` entry (`KhVolumeMain`); `KhVolumeApp` wires `MenuBarExtra` + `Settings` scenes |
 | `App/KhVolumeAppDelegate.swift` | NSApp delegate |
 | `Models/SpeakerModels.swift` | `DeviceLevel`, `SpeakerStatus`, `NetworkInterfaceInfo`, `KhvolJSONStatus`, `ConnectionState` |
 | `Models/AppConfig.swift` | Persisted settings: interface, maxVolumeLimit, volumeStep, launchAtLogin, allowForceOnMismatch, hotkeys |
@@ -24,7 +24,7 @@ macOS 14+ menu bar app controlling Neumann KH DSP studio monitors (KH 80/120 II/
 
 ## Test layout
 
-`KhVolume/Tests/KhVolumeTests/` — all tests `async`, built with `TESTING` compile flag (removes `@main`).
+`KhVolume/Tests/KhVolumeTests/` — all tests `async`, hosted in the app; `KhVolumeMain` launches an empty app instead of `KhVolumeApp` when `XCTestConfigurationFilePath` is set.
 Helpers: `MockKhvolClient`, `SuspendingKhvolClient`, `MockNetworkMonitorService`, `MockHotkeyService`, `MockLaunchAtLoginCoordinator`.
 
 ## Further reading

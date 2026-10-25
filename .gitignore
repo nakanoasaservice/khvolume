@@ -23,7 +23,6 @@ build/
 dist/
 
 # Swift
-KhVolume/.build/
 DerivedData/
 xcuserdata/
 *.hmap

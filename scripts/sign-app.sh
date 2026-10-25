@@ -27,7 +27,7 @@ if [[ -z "$IDENTITY" ]]; then
   exit 1
 fi
 
-HELPERS="$APP_PATH/Contents/Helpers"
+HELPER_BUNDLE="$APP_PATH/Contents/Resources/khvol-bundle"
 ENTITLEMENTS="${ENTITLEMENTS:-}"
 
 sign_file() {
@@ -39,15 +39,11 @@ sign_file() {
   fi
 }
 
-if [[ -d "$HELPERS/khvol-bundle" ]]; then
-  sign_file "$HELPERS/khvol-bundle/khvol"
-  find "$HELPERS/khvol-bundle" -type f \( -name "*.so" -o -name "*.dylib" \) -print0 | while IFS= read -r -d '' lib; do
+if [[ -d "$HELPER_BUNDLE" ]]; then
+  find "$HELPER_BUNDLE" -type f \( -name "*.so" -o -name "*.dylib" \) -print0 | while IFS= read -r -d '' lib; do
     sign_file "$lib"
   done
-fi
-
-if [[ -x "$HELPERS/khvol" ]]; then
-  sign_file "$HELPERS/khvol"
+  sign_file "$HELPER_BUNDLE/khvol"
 fi
 
 sign_file "$APP_PATH/Contents/MacOS/KhVolume"

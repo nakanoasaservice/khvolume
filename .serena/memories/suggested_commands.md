@@ -1,13 +1,13 @@
 # Suggested Commands
 
-All Swift commands must be run from the `KhVolume/` subdirectory (where `Package.swift` lives).
+The Swift app is built from the Xcode project `KhVolume/KhVolume.xcodeproj` (scheme `KhVolume`). Run commands from the repo root.
 
 ## Swift app
 
 ```bash
-cd KhVolume && swift run                             # Run debug build
-cd KhVolume && swift test                            # Run all tests
-cd KhVolume && swift test --filter SpeakerStoreVolumeConcurrencyTests  # Single test class
+open KhVolume/KhVolume.xcodeproj                     # Run debug build from Xcode
+xcodebuild test -project KhVolume/KhVolume.xcodeproj -scheme KhVolume -destination 'platform=macOS'  # Run all tests
+xcodebuild test -project KhVolume/KhVolume.xcodeproj -scheme KhVolume -destination 'platform=macOS' -only-testing:KhVolumeTests/SpeakerStoreVolumeConcurrencyTests  # Single suite
 ```
 
 ## Build / distribute
