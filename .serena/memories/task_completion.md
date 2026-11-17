@@ -3,7 +3,7 @@
 After any coding change, run:
 
 ```bash
-xcodebuild test -project KhVolume/KhVolume.xcodeproj -scheme KhVolume -destination 'platform=macOS'
+xcodebuild test -project KhVolume.xcodeproj -scheme KhVolume -destination 'platform=macOS'
 ```
 
 No linter or formatter is configured (no SwiftLint/SwiftFormat in the project).

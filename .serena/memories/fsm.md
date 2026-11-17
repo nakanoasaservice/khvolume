@@ -1,6 +1,6 @@
 # SpeakerStore FSMs
 
-Both FSMs live in `KhVolume/Sources/KhVolume/Services/SpeakerStore.swift`.
+Both FSMs live in `Sources/KhVolume/Services/SpeakerStore.swift`.
 
 ## Phase FSM — serialises load operations
 

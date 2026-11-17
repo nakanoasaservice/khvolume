@@ -1,7 +1,7 @@
 version: 2
 updates:
   - package-ecosystem: "swift"
-    directory: "/KhVolume"
+    directory: "/"
     schedule:
       interval: "weekly"
     commit-message:

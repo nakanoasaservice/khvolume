@@ -4,11 +4,11 @@ macOS 14+ menu bar app controlling Neumann KH DSP studio monitors (KH 80/120 II/
 
 ## Architecture
 
-Pure Swift app (`KhVolume/Sources/KhVolume/`): UI + state machine on top of a native SSC client in `Services/SSC/`. There is no helper process (the former Python/PyInstaller helper was removed).
+Pure Swift app (`Sources/KhVolume/`): UI + state machine on top of a native SSC client in `Services/SSC/`. There is no helper process (the former Python/PyInstaller helper was removed).
 
 ## Swift source map
 
-| Path (relative to `KhVolume/Sources/KhVolume/`) | Role |
+| Path (relative to `Sources/KhVolume/`) | Role |
 |---|---|
 | `KhVolumeApp.swift` | `@main` entry (`KhVolumeMain`); `KhVolumeApp` wires `MenuBarExtra` + `Settings` scenes |
 | `App/KhVolumeAppDelegate.swift` | NSApp delegate |
@@ -30,7 +30,7 @@ Pure Swift app (`KhVolume/Sources/KhVolume/`): UI + state machine on top of a na
 
 ## Test layout
 
-`KhVolume/Tests/KhVolumeTests/` — all tests `async`, hosted in the app; `KhVolumeMain` launches an empty app instead of `KhVolumeApp` when `XCTestConfigurationFilePath` is set.
+`Tests/KhVolumeTests/` — all tests `async`, hosted in the app; `KhVolumeMain` launches an empty app instead of `KhVolumeApp` when `XCTestConfigurationFilePath` is set.
 Helpers: `FakeSSCServer` (loopback SSC device for pool tests), `MockKhvolClient`, `SuspendingKhvolClient`, `MockNetworkMonitorService`, `MockHotkeyService`, `MockLaunchAtLoginCoordinator`.
 
 ## Further reading
