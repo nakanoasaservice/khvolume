@@ -12,7 +12,7 @@ APP_DIR="$ROOT/dist/${APP_BUNDLE_NAME}.app"
 
 echo "Building release app with xcodebuild..."
 xcodebuild \
-  -project "$ROOT/KhVolume/KhVolume.xcodeproj" \
+  -project "$ROOT/KhVolume.xcodeproj" \
   -scheme KhVolume \
   -configuration Release \
   -destination "generic/platform=macOS" \

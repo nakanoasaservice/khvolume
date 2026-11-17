@@ -53,10 +53,10 @@ For distribution signing and notarization, see `scripts/sign-app.sh`.
 
 ```bash
 # Open in Xcode and run the KhVolume scheme
-open KhVolume/KhVolume.xcodeproj
+open KhVolume.xcodeproj
 
 # Run tests
-xcodebuild test -project KhVolume/KhVolume.xcodeproj -scheme KhVolume -destination 'platform=macOS'
+xcodebuild test -project KhVolume.xcodeproj -scheme KhVolume -destination 'platform=macOS'
 ```
 
 Settings and the scanned speaker list are stored in UserDefaults (`defaults read <bundle id>`).
@@ -74,10 +74,9 @@ Settings and the scanned speaker list are stored in UserDefaults (`defaults read
 ## Project layout
 
 ```
-KhVolume/              Swift menu bar app
-  KhVolume.xcodeproj   Xcode project (app + unit tests)
-  Sources/             App UI and logic
-  Tests/               Unit tests (Swift Testing)
+KhVolume.xcodeproj     Xcode project (app + unit tests)
+Sources/KhVolume/      App UI and logic
+Tests/KhVolumeTests/   Unit tests (Swift Testing)
 scripts/               build-app-bundle.sh, sign-app.sh
 ```
 
