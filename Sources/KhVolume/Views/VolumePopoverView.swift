@@ -152,6 +152,12 @@ struct VolumePopoverView: View {
 
             if !store.isBalanced {
                 levelMismatchDetails
+            } else if !store.outputs.isEmpty {
+                Text(store.speakerNamesText)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 8)
             }
 
             if let err = store.errorMessage {

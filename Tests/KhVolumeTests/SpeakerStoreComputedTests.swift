@@ -25,6 +25,14 @@ struct SpeakerStoreComputedTests {
         #expect(store.level == 80)
     }
 
+    // MARK: speakerNamesText
+
+    @Test("speakerNamesText lists the controlled speakers by name")
+    func speakerNames() {
+        let outputs: [SpeakerOutput] = [.stub(id: "b", name: "Right"), .stub(id: "a", name: "Left")]
+        #expect(store(outputs: outputs).speakerNamesText == "Left, Right")
+    }
+
     // MARK: volumeLevelText
 
     @Test("volumeLevelText is a dash when muted", arguments: [0.0, 50.0, 99.9])
