@@ -78,6 +78,8 @@ final class SpeakerLink: @unchecked Sendable {
             try socket.open()
             return try socket.request(message)
         } catch {
+            // The popover only says "not responding"; the cause (timeout, no route…) goes to the log.
+            NSLog("SSC %@: %@", speaker.id, String(describing: error))
             socket.close()
             throw .unreachable(speaker: name ?? speaker.address)
         }
