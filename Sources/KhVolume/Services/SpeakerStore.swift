@@ -53,16 +53,13 @@ struct SpeakerStoreTiming {
     var volumeThrottleInterval: Duration = .milliseconds(200)
     /// Debounce applied after a network path change before attempting recovery.
     var networkRecoveryDelay: Duration = .milliseconds(500)
-    /// How long a cached interface list is considered fresh before reloading.
-    var interfacesReloadInterval: TimeInterval = 60
 }
 
 extension SpeakerStoreTiming {
     /// All delays zeroed out so tests run without real sleeps.
     static let testing = SpeakerStoreTiming(
         volumeThrottleInterval: .zero,
-        networkRecoveryDelay: .zero,
-        interfacesReloadInterval: 0
+        networkRecoveryDelay: .zero
     )
 }
 
@@ -105,7 +102,6 @@ final class SpeakerStore {
     /// Retained HotkeyService instance (production: HotkeyManager; tests: mock).
     private var hotkeyService: (any HotkeyService)?
     private var hasStartedUp = false
-    private var lastInterfacesLoad: Date?
     private var volumeState: VolumeState = .idle
     private var networkMonitor: (any NetworkMonitorService)?
     private var networkRecoveryTask: Task<Void, Never>?
@@ -114,15 +110,11 @@ final class SpeakerStore {
     private let clientFactory: (() -> any KhvolClientProtocol)?
     /// Timing constants — replaced with `.testing` in unit tests to eliminate real sleeps.
     private let timing: SpeakerStoreTiming
-    /// Returns the current date/time.
-    /// Injected in tests to make interface-cache TTL logic deterministic.
-    private let now: () -> Date
 
     init() {
         config = AppDefaults.loadConfig()
         clientFactory = nil
         launchAtLoginCoordinator = LaunchAtLoginCoordinator()
-        now = { Date() }
         timing = SpeakerStoreTiming()
         KhVolumeBootstrap.store = self
         Task { await startupIfNeeded() }
@@ -140,7 +132,6 @@ final class SpeakerStore {
         networkMonitor: (any NetworkMonitorService)? = nil,
         hotkeyService: (any HotkeyService)? = nil,
         launchAtLoginCoordinator: (any LaunchAtLoginManaging)? = nil,
-        now: @escaping () -> Date = { Date() },
         timing: SpeakerStoreTiming = SpeakerStoreTiming(),
         suppressStartup: Bool = true
     ) {
@@ -149,7 +140,6 @@ final class SpeakerStore {
         self.networkMonitor = networkMonitor
         self.hotkeyService = hotkeyService
         self.launchAtLoginCoordinator = launchAtLoginCoordinator ?? LaunchAtLoginCoordinator()
-        self.now = now
         self.timing = timing
         if suppressStartup { self.hasStartedUp = true }
     }
@@ -263,7 +253,7 @@ final class SpeakerStore {
     /// Rescan only when no speakers have been stored yet.
     private func recoverAfterDeviceError(_ err: KhvolError) async -> KhvolJSONStatus? {
         guard case .noSpeakers = err else { return nil }
-        await loadInterfaces(force: true)
+        await loadInterfaces()
         do {
             let client = makeClient()
             let count = try await client.scan()
@@ -276,16 +266,9 @@ final class SpeakerStore {
 
     // MARK: - Interface loading
 
-    func loadInterfaces(force: Bool = false) async {
-        if !force,
-           !interfaces.isEmpty,
-           let last = lastInterfacesLoad,
-           now().timeIntervalSince(last) < timing.interfacesReloadInterval {
-            return
-        }
+    func loadInterfaces() async {
         do {
             interfaces = try await makeClient().interfaces()
-            lastInterfacesLoad = now()
         } catch {
             interfaces = []
         }
@@ -304,8 +287,7 @@ final class SpeakerStore {
     }
 
     private func handleNetworkPathChange(isSatisfied: Bool) {
-        // Invalidate the interface cache and speaker connections on any network change
-        lastInterfacesLoad = nil
+        // Drop speaker connections on any network change
         let client = makeClient()
         Task { await client.resetConnections() }
 
@@ -448,12 +430,7 @@ final class SpeakerStore {
         case (.loading(let reason), .loadCompleted(.failure(let err))):
             connectionState = .disconnected
             status.lastError = err.localizedDescription
-            switch reason {
-            case .refresh, .interfaceSelection:
-                status.devices = []
-            case .mutation:
-                lastInterfacesLoad = nil
-            }
+            if reason != .mutation { status.devices = [] }
             phase = .idle
 
         case (_, .silentRefreshCompleted(.success(let json))):
@@ -507,7 +484,6 @@ final class SpeakerStore {
                 where committingLevel == level:
             connectionState = .disconnected
             status.lastError = err.localizedDescription
-            lastInterfacesLoad = nil
             if err is KhvolError { status.devices = [] }
             // Drop the level: keeping it pending would block silent refreshes and show a level
             // the speakers never received.
