@@ -33,9 +33,9 @@ struct SSCHardwareTests {
         // A set must be answered with the applied value; otherwise every set costs a second round trip.
         for speaker in directory.load() {
             let link = SpeakerLink(speaker: speaker, interface: interface)
-            let reply = try await link.send(SSCMessage.setLevel(originalLevel)).get()
+            let reply = try await link.send { SSCMessage.setLevel(originalLevel, node: $0) }.get()
             print("set reply from \(reply.name):", reply.text)
-            #expect(SSCMessage.parseOutput(reply.text)?.level != nil)
+            #expect(reply.output?.level != nil)
         }
 
         let setStart = ContinuousClock.now

@@ -36,6 +36,7 @@ TEST_RUNNER_KHVOL_HARDWARE_INTERFACE=en15 xcodebuild test -project KhVolume.xcod
 - **A speaker accepts 4 TCP connections; a 5th is ignored without an error.** Hence one long-lived connection per speaker, closed before sleep.
 - Connections use BSD sockets, not `NWConnection`, on purpose: the kernel closes BSD sockets when the process dies, while `NWConnection` flows that are never cancelled stay half-open and use up the slots.
 - The Bonjour scan resolves addresses with a UDP `NWConnection`, which sends nothing and takes no slot.
+- **KH 750 support is untested on hardware.** Its output node (`audio.out` or `audio.out5`, by firmware) is copied from khtool's `handle_device`; nobody has run this app against a KH 750. On the `out5` firmware `out1`…`out4` are the monitors connected to the subwoofer, which the app does not touch.
 - A speaker answers a set with the value it applied, so a volume change is one round trip (about 20 ms). `SSCHardwareTests` checks this.
 
 ## Rules the store relies on

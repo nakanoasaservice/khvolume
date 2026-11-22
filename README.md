@@ -12,6 +12,8 @@ Instead of adjusting the system volume slider, KH Volume directly drives the **n
 
 If your KH monitors are connected to your local network via Ethernet (built-in port or adapter) and support SSC, KH Volume can seamlessly manage their levels. This includes popular models across the Neumann KH DSP lineup: **KH 80 DSP**, **KH 120 II**, **KH 150**, **KH 150 AES67**, and **KH 750 DSP**.
 
+A **KH 750 DSP** subwoofer on the network gets the same level and mute as the monitors. Where it keeps its own level depends on its firmware; KH Volume follows what [khtool](https://github.com/schwinn/khtool) does for each firmware, but this has **not been tested on a real KH 750 DSP**. Monitors without a network port that are connected through the subwoofer are not controlled.
+
 ## How it works
 
 1. Your Mac and the speakers share a network connection (usually Ethernet to the speaker’s RJ45 port).
