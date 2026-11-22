@@ -9,17 +9,12 @@ enum LaunchAtLogin {
 
     /// Live Login Item state from SMAppService (preferred over the config file for UI).
     static var serviceIsEnabled: Bool {
-        guard #available(macOS 13.0, *) else { return false }
-        return SMAppService.mainApp.status == .enabled
+        SMAppService.mainApp.status == .enabled
     }
 
     static func setEnabled(_ enabled: Bool) -> SetResult {
         guard Bundle.main.bundleURL.pathExtension == "app" else {
             return .unavailable("Open at Login is only available when running inside a .app bundle.")
-        }
-
-        guard #available(macOS 13.0, *) else {
-            return .unavailable("macOS 13 or later is required.")
         }
 
         do {
