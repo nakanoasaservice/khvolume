@@ -78,7 +78,8 @@ final class SpeakerStore {
     /// True while status refresh, scan, or other non-volume mutations are in flight.
     var isStatusLoading: Bool { phase.isStatusLoading }
     /// Terminal connection state (ready/warning/disconnected). Use `connection` for display.
-    private var connectionState: ConnectionState = .disconnected
+    /// Not private so tests can start from a connected store.
+    var connectionState: ConnectionState = .disconnected
     /// Derives `.scanning` from `phase`, so the stored value never needs to be `.scanning`.
     var connection: ConnectionState { phase.isStatusLoading ? .scanning : connectionState }
     /// Forwarded from `launchAtLoginCoordinator.errorMessage`.
@@ -361,6 +362,12 @@ final class SpeakerStore {
     /// Updates the shared preview level and debounces commit to the device.
     func setVolumePreview(_ level: Double) {
         guard !isStatusLoading else { return }
+        // No level is known while disconnected (it may still be the initial 0), so read it first
+        // instead of sending one derived from it.
+        guard connectionState != .disconnected else {
+            scheduleRefresh()
+            return
+        }
 
         let requested = clampVolume(level)
         if blocksVolumeIncrease && requested > previewAverageLevel {
@@ -514,7 +521,9 @@ final class SpeakerStore {
             status.lastError = err.localizedDescription
             lastInterfacesLoad = nil
             if err is KhvolError { status.devices = [] }
-            volumeState = .pending(level: committingLevel, lastCommitStart: nil)
+            // Drop the level: keeping it pending would block silent refreshes and show a level
+            // the speakers never received.
+            volumeState = .idle
 
         case (_, .commitSucceeded), (_, .commitFailed):
             // Stale result from a superseded commit; discard silently.

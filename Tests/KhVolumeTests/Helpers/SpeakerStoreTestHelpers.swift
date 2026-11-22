@@ -8,6 +8,7 @@ extension SpeakerStore {
     /// - `hasSpeakerCache` returns `true` so `shouldRescan` tests only exercise message matching.
     /// - `timing` is `.testing` (all delays zero) so tests run without real sleeps.
     /// - `suppressStartup: true` prevents `startupIfNeeded()` from running automatically.
+    /// - The store starts connected, as after a successful refresh, so volume changes are sent.
     ///
     /// To test the startup path, pass `suppressStartup: false` directly to `SpeakerStore.init`
     /// and call `await store.startupIfNeeded()` explicitly.
@@ -21,7 +22,7 @@ extension SpeakerStore {
         now: @escaping () -> Date = { Date() },
         timing: SpeakerStoreTiming = .testing
     ) -> SpeakerStore {
-        SpeakerStore(
+        let store = SpeakerStore(
             config: config,
             clientFactory: { client },
             networkMonitor: networkMonitor,
@@ -31,5 +32,7 @@ extension SpeakerStore {
             now: now,
             timing: timing
         )
+        store.connectionState = .ready
+        return store
     }
 }
