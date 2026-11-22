@@ -116,7 +116,7 @@ final class SpeakerStore {
         clientFactory = nil
         launchAtLoginCoordinator = LaunchAtLoginCoordinator()
         timing = SpeakerStoreTiming()
-        KhVolumeBootstrap.store = self
+        // Start here, not from a view, so volume and hotkeys work before the popover is opened.
         Task { await startupIfNeeded() }
     }
 
