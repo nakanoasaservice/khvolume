@@ -10,7 +10,7 @@ extension KeyboardShortcuts.Name {
 
 @MainActor
 final class HotkeyManager {
-    private weak var store: (any VolumeAdjustable)?
+    private weak var store: SpeakerStore?
     private let volumeInteraction: HotkeyVolumeInteraction
     private let volumeHUD = VolumeHUDController()
 

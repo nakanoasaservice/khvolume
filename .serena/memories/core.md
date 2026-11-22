@@ -23,7 +23,6 @@ Pure Swift app (`Sources/KhVolume/`): UI + state machine on top of a native SSC 
 | `Services/SSC/SpeakerDirectory.swift` | Scanned speaker list in UserDefaults (`speakers`: `{mDNS name: IPv6}`) |
 | `Services/AppDefaults.swift` | `AppConfig` load/save in UserDefaults (`config`) |
 | `Services/NetworkInterfaceLister.swift` | Hardware ports via SystemConfiguration + SIOCGIFMEDIA link state |
-| `Services/VolumeAdjustable.swift` | Protocol used by hotkey and HUD paths |
 | `Services/HotkeyService.swift` / `HotkeyManager.swift` | Global shortcuts via `KeyboardShortcuts` package |
 | `Services/NetworkMonitorService.swift` | `NWPathMonitor` wrapper; triggers reconnect on network change |
 | `Views/` | SwiftUI views: popover, menu bar label, settings sheet, HUD overlay |

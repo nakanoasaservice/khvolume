@@ -37,7 +37,6 @@
 		949415CC6B8DB2DD58C9AD25 /* NetworkMonitorService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90B415F0371D08D1D1C5E042 /* NetworkMonitorService.swift */; };
 		9DEC965985DDD7751278D8CC /* VolumeHUDView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC92CE43BE483BEF4D289127 /* VolumeHUDView.swift */; };
 		9E3F09785DBCBA3B8C71CD1B /* PopoverKeyboardHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 161AA6DA806B6748E4D32455 /* PopoverKeyboardHandler.swift */; };
-		AA883786E5F067AE3E7A8FCD /* VolumeAdjustable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B7B3E8FE91B710F9E6E27B0 /* VolumeAdjustable.swift */; };
 		B0A9526BF159F6FB9A441AA7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9A587CEA7F52E299A3CAC850 /* Assets.xcassets */; };
 		D35A0CB9E5EE9BFB0E6E3223 /* SuspendingKhvolClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE2FB7FCFE5689548784F209 /* SuspendingKhvolClient.swift */; };
 		DA2A25A5F1F40DA4ED24B998 /* SpeakerStoreVolumePreviewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 894C915C42DE45F9DC8C7C12 /* SpeakerStoreVolumePreviewTests.swift */; };
@@ -78,7 +77,6 @@
 		191F58C2C957D01F428EFD6B /* SpeakerStoreShouldRescanTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeakerStoreShouldRescanTests.swift; sourceTree = "<group>"; };
 		1AA083F6C63C815E04E3F7A8 /* HotkeyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyService.swift; sourceTree = "<group>"; };
 		29BF772FA72D56E61509E97E /* HotkeyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyManager.swift; sourceTree = "<group>"; };
-		2B7B3E8FE91B710F9E6E27B0 /* VolumeAdjustable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VolumeAdjustable.swift; sourceTree = "<group>"; };
 		2F6BDF558358FF89E6D0F712 /* PopoverMenuRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopoverMenuRow.swift; sourceTree = "<group>"; };
 		34D442D215FE9FE7377D43AC /* AppConfigTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfigTests.swift; sourceTree = "<group>"; };
 		44F11151CE70C93F41E2A216 /* MockLaunchAtLoginCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockLaunchAtLoginCoordinator.swift; sourceTree = "<group>"; };
@@ -273,7 +271,6 @@
 				90B415F0371D08D1D1C5E042 /* NetworkMonitorService.swift */,
 				A1FBAA4FABA087107B1CBD09 /* SoundSettingsPresenter.swift */,
 				FF19B73105D54E33739E3AEA /* SpeakerStore.swift */,
-				2B7B3E8FE91B710F9E6E27B0 /* VolumeAdjustable.swift */,
 				A8F29B1EFC8141001C78955B /* VolumeHUDController.swift */,
 			);
 			path = Services;
@@ -442,7 +439,6 @@
 				EE824148EC4A60D83089CDCF /* SpeakerModels.swift in Sources */,
 				2D285D19D99E574FB77B36D5 /* SpeakerStore.swift in Sources */,
 				8E1AC97B4FC7096F96465C63 /* SpeakerStoreDisplayProperties.swift in Sources */,
-				AA883786E5F067AE3E7A8FCD /* VolumeAdjustable.swift in Sources */,
 				6228280FA10ED8D11D0890BF /* VolumeHUDController.swift in Sources */,
 				9DEC965985DDD7751278D8CC /* VolumeHUDView.swift in Sources */,
 				69E60156AD7DE07AA42428CF /* VolumePopoverView.swift in Sources */,
