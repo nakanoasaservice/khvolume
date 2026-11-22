@@ -23,7 +23,7 @@ struct SoundSettingsView: View {
             Section("Volume") {
                 LabeledContent("Volume limit") {
                     HStack(spacing: 12) {
-                        Slider(value: $store.config.maxVolumeLimit, in: 0...120)
+                        Slider(value: $store.config.maxVolumeLimit, in: 0...SpeakerGroup.maxLevel)
                         Text("\(Int(store.config.maxVolumeLimit.rounded())) dB")
                             .monospacedDigit()
                             .frame(width: 52, alignment: .trailing)

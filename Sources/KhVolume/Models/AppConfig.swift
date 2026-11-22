@@ -10,12 +10,12 @@ struct AppConfig: Codable, Equatable {
         case launchAtLogin
         case allowForceOnMismatch
     }
-    var maxVolumeLimit: Double = 120
+    var maxVolumeLimit: Double = SpeakerGroup.maxLevel
     var volumeStep: Double = 1
     var launchAtLogin: Bool = false
     var allowForceOnMismatch: Bool = false
 
     var effectiveMax: Double {
-        min(120, max(0, maxVolumeLimit))
+        min(SpeakerGroup.maxLevel, max(0, maxVolumeLimit))
     }
 }

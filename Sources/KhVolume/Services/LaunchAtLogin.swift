@@ -13,10 +13,6 @@ enum LaunchAtLogin {
     }
 
     static func setEnabled(_ enabled: Bool) -> SetResult {
-        guard Bundle.main.bundleURL.pathExtension == "app" else {
-            return .unavailable("Open at Login is only available when running inside a .app bundle.")
-        }
-
         do {
             if enabled {
                 if SMAppService.mainApp.status == .enabled {
