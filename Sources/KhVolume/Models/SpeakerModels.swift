@@ -22,33 +22,16 @@ struct SpeakerStatus: Equatable {
     var lastError: String?
 }
 
-struct NetworkInterfaceInfo: Identifiable, Equatable, Codable {
-    let id: String
+struct NetworkInterfaceInfo: Identifiable, Equatable {
     let name: String
     let label: String
     let status: String
 
-    enum CodingKeys: String, CodingKey {
-        case name, label, status
-    }
-
-    init(name: String, label: String, status: String) {
-        self.id = name
-        self.name = name
-        self.label = label
-        self.status = status
-    }
-
-    init(from decoder: Decoder) throws {
-        let c = try decoder.container(keyedBy: CodingKeys.self)
-        name = try c.decode(String.self, forKey: .name)
-        label = try c.decode(String.self, forKey: .label)
-        status = try c.decode(String.self, forKey: .status)
-        id = name
-    }
+    var id: String { name }
 }
-struct KhvolJSONStatus: Codable {
-    struct DeviceInfo: Codable {
+
+struct KhvolJSONStatus {
+    struct DeviceInfo {
         let level: Double?
         let mute: Bool?
     }
