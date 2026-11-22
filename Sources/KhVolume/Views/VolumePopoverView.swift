@@ -91,7 +91,11 @@ struct VolumePopoverView: View {
         }
         let item = navigableItems[focusedNavIndex]
         guard isNavItemEnabled(item) else { return }
+        activate(item)
+    }
 
+    /// The action behind each row, shared by clicks and the keyboard.
+    private func activate(_ item: PopoverNavItem) {
         switch item {
         case .mute:
             Task { await store.toggleMute() }
@@ -159,7 +163,7 @@ struct VolumePopoverView: View {
 
     private var muteButton: some View {
         Button {
-            Task { await store.toggleMute() }
+            activate(.mute)
         } label: {
             Image(systemName: store.status.isMuted ? "speaker.slash.fill" : "speaker.wave.2.fill")
                 .font(.title3)
@@ -228,7 +232,7 @@ struct VolumePopoverView: View {
                     isKeyboardFocused: isKeyboardFocused(.interface(iface.name)),
                     isEnabled: !store.isStatusLoading
                 ) {
-                    Task { await store.selectInterface(iface.name) }
+                    activate(.interface(iface.name))
                 }
             }
         }
@@ -251,15 +255,14 @@ struct VolumePopoverView: View {
                 title: "Preferences…",
                 isKeyboardFocused: isKeyboardFocused(.soundSettings)
             ) {
-                dismiss()
-                SoundSettingsPresenter.present(openSettings: openSettings)
+                activate(.soundSettings)
             }
 
             PopoverMenuRow(
                 title: "Quit KH Volume",
                 isKeyboardFocused: isKeyboardFocused(.quit)
             ) {
-                NSApplication.shared.terminate(nil)
+                activate(.quit)
             }
         }
     }
