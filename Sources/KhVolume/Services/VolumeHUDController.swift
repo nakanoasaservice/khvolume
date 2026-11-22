@@ -121,6 +121,8 @@ final class VolumeHUDController {
 
     private func hideAnimated() {
         guard let panel, isVisible else { return }
+        // Cleared before the fade, so a key press during it shows the panel again.
+        isVisible = false
 
         let startFrame = panel.frame
         let endFrame = NSRect(
@@ -137,8 +139,8 @@ final class VolumeHUDController {
             panel.animator().setFrame(endFrame, display: true)
         }, completionHandler: { [weak self] in
             Task { @MainActor in
+                guard self?.isVisible == false else { return }
                 panel.orderOut(nil)
-                self?.isVisible = false
             }
         })
     }
