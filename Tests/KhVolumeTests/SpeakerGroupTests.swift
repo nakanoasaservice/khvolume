@@ -222,6 +222,30 @@ struct SpeakerGroupTests {
         }
     }
 
+    @Test("a scanned device that has no output is left out and its connection released")
+    func nonSpeakerIsLeftOut() async throws {
+        // Both devices are on the one fake server; the connection that asks first has no output.
+        let nonSpeaker = OSAllocatedUnfairLock<ObjectIdentifier?>(initialState: nil)
+        let server = try FakeSSCServer { line in
+            let connection = ObjectIdentifier(Thread.current)
+            let isNonSpeaker = nonSpeaker.withLock { first in
+                if first == nil { first = connection }
+                return first == connection
+            }
+            if isNonSpeaker && line.contains("audio") { return FakeSSCServer.notFoundReply }
+            return FakeSSCServer.defaultReply(line)
+        }
+        let found = [Speaker(id: "a", address: "::1"), Speaker(id: "b", address: "::1")]
+        let (group, directory) = makeGroup(server, stored: [], found: found)
+
+        let outputs = try await group.connect(interface: "lo0", rescan: true)
+
+        #expect(outputs.count == 1)
+        #expect(directory.load().map(\.id) == outputs.map(\.id))
+        #expect(server.waitUntil { server.openCount == 1 })
+        #expect(try await group.setLevel(42).map(\.level) == [42])
+    }
+
     // MARK: KH 750
 
     @Test("a KH 750 whose own output is out5 is read and set there")
