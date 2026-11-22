@@ -17,10 +17,6 @@ struct SoundSettingsView: View {
                     Text(message)
                         .font(.caption)
                         .foregroundStyle(.orange)
-                } else if !LaunchAtLogin.serviceIsEnabled {
-                    Text("Install a signed \"KH Volume.app\" in /Applications to enable Open at Login.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
                 }
             }
 
