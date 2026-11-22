@@ -210,7 +210,7 @@ final class SpeakerStore {
     func refresh() async {
         guard case .idle = phase else { return }
         await withLoadPhase(.refresh) {
-            await fetchStatus(attemptRecovery: true)
+            await fetchStatus()
         }
     }
 
@@ -218,7 +218,7 @@ final class SpeakerStore {
     private func refreshSilently() async {
         guard case .idle = phase else { return }
         guard case .idle = volumeState else { return }
-        reduce(.silentRefreshCompleted(await fetchStatus(attemptRecovery: true)))
+        reduce(.silentRefreshCompleted(await fetchStatus()))
     }
 
     /// Acquire the load phase, yield for UI, run `fetch`, then release. Caller must guard `.idle` first.
@@ -232,18 +232,17 @@ final class SpeakerStore {
         reduce(.loadCompleted(result))
     }
 
-    /// Popover open: refresh interface list and status without blocking controls or rescanning.
-    /// Popover open: refresh interface list and status without blocking controls or rescanning.
+    /// Popover open: refresh interface list and status without blocking controls.
     func preparePopover() async {
         await loadInterfaces()
         await refreshSilently()
     }
 
-    private func fetchStatus(attemptRecovery: Bool) async -> Result<KhvolJSONStatus, KhvolError> {
+    private func fetchStatus() async -> Result<KhvolJSONStatus, KhvolError> {
         do {
             return .success(try await makeClient().jsonStatus())
         } catch {
-            if attemptRecovery, let recovered = await recoverAfterDeviceError(error) {
+            if let recovered = await recoverAfterDeviceError(error) {
                 return .success(recovered)
             }
             return .failure(error)
@@ -314,15 +313,12 @@ final class SpeakerStore {
         config.networkInterface = name
         saveConfig()
         await withLoadPhase(.interfaceSelection(name: name)) {
-            do {
+            do throws(KhvolError) {
                 let client = makeClient()
                 _ = try await client.scan()
                 return .success(try await client.jsonStatus())
-            } catch let error as KhvolError {
-                return .failure(error)
             } catch {
-                assertionFailure("Unreachable: all KhvolClientProtocol methods throw KhvolError, got \(error)")
-                return .failure(.commandFailed(error.localizedDescription))
+                return .failure(error)
             }
         }
     }
@@ -339,31 +335,19 @@ final class SpeakerStore {
             return
         }
 
-        let requested = clampVolume(level)
-        if blocksVolumeIncrease && requested > previewAverageLevel {
+        // Compared before clamping, so a step up at the limit is still refused.
+        if blocksVolumeIncrease && level > previewAverageLevel {
             status.lastError = "Left and right levels do not match"
             return
         }
 
         status.lastError = nil
-        reduceVolume(.previewSet(requested))
+        reduceVolume(.previewSet(clampVolume(level)))
     }
 
     /// Relative volume change from a delta (e.g. hotkey step).
     func adjustVolume(by delta: Double) {
-        guard !isStatusLoading else { return }
-        guard volumeChangeAllowed(delta: delta) else { return }
-
-        let base = pendingVolumeLevel ?? status.averageLevel
-        setVolumePreview(base + delta)
-    }
-
-    private func volumeChangeAllowed(delta: Double) -> Bool {
-        if delta > 0 && blocksVolumeIncrease {
-            status.lastError = "Left and right levels do not match"
-            return false
-        }
-        return true
+        setVolumePreview(previewAverageLevel + delta)
     }
 
     func toggleMute() async {
@@ -409,8 +393,6 @@ final class SpeakerStore {
         }
     }
 
-    
-
     // MARK: - FSM reducer
 
     private func reduce(_ event: PhaseEvent) {
@@ -423,8 +405,6 @@ final class SpeakerStore {
 
         case (.loading, .loadCompleted(.success(let json))):
             apply(json: json)
-            connectionState = json.balanced ? .ready : .warning
-            status.lastError = nil
             phase = .idle
 
         case (.loading(let reason), .loadCompleted(.failure(let err))):
@@ -435,8 +415,6 @@ final class SpeakerStore {
 
         case (_, .silentRefreshCompleted(.success(let json))):
             apply(json: json)
-            connectionState = json.balanced ? .ready : .warning
-            status.lastError = nil
 
         case (_, .silentRefreshCompleted(.failure(let err))):
             connectionState = .disconnected
@@ -476,8 +454,6 @@ final class SpeakerStore {
         case (.committing(let committingLevel, _), .commitSucceeded(let level, let json))
                 where committingLevel == level:
             apply(json: json)
-            connectionState = json.balanced ? .ready : .warning
-            status.lastError = nil
             volumeState = .idle
 
         case (.committing(let committingLevel, _), .commitFailed(let level, let err))
@@ -501,18 +477,17 @@ final class SpeakerStore {
     private func runMutation(_ body: (any KhvolClientProtocol) async throws(KhvolError) -> KhvolJSONStatus) async {
         guard case .idle = phase else { return }
         await withLoadPhase(.mutation) {
-            do {
+            do throws(KhvolError) {
                 return .success(try await body(makeClient()))
-            } catch let error as KhvolError {
-                return .failure(error)
             } catch {
-                assertionFailure("Unreachable: all KhvolClientProtocol methods throw KhvolError, got \(error)")
-                return .failure(.commandFailed(error.localizedDescription))
+                return .failure(error)
             }
         }
     }
 
     private func apply(json: KhvolJSONStatus) {
+        connectionState = json.balanced ? .ready : .warning
+        status.lastError = nil
         status.isMuted = json.muted
         status.levelMismatch = !json.balanced
         status.devices = json.devices.enumerated().map { index, device in
