@@ -49,8 +49,19 @@ struct AppDefaultsTests {
         var config = AppConfig()
         config.networkInterface = "en15"
         config.maxVolumeLimit = 75
-        config.hotkeyMuteToggle = "control+option+m"
         AppDefaults.saveConfig(config, to: defaults)
+        #expect(AppDefaults.loadConfig(from: defaults) == config)
+    }
+
+    @Test("config saved with keys that no longer exist still loads")
+    func unknownKeysAreIgnored() {
+        let defaults = UserDefaults.makeForTesting()
+        var config = AppConfig()
+        config.networkInterface = "en15"
+        AppDefaults.saveConfig(config, to: defaults)
+        var stored = defaults.dictionary(forKey: AppDefaults.configKey) ?? [:]
+        stored["hotkeyVolumeUp"] = "option+equal"
+        defaults.set(stored, forKey: AppDefaults.configKey)
         #expect(AppDefaults.loadConfig(from: defaults) == config)
     }
 
