@@ -11,7 +11,11 @@ enum AppDefaults {
               let data = try? PropertyListSerialization.data(fromPropertyList: object, format: .binary, options: 0),
               let config = try? PropertyListDecoder().decode(AppConfig.self, from: data)
         else {
-            return AppConfig()
+            // Nothing stored, or stored by a version with other settings: start over in the
+            // current format instead of migrating.
+            let config = AppConfig()
+            saveConfig(config, to: defaults)
+            return config
         }
         return config
     }
