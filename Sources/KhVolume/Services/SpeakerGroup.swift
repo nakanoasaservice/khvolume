@@ -49,11 +49,12 @@ actor SpeakerGroup: SpeakerControlling {
     }
 
     func setLevel(_ level: Double) async throws(SpeakerError) -> [SpeakerOutput] {
-        try await apply(SSCMessage.setLevel(min(max(level, 0), Self.maxLevel)))
+        let level = min(max(level, 0), Self.maxLevel)
+        return try await apply { SSCMessage.setLevel(level, node: $0) }
     }
 
     func setMuted(_ muted: Bool) async throws(SpeakerError) -> [SpeakerOutput] {
-        try await apply(SSCMessage.setMuted(muted))
+        try await apply { SSCMessage.setMuted(muted, node: $0) }
     }
 
     func disconnect() {
@@ -77,8 +78,8 @@ actor SpeakerGroup: SpeakerControlling {
 
     private func readOutputs() async throws(SpeakerError) -> [SpeakerOutput] {
         var read: [SpeakerOutput] = []
-        for reply in try await sendToAll(SSCMessage.outputQuery) {
-            guard let output = SSCMessage.parseOutput(reply.text), let level = output.level else {
+        for reply in try await sendToAll({ SSCMessage.outputQuery($0) }) {
+            guard let output = reply.output, let level = output.level else {
                 throw .unexpectedReply(speaker: reply.name)
             }
             read.append(SpeakerOutput(id: reply.id, name: reply.name, level: level, muted: output.mute ?? false))
@@ -89,11 +90,11 @@ actor SpeakerGroup: SpeakerControlling {
 
     /// Sends a set message. A speaker answers a set with the value it applied, which updates what
     /// is known about it without a second round trip; any other answer falls back to reading.
-    private func apply(_ message: String) async throws(SpeakerError) -> [SpeakerOutput] {
+    private func apply(_ message: @escaping SpeakerLink.Message) async throws(SpeakerError) -> [SpeakerOutput] {
         var updated = outputs
         for reply in try await sendToAll(message) {
             guard let index = updated.firstIndex(where: { $0.id == reply.id }),
-                  let applied = SSCMessage.parseOutput(reply.text),
+                  let applied = reply.output,
                   applied.level != nil || applied.mute != nil
             else { return try await readOutputs() }
             if let level = applied.level { updated[index].level = level }
@@ -104,7 +105,7 @@ actor SpeakerGroup: SpeakerControlling {
     }
 
     /// Sends `message` to every speaker in parallel. Replies come back in speaker order.
-    private func sendToAll(_ message: String) async throws(SpeakerError) -> [SpeakerLink.Reply] {
+    private func sendToAll(_ message: @escaping SpeakerLink.Message) async throws(SpeakerError) -> [SpeakerLink.Reply] {
         let links = self.links
         guard !links.isEmpty else {
             if let interface { throw .noSpeakersFound(interface: interface) }

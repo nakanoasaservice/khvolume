@@ -46,6 +46,20 @@ final class FakeSSCServer: @unchecked Sendable {
         return line
     }
 
+    static let notFoundReply = #"{"osc":{"error":[404,{"desc":"address not found"}]}}"#
+
+    /// A KH 750 on firmware `version` whose own output is at `node`; any other output is not found.
+    static func kh750(version: String, node: String) -> @Sendable (String) -> String {
+        { line in
+            if line.contains(#""name":null"#) { return #"{"device":{"name":"Sub"}}"# }
+            if line.contains(#""product":null"#) { return #"{"device":{"identity":{"product":"KH 750"}}}"# }
+            if line.contains(#""version":null"#) { return #"{"device":{"identity":{"version":"\#(version)"}}}"# }
+            guard line.contains(#""\#(node)":"#) else { return notFoundReply }
+            if line.contains(#""level":null"#) { return #"{"audio":{"\#(node)":{"level":50.0,"mute":false}}}"# }
+            return line
+        }
+    }
+
     var acceptedCount: Int { lock.withLock { _accepted } }
     var openCount: Int { lock.withLock { clients.count } }
     var requests: [String] { lock.withLock { _requests } }

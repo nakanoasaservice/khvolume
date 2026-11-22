@@ -12,13 +12,20 @@ final class SpeakerLink: @unchecked Sendable {
         /// SSC device name.
         let name: String
         let text: String
+        /// What `text` says about the speaker's own output; nil when it says nothing about it.
+        let output: SSCMessage.Output?
     }
+
+    /// Builds a message about the speaker's own output, which not every device keeps at the same node.
+    typealias Message = @Sendable (SSCMessage.OutputNode) -> String
 
     let speaker: Speaker
     private let socket: SSCSocket
     private let queue: DispatchQueue
     /// Device name from SSC, asked once for the life of the link.
     private var name: String?
+    /// Where the device keeps its own output, worked out once for the life of the link.
+    private var node: SSCMessage.OutputNode?
 
     init(speaker: Speaker, interface: String, port: UInt16 = 45, timeout: TimeInterval = 3) {
         self.speaker = speaker
@@ -26,7 +33,7 @@ final class SpeakerLink: @unchecked Sendable {
         queue = DispatchQueue(label: "com.khvolume.ssc.\(speaker.address)")
     }
 
-    func send(_ message: String) async -> Result<Reply, SpeakerError> {
+    func send(_ message: @escaping Message) async -> Result<Reply, SpeakerError> {
         await withCheckedContinuation { continuation in
             queue.async {
                 continuation.resume(returning: Result { () throws(SpeakerError) in try self.sendNow(message) })
@@ -39,13 +46,27 @@ final class SpeakerLink: @unchecked Sendable {
         queue.async { self.socket.close() }
     }
 
-    private func sendNow(_ message: String) throws(SpeakerError) -> Reply {
+    private func sendNow(_ message: Message) throws(SpeakerError) -> Reply {
         if name == nil {
             name = SSCMessage.parseDeviceName(try exchange(SSCMessage.deviceNameQuery)) ?? speaker.address
         }
-        let text = try exchange(message)
+        if node == nil {
+            node = try outputNode()
+        }
+        let text = try exchange(message(node!))
         if SSCMessage.isError(text) { throw .rejected(speaker: name!, reply: text) }
-        return Reply(id: speaker.id, name: name!, text: text)
+        return Reply(id: speaker.id, name: name!, text: text, output: SSCMessage.parseOutput(text, node: node!))
+    }
+
+    /// Asks the device what it is. A device that does not say is treated as a plain speaker.
+    /// The fields are asked one at a time, as khtool does.
+    private func outputNode() throws(SpeakerError) -> SSCMessage.OutputNode {
+        let product = SSCMessage.parseProduct(try exchange(SSCMessage.productQuery))
+        // Only a KH 750's node depends on its firmware.
+        let version = product == SSCMessage.OutputNode.kh750
+            ? SSCMessage.parseVersion(try exchange(SSCMessage.versionQuery))
+            : nil
+        return SSCMessage.OutputNode(product: product, version: version)
     }
 
     private func exchange(_ message: String) throws(SpeakerError) -> String {

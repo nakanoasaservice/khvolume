@@ -92,7 +92,7 @@ struct SpeakerGroupTests {
 
     // MARK: connections
 
-    @Test("reuses one connection per speaker and asks the name once")
+    @Test("reuses one connection per speaker and asks what it is once")
     func reusesConnection() async throws {
         let server = try FakeSSCServer()
         let (group, _) = makeGroup(server)
@@ -101,6 +101,9 @@ struct SpeakerGroupTests {
         }
         #expect(server.acceptedCount == 1)
         #expect(server.requests.filter { $0 == SSCMessage.deviceNameQuery }.count == 1)
+        #expect(server.requests.filter { $0 == SSCMessage.productQuery }.count == 1)
+        // Only a KH 750 is asked for its firmware.
+        #expect(!server.requests.contains(SSCMessage.versionQuery))
     }
 
     @Test("reconnects once when the reused connection was dropped")
@@ -162,7 +165,7 @@ struct SpeakerGroupTests {
         let outputs = try await group.setLevel(42)
 
         #expect(outputs == [SpeakerOutput(id: "fake", name: "Fake", level: 42, muted: false)])
-        #expect(server.requests.filter { $0 == SSCMessage.outputQuery }.count == 1)
+        #expect(server.requests.filter { $0 == SSCMessage.outputQuery() }.count == 1)
     }
 
     @Test("setLevel keeps the level within what the speakers accept")
@@ -200,7 +203,7 @@ struct SpeakerGroupTests {
         let outputs = try await group.setLevel(42)
 
         #expect(outputs.map(\.level) == [50])
-        #expect(server.requests.filter { $0 == SSCMessage.outputQuery }.count == 2)
+        #expect(server.requests.filter { $0 == SSCMessage.outputQuery() }.count == 2)
     }
 
     @Test("an SSC error reply is reported with the speaker's name")
@@ -217,6 +220,56 @@ struct SpeakerGroupTests {
         await #expect(throws: SpeakerError.rejected(speaker: "Fake", reply: errorReply)) {
             _ = try await group.setLevel(42)
         }
+    }
+
+    // MARK: KH 750
+
+    @Test("a KH 750 whose own output is out5 is read and set there")
+    func kh750AtOut5() async throws {
+        let server = try FakeSSCServer(reply: FakeSSCServer.kh750(version: "1_2_4", node: "out5"))
+        let (group, _) = makeGroup(server)
+
+        let read = try await group.connect(interface: "lo0", rescan: false)
+        #expect(read == [SpeakerOutput(id: "fake", name: "Sub", level: 50, muted: false)])
+
+        let lowered = try await group.setLevel(42)
+        #expect(lowered.map(\.level) == [42])
+        #expect(server.requests.last == #"{"audio":{"out5":{"level":42.0}}}"#)
+
+        let muted = try await group.setMuted(true)
+        #expect(muted == [SpeakerOutput(id: "fake", name: "Sub", level: 42, muted: true)])
+        #expect(server.requests.last == #"{"audio":{"out5":{"mute":true}}}"#)
+
+        // Every set was answered with the applied value, so the output was read once.
+        #expect(server.requests.filter { $0.contains(#""level":null"#) } == [SSCMessage.outputQuery(.out5)])
+        #expect(server.requests.filter { $0 == SSCMessage.versionQuery }.count == 1)
+    }
+
+    @Test("a KH 750 on firmware that keeps its output at out is read and set there", arguments: ["1_1_0", "2_0_3"])
+    func kh750AtOut(version: String) async throws {
+        let server = try FakeSSCServer(reply: FakeSSCServer.kh750(version: version, node: "out"))
+        let (group, _) = makeGroup(server)
+
+        _ = try await group.connect(interface: "lo0", rescan: false)
+        let lowered = try await group.setLevel(42)
+
+        #expect(lowered == [SpeakerOutput(id: "fake", name: "Sub", level: 42, muted: false)])
+        #expect(server.requests.last == SSCMessage.setLevel(42))
+    }
+
+    @Test("a device that does not say what it is is treated as a plain speaker")
+    func unknownProduct() async throws {
+        let server = try FakeSSCServer { line in
+            if line.contains(#""name":null"#) { return #"{"device":{"name":"Fake"}}"# }
+            if line.contains(#""level":null"#) { return Self.outputReply }
+            return FakeSSCServer.notFoundReply
+        }
+        let (group, _) = makeGroup(server)
+
+        let outputs = try await group.connect(interface: "lo0", rescan: false)
+
+        #expect(outputs.map(\.level) == [50])
+        #expect(server.requests.last == SSCMessage.outputQuery())
     }
 
     @Test("a reply without a level is unexpected")
