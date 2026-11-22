@@ -27,6 +27,7 @@
 		69E60156AD7DE07AA42428CF /* VolumePopoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD8F77905869BE58F7A43C85 /* VolumePopoverView.swift */; };
 		6B74A1EDF66DEB734AF7CCCD /* AppDefaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0572A62B659E31B297B14CEE /* AppDefaults.swift */; };
 		76CEF1DEC3DEF4B2AC34B572 /* SpeakerErrorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFC6EB8432502459D66F30FE /* SpeakerErrorTests.swift */; };
+		A7C1E5F2B3D44A6E9F0C1D2E /* HotkeyVolumeInteractionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8D2F6A3C4E55B7FA01D2E3F /* HotkeyVolumeInteractionTests.swift */; };
 		77ABD2A70B4717217C6E1F94 /* AppConfigTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34D442D215FE9FE7377D43AC /* AppConfigTests.swift */; };
 		7E23CB66EBBE7BE06D8A8493 /* SpeakerGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD295A7B75C37830941D9E8B /* SpeakerGroup.swift */; };
 		872AE82AEE5878B541118DD0 /* MockNetworkMonitorService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8719BA50AFCFA05772BF7B52 /* MockNetworkMonitorService.swift */; };
@@ -103,6 +104,7 @@
 		DE2FB7FCFE5689548784F209 /* SuspendingSpeakerGroup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuspendingSpeakerGroup.swift; sourceTree = "<group>"; };
 		E35BE4E8BB5D613C8EA7C8A4 /* SpeakerStoreTestHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeakerStoreTestHelpers.swift; sourceTree = "<group>"; };
 		EFC6EB8432502459D66F30FE /* SpeakerErrorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeakerErrorTests.swift; sourceTree = "<group>"; };
+		B8D2F6A3C4E55B7FA01D2E3F /* HotkeyVolumeInteractionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyVolumeInteractionTests.swift; sourceTree = "<group>"; };
 		F1A8B151312045C08CCF1D27 /* SpeakerOutputTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeakerOutputTests.swift; sourceTree = "<group>"; };
 		F60CC07A65FB714EABAF2531 /* HotkeyVolumeInteraction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyVolumeInteraction.swift; sourceTree = "<group>"; };
 		FBC811D438C7684D2325AE9C /* SpeakerStoreVolumeConcurrencyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeakerStoreVolumeConcurrencyTests.swift; sourceTree = "<group>"; };
@@ -187,6 +189,7 @@
 			children = (
 				34D442D215FE9FE7377D43AC /* AppConfigTests.swift */,
 				EFC6EB8432502459D66F30FE /* SpeakerErrorTests.swift */,
+				B8D2F6A3C4E55B7FA01D2E3F /* HotkeyVolumeInteractionTests.swift */,
 				CD23BA754934FC345531A26D /* SSCHardwareTests.swift */,
 				A34AA1C391FCE9441A18BC7A /* SSCMessageTests.swift */,
 				D2994EDB7D86E8336899ED5F /* SpeakerGroupTests.swift */,
@@ -378,6 +381,7 @@
 			files = (
 				77ABD2A70B4717217C6E1F94 /* AppConfigTests.swift in Sources */,
 				76CEF1DEC3DEF4B2AC34B572 /* SpeakerErrorTests.swift in Sources */,
+				A7C1E5F2B3D44A6E9F0C1D2E /* HotkeyVolumeInteractionTests.swift in Sources */,
 				4844500565DC88FCACA03AC0 /* MockHotkeyService.swift in Sources */,
 				892B86479A5E81441250597E /* MockSpeakerGroup.swift in Sources */,
 				90DDED2056DEDB3619C7DED4 /* MockLaunchAtLoginCoordinator.swift in Sources */,
