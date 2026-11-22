@@ -8,7 +8,8 @@ enum ConnectionState: Equatable {
 }
 
 struct DeviceLevel: Identifiable, Equatable {
-    let id: String
+    /// Position in speaker order; names can repeat.
+    let id: Int
     let name: String
     let level: Double
     let muted: Bool
@@ -36,7 +37,8 @@ struct KhvolJSONStatus {
         let mute: Bool?
     }
 
-    let devices: [String: DeviceInfo]
+    /// One reading per speaker, in speaker order. Two speakers may share a name.
+    let devices: [(name: String, output: DeviceInfo)]
     let levels: [Double]
     let muted: Bool
     let balanced: Bool

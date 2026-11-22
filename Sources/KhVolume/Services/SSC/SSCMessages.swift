@@ -50,10 +50,8 @@ enum SpeakerStatusBuilder {
         guard levels.count == readings.count else {
             throw .deviceError("missing level from one or more devices")
         }
-        var devices: [String: KhvolJSONStatus.DeviceInfo] = [:]
-        for reading in readings { devices[reading.name] = reading.output }
         return KhvolJSONStatus(
-            devices: devices,
+            devices: readings,
             levels: levels,
             muted: readings.contains { $0.output.mute == true },
             balanced: levels.max()! - levels.min()! < balanceTolerance
