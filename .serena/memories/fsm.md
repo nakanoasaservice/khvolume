@@ -29,4 +29,4 @@ Transitions:
 
 Events (`VolumeEvent`): reducer `SpeakerStore.reduceVolume(_:)`
 
-Timing struct: `SpeakerStoreTiming` — `volumeThrottleInterval`, `networkRecoveryDelay`, `interfacesReloadInterval`; `testing` static instance with shortened intervals for tests.
+Timing struct: `SpeakerStoreTiming` — `volumeThrottleInterval`, `networkRecoveryDelay`; `testing` static instance with shortened intervals for tests.

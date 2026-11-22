@@ -17,7 +17,6 @@ extension SpeakerStore {
         networkMonitor: MockNetworkMonitorService? = nil,
         hotkeyService: MockHotkeyService? = nil,
         launchAtLoginCoordinator: MockLaunchAtLoginCoordinator? = nil,
-        now: @escaping () -> Date = { Date() },
         timing: SpeakerStoreTiming = .testing
     ) -> SpeakerStore {
         let store = SpeakerStore(
@@ -26,7 +25,6 @@ extension SpeakerStore {
             networkMonitor: networkMonitor,
             hotkeyService: hotkeyService,
             launchAtLoginCoordinator: launchAtLoginCoordinator,
-            now: now,
             timing: timing
         )
         store.connectionState = .ready
