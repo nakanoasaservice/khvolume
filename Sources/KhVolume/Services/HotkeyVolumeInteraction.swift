@@ -8,7 +8,7 @@ final class HotkeyVolumeInteraction {
         case down
     }
 
-    private weak var store: (any VolumeAdjustable)?
+    private weak var store: SpeakerStore?
     private let hud: VolumeHUDController
     private var activeDirection: Direction?
     private var repeatTask: Task<Void, Never>?
@@ -18,7 +18,7 @@ final class HotkeyVolumeInteraction {
     /// Repeat interval while held.
     private let repeatIntervalNanos: UInt64 = 90_000_000
 
-    init(store: any VolumeAdjustable, hud: VolumeHUDController) {
+    init(store: SpeakerStore, hud: VolumeHUDController) {
         self.store = store
         self.hud = hud
     }

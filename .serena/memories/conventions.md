@@ -3,7 +3,7 @@
 ## Swift
 
 - `@Observable` (Swift Observation framework) for `SpeakerStore` — not `ObservableObject`/`@Published`
-- Protocol-based testability: `KhvolClientProtocol`, `VolumeAdjustable`, `NetworkMonitorServiceProtocol`, `HotkeyServiceProtocol`, `LaunchAtLoginCoordinatorProtocol`
+- Protocol-based testability: `KhvolClientProtocol`, `NetworkMonitorServiceProtocol`, `HotkeyServiceProtocol`, `LaunchAtLoginCoordinatorProtocol`
 - All tests are `async` (Swift Concurrency); tests run hosted in the app, which skips the real scenes under XCTest
 - `SuspendingKhvolClient` suspends until manually resumed — use for concurrency invariant tests
 - Stale-result discarding pattern: volume commit results carry a `commitStart` timestamp; results superseded by a newer commit or cancel are silently dropped
