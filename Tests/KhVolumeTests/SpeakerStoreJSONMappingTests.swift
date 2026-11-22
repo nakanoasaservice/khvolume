@@ -10,9 +10,9 @@ struct SpeakerStoreJSONMappingTests {
         let mock = MockKhvolClient()
         mock.jsonStatusResult = .success(KhvolJSONStatus.stub(
             devices: [
-                "zeta": .init(level: 40, mute: false),
-                "alpha": .init(level: 80, mute: false),
-                "mu": .init(level: 60, mute: false),
+                ("zeta", .init(level: 40, mute: false)),
+                ("alpha", .init(level: 80, mute: false)),
+                ("mu", .init(level: 60, mute: false)),
             ],
             levels: [40, 80, 60]
         ))
@@ -22,6 +22,24 @@ struct SpeakerStoreJSONMappingTests {
 
         let names = store.status.devices.map(\.name)
         #expect(names == ["alpha", "mu", "zeta"])
+    }
+
+    @Test("keeps both speakers when they share a name")
+    func sameNameSpeakersAreKept() async {
+        let mock = MockKhvolClient()
+        mock.jsonStatusResult = .success(.stub(
+            devices: [
+                ("KH 120", .init(level: 50, mute: false)),
+                ("KH 120", .init(level: 60, mute: false)),
+            ],
+            levels: [50, 60]
+        ))
+        let store = SpeakerStore.makeForTesting(client: mock)
+
+        await store.refresh()
+
+        #expect(store.status.devices.map(\.level) == [50, 60])
+        #expect(Set(store.status.devices.map(\.id)).count == 2)
     }
 
     @Test("computes averageLevel as mean of levels")
@@ -78,7 +96,7 @@ struct SpeakerStoreJSONMappingTests {
     func deviceLevelMapped() async {
         let mock = MockKhvolClient()
         mock.jsonStatusResult = .success(.stub(
-            devices: ["speaker": .init(level: 77, mute: true)],
+            devices: [("speaker", .init(level: 77, mute: true))],
             levels: [77]
         ))
         let store = SpeakerStore.makeForTesting(client: mock)
@@ -94,7 +112,7 @@ struct SpeakerStoreJSONMappingTests {
     func nilDeviceLevelDefaultsToZero() async {
         let mock = MockKhvolClient()
         mock.jsonStatusResult = .success(.stub(
-            devices: ["speaker": .init(level: nil, mute: nil)],
+            devices: [("speaker", .init(level: nil, mute: nil))],
             levels: [0]
         ))
         let store = SpeakerStore.makeForTesting(client: mock)

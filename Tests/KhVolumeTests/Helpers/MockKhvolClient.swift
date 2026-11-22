@@ -39,7 +39,7 @@ final class MockKhvolClient: KhvolClientProtocol, @unchecked Sendable {
 
 extension KhvolJSONStatus {
     static func stub(
-        devices: [String: KhvolJSONStatus.DeviceInfo] = [:],
+        devices: [(name: String, output: KhvolJSONStatus.DeviceInfo)] = [],
         levels: [Double] = [50],
         muted: Bool = false,
         balanced: Bool = true

@@ -551,12 +551,12 @@ final class SpeakerStore {
     private func apply(json: KhvolJSONStatus) {
         status.isMuted = json.muted
         status.levelMismatch = !json.balanced
-        status.devices = json.devices.map { key, val in
+        status.devices = json.devices.enumerated().map { index, device in
             DeviceLevel(
-                id: key,
-                name: key,
-                level: val.level ?? 0,
-                muted: val.mute ?? false
+                id: index,
+                name: device.name,
+                level: device.output.level ?? 0,
+                muted: device.output.mute ?? false
             )
         }.sorted { $0.name < $1.name }
         status.averageLevel = json.levels.isEmpty ? 0 : json.levels.reduce(0, +) / Double(json.levels.count)

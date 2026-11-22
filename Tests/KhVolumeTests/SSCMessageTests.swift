@@ -41,7 +41,7 @@ struct SpeakerStatusBuilderTests {
         #expect(status.levels == [50, 50.02])
         #expect(status.muted)
         #expect(status.balanced)
-        #expect(status.devices.keys.sorted() == ["Left", "Right"])
+        #expect(status.devices.map(\.name) == ["Left", "Right"])
     }
 
     @Test("levels 0.1 dB apart are unbalanced")
