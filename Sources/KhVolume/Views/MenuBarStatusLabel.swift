@@ -12,6 +12,5 @@ struct MenuBarStatusLabel: View {
             }
         }
         .frame(minWidth: 24, minHeight: 16, alignment: .center)
-        .task { await store.startupIfNeeded() }
     }
 }

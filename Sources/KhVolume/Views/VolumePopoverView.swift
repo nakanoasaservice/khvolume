@@ -34,10 +34,7 @@ struct VolumePopoverView: View {
         }
         .onAppear {
             focusedNavIndex = nil
-            Task {
-                await store.startupIfNeeded()
-                await store.preparePopover()
-            }
+            Task { await store.preparePopover() }
         }
         .onChange(of: navigableItems) { _, _ in
             clampFocusedNavIndex()
