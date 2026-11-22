@@ -2,6 +2,12 @@ import Foundation
 
 /// SSC (Sennheiser Sound Control) messages used by KH Volume, and parsing of their replies.
 enum SSCMessage {
+    /// The `audio.out` part of a reply; a speaker only includes the values that were asked for or set.
+    struct Output: Equatable {
+        let level: Double?
+        let mute: Bool?
+    }
+
     static let deviceNameQuery = #"{"device":{"name":null}}"#
     static let outputQuery = #"{"audio":{"out":{"level":null,"mute":null}}}"#
 
@@ -19,11 +25,11 @@ enum SSCMessage {
     }
 
     /// `{"audio":{"out":{"level":52.0,"mute":false}}}` → level and mute (either may be missing).
-    static func parseOutput(_ reply: String) -> KhvolJSONStatus.DeviceInfo? {
+    static func parseOutput(_ reply: String) -> Output? {
         guard let audio = object(reply)?["audio"] as? [String: Any],
               let out = audio["out"] as? [String: Any]
         else { return nil }
-        return KhvolJSONStatus.DeviceInfo(
+        return Output(
             level: (out["level"] as? NSNumber)?.doubleValue,
             mute: out["mute"] as? Bool
         )
@@ -36,25 +42,5 @@ enum SSCMessage {
 
     private static func object(_ reply: String) -> [String: Any]? {
         try? JSONSerialization.jsonObject(with: Data(reply.utf8)) as? [String: Any]
-    }
-}
-
-enum SpeakerStatusBuilder {
-    /// Levels closer than this count as balanced.
-    static let balanceTolerance = 0.05
-
-    /// Combines per-speaker readings (in speaker order) into the status the store consumes.
-    static func status(from readings: [(name: String, output: KhvolJSONStatus.DeviceInfo)]) throws(KhvolError) -> KhvolJSONStatus {
-        guard !readings.isEmpty else { throw .deviceError("no devices found") }
-        let levels = readings.compactMap(\.output.level)
-        guard levels.count == readings.count else {
-            throw .deviceError("missing level from one or more devices")
-        }
-        return KhvolJSONStatus(
-            devices: readings,
-            levels: levels,
-            muted: readings.contains { $0.output.mute == true },
-            balanced: levels.max()! - levels.min()! < balanceTolerance
-        )
     }
 }

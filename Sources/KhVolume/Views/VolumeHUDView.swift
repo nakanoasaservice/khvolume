@@ -12,7 +12,7 @@ struct VolumeHUDView: View {
                 .foregroundStyle(.white)
 
             HStack(spacing: 10) {
-                Image(systemName: store.status.isMuted ? "speaker.slash.fill" : "speaker.fill")
+                Image(systemName: store.isMuted ? "speaker.slash.fill" : "speaker.fill")
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(.white.opacity(0.85))
                     .frame(width: 14)

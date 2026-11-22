@@ -18,6 +18,6 @@ struct SSCBrowserTests {
         defer { listener.cancel() }
 
         let found = await SSCBrowser.scan(interface: "lo0", browseDuration: .seconds(2))
-        #expect(found[name] == "::1")
+        #expect(found.first { $0.id == name }?.address == "::1")
     }
 }

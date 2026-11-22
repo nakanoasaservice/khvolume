@@ -7,7 +7,7 @@ import Foundation
 /// process dies, while NWConnection flows that are never cancelled stay half-open on the speaker.
 /// KH speakers accept only 4 concurrent connections, so leaked flows lock them up.
 ///
-/// Not thread-safe; callers serialize access (see `SSCSpeakerPool`).
+/// Not thread-safe; callers serialize access (see `SpeakerLink`).
 final class SSCSocket {
     enum Failure: Error, Equatable {
         case connect(String)

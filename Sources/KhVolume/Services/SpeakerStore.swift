@@ -1,200 +1,118 @@
-import Foundation
+import AppKit
 import Observation
 
-enum StorePhase: Equatable {
-    case idle
-    case loading(LoadReason)
-
-    enum LoadReason: Equatable {
-        case refresh
-        case interfaceSelection(name: String)
-        case mutation
-    }
-
-    var isStatusLoading: Bool {
-        if case .loading = self { return true }
-        return false
-    }
-}
-
-private enum PhaseEvent {
-    case loadBegan(StorePhase.LoadReason)
-    case loadCompleted(Result<KhvolJSONStatus, KhvolError>)
-    case silentRefreshCompleted(Result<KhvolJSONStatus, KhvolError>)
-}
-
-private enum VolumeState {
-    case idle
-    case pending(level: Double, lastCommitStart: ContinuousClock.Instant?)
-    case committing(level: Double, commitStart: ContinuousClock.Instant)
-
-    var pendingLevel: Double? {
-        switch self {
-        case .idle: nil
-        case .pending(let level, _): level
-        case .committing(let level, _): level
-        }
-    }
-}
-
-private enum VolumeEvent {
-    case previewSet(Double)
-    case cancelled
-    case throttleExpired
-    case commitSucceeded(level: Double, KhvolJSONStatus)
-    case commitFailed(level: Double, any Error)
-}
-
-// MARK: - SpeakerStoreTiming
-
-/// Injectable timing constants — set to `.testing` in unit tests to eliminate real sleeps.
-struct SpeakerStoreTiming {
-    /// Minimum interval between consecutive volume commits to the device.
-    var volumeThrottleInterval: Duration = .milliseconds(200)
-    /// Debounce applied after a network path change before attempting recovery.
-    var networkRecoveryDelay: Duration = .milliseconds(500)
-}
-
-extension SpeakerStoreTiming {
-    /// All delays zeroed out so tests run without real sleeps.
-    static let testing = SpeakerStoreTiming(
-        volumeThrottleInterval: .zero,
-        networkRecoveryDelay: .zero
-    )
-}
-
-// MARK: - SpeakerStore
-
+/// The app's state: settings, what the speakers report, and what the user asked of them.
 @Observable
 @MainActor
 final class SpeakerStore {
     var config: AppConfig
-    var status = SpeakerStatus()
     var interfaces: [NetworkInterfaceInfo] = []
-    var phase: StorePhase = .idle
-    /// True while status refresh, scan, or other non-volume mutations are in flight.
-    var isStatusLoading: Bool { phase.isStatusLoading }
-    /// Terminal connection state (ready/warning/disconnected). Use `connection` for display.
-    /// Not private so tests can start from a connected store.
-    var connectionState: ConnectionState = .disconnected
-    /// Derives `.scanning` from `phase`, so the stored value never needs to be `.scanning`.
-    var connection: ConnectionState { phase.isStatusLoading ? .scanning : connectionState }
+    /// What the speakers last reported; empty while nothing is known.
+    /// Not `private(set)` so tests can start from a known state, like `connection`.
+    var outputs: [SpeakerOutput] = []
+    var connection: ConnectionState = .disconnected
+    /// The level the user asked for, until the speakers have confirmed it.
+    private(set) var targetLevel: Double?
+
     /// Forwarded from `launchAtLoginCoordinator.errorMessage`.
     var launchAtLoginMessage: String? { launchAtLoginCoordinator.errorMessage }
-    /// Uncommitted target level shared by hotkeys, popover slider, and HUD preview.
-    var pendingVolumeLevel: Double? {
-        get { volumeState.pendingLevel }
-        set {
-            if let v = newValue {
-                volumeState = .pending(level: v, lastCommitStart: nil)
-            } else {
-                volumeState = .idle
-            }
-        }
-    }
 
     /// Manages LaunchAtLogin preference and owns its error-message state.
-    /// Injected in tests; production init creates a real `LaunchAtLoginCoordinator`.
     let launchAtLoginCoordinator: any LaunchAtLoginManaging
 
-    private var refreshTask: Task<Void, Never>?
-    private var volumeCommitTask: Task<Void, Never>?
+    private let speakers: any SpeakerControlling
+    private let listInterfaces: () -> [NetworkInterfaceInfo]
+    private let defaults: UserDefaults
+    /// Debounce applied after a network path change before attempting recovery.
+    private let networkRecoveryDelay: Duration
     /// Retained HotkeyService instance (production: HotkeyManager; tests: mock).
     private var hotkeyService: (any HotkeyService)?
-    private var hasStartedUp = false
-    private var volumeState: VolumeState = .idle
     private var networkMonitor: (any NetworkMonitorService)?
     private var networkRecoveryTask: Task<Void, Never>?
+    private var hasStartedUp = false
 
-    /// Injected in tests; nil means production path creates KhvolClient directly.
-    private let clientFactory: (() -> any KhvolClientProtocol)?
-    /// Timing constants — replaced with `.testing` in unit tests to eliminate real sleeps.
-    private let timing: SpeakerStoreTiming
+    /// The speaker operation queued last; each one waits for the one before it.
+    private var lastOperation: Task<Void, Never>?
+    private var isWriting = false
+    private var isRefreshing = false
 
     init() {
         config = AppDefaults.loadConfig()
-        clientFactory = nil
+        speakers = SpeakerGroup()
+        listInterfaces = NetworkInterfaceLister.list
+        defaults = .standard
+        networkRecoveryDelay = .milliseconds(500)
         launchAtLoginCoordinator = LaunchAtLoginCoordinator()
-        timing = SpeakerStoreTiming()
         // Start here, not from a view, so volume and hotkeys work before the popover is opened.
-        Task { await startupIfNeeded() }
+        Task { startupIfNeeded() }
     }
 
     /// Testing initializer — all infrastructure dependencies are injectable.
     ///
     /// - Parameters:
-    ///   - suppressStartup: When `true` (the default), sets `hasStartedUp = true` so that
-    ///     `startupIfNeeded()` is a no-op even if called manually.
+    ///   - suppressStartup: When `true` (the default), `startupIfNeeded()` is a no-op.
     ///     Pass `false` and call `startupIfNeeded()` explicitly to test the startup path.
     init(
         config: AppConfig,
-        clientFactory: @escaping () -> any KhvolClientProtocol,
+        speakers: any SpeakerControlling,
+        listInterfaces: @escaping () -> [NetworkInterfaceInfo] = { [] },
+        defaults: UserDefaults,
         networkMonitor: (any NetworkMonitorService)? = nil,
         hotkeyService: (any HotkeyService)? = nil,
         launchAtLoginCoordinator: (any LaunchAtLoginManaging)? = nil,
-        timing: SpeakerStoreTiming = SpeakerStoreTiming(),
+        networkRecoveryDelay: Duration = .zero,
         suppressStartup: Bool = true
     ) {
         self.config = config
-        self.clientFactory = clientFactory
+        self.speakers = speakers
+        self.listInterfaces = listInterfaces
+        self.defaults = defaults
         self.networkMonitor = networkMonitor
         self.hotkeyService = hotkeyService
         self.launchAtLoginCoordinator = launchAtLoginCoordinator ?? LaunchAtLoginCoordinator()
-        self.timing = timing
+        self.networkRecoveryDelay = networkRecoveryDelay
         if suppressStartup { self.hasStartedUp = true }
     }
 
     // MARK: - Startup
 
     /// Called at launch so volume and hotkeys work without opening the menu bar popover.
-    func startupIfNeeded() async {
+    func startupIfNeeded() {
         guard !hasStartedUp else { return }
         hasStartedUp = true
 
         if hotkeyService == nil {
-            let manager = HotkeyManager(store: self)
-            hotkeyService = manager
+            hotkeyService = HotkeyManager(store: self)
         }
         hotkeyService?.register()
 
         launchAtLoginCoordinator.reconcile(config: &config)
         setupNetworkMonitor()
-        await loadInterfaces()
-        scheduleRefresh()
+        observeSleep()
+        loadInterfaces()
+        refresh()
     }
 
-    // MARK: - Computed properties
+    // MARK: - Derived state
 
-    var interfaceName: String? {
-        config.networkInterface
-    }
-
-    /// Current level for all volume UI, including uncommitted hotkey preview.
-    var previewAverageLevel: Double {
-        pendingVolumeLevel ?? status.averageLevel
-    }
-
-    private func clampVolume(_ level: Double) -> Double {
-        min(config.effectiveMax, max(0, level))
-    }
+    /// The level every volume control shows: the requested one until the speakers confirm it.
+    var level: Double { targetLevel ?? outputs.level }
+    var isMuted: Bool { outputs.isMuted }
+    var isBalanced: Bool { outputs.isBalanced }
+    var isSearching: Bool { connection == .searching }
 
     var blocksVolumeIncrease: Bool {
-        status.levelMismatch && !config.allowForceOnMismatch
+        !isBalanced && !config.allowForceOnMismatch
     }
 
-    // MARK: - Client
-
-    private func makeClient() -> any KhvolClientProtocol {
-        if let factory = clientFactory {
-            return factory()
-        }
-        return KhvolClient(interface: interfaceName)
+    var errorMessage: String? {
+        if case .failed(let error) = connection { error.errorDescription } else { nil }
     }
 
     // MARK: - Config persistence
 
     func saveConfig() {
-        AppDefaults.saveConfig(config)
+        AppDefaults.saveConfig(config, to: defaults)
     }
 
     func applyLaunchAtLoginPreference() {
@@ -205,75 +123,139 @@ final class SpeakerStore {
         launchAtLoginCoordinator.reconcile(config: &config)
     }
 
-    // MARK: - Status refresh
+    // MARK: - Volume
 
-    func refresh() async {
-        guard case .idle = phase else { return }
-        await withLoadPhase(.refresh) {
-            await fetchStatus()
+    /// Asks the speakers for `level`. The controls show it at once; it is sent as soon as the
+    /// speakers have answered the previous request, and levels asked for meanwhile replace it.
+    func setLevel(_ level: Double) {
+        // No level is known unless connected, so read it first instead of sending one derived from it.
+        guard connection == .connected else {
+            refresh()
+            return
+        }
+        // Compared before clamping, so a step up at the limit is still refused.
+        if blocksVolumeIncrease && level > self.level { return }
+
+        targetLevel = min(config.effectiveMax, max(0, level))
+        guard !isWriting else { return }
+        isWriting = true
+        enqueue { await self.writeTargetLevel() }
+    }
+
+    /// Relative volume change from a delta (e.g. hotkey step).
+    func adjustVolume(by delta: Double) {
+        setLevel(level + delta)
+    }
+
+    func toggleMute() async {
+        guard connection == .connected else {
+            refresh()
+            return
+        }
+        await enqueue { await self.writeMuteToggle() }.value
+    }
+
+    private func writeMuteToggle() async {
+        // An operation queued before this one may have failed.
+        guard connection == .connected else { return }
+        do {
+            outputs = try await speakers.setMuted(!isMuted)
+        } catch {
+            fail(error)
         }
     }
 
-    /// Status-only refresh that never sets a loading phase — safe to call during active UI interaction.
-    private func refreshSilently() async {
-        guard case .idle = phase else { return }
-        guard case .idle = volumeState else { return }
-        reduce(.silentRefreshCompleted(await fetchStatus()))
-    }
-
-    /// Acquire the load phase, yield for UI, run `fetch`, then release. Caller must guard `.idle` first.
-    private func withLoadPhase(
-        _ reason: StorePhase.LoadReason,
-        _ fetch: () async -> Result<KhvolJSONStatus, KhvolError>
-    ) async {
-        reduce(.loadBegan(reason))
-        await Task.yield()
-        let result = await fetch()
-        reduce(.loadCompleted(result))
-    }
-
-    /// Popover open: refresh interface list and status without blocking controls.
-    func preparePopover() async {
-        await loadInterfaces()
-        await refreshSilently()
-    }
-
-    private func fetchStatus() async -> Result<KhvolJSONStatus, KhvolError> {
-        do {
-            return .success(try await makeClient().jsonStatus())
-        } catch {
-            if let recovered = await recoverAfterDeviceError(error) {
-                return .success(recovered)
+    /// Sends the target level until the speakers have the latest one.
+    private func writeTargetLevel() async {
+        defer { isWriting = false }
+        var written: Double?
+        while let target = targetLevel, target != written {
+            do {
+                outputs = try await speakers.setLevel(target)
+                written = target
+            } catch {
+                fail(error)
+                return
             }
-            return .failure(error)
+        }
+        targetLevel = nil
+    }
+
+    // MARK: - Connection
+
+    /// Reads the speakers' outputs, connecting first when needed. Does nothing while a read is
+    /// already queued or a level is being written, since either brings fresh outputs.
+    func refresh() {
+        guard !isRefreshing, !isWriting else { return }
+        isRefreshing = true
+        // The first connect may have to search; a later one retries or re-reads without blocking the controls.
+        if connection == .disconnected { connection = .searching }
+        enqueue {
+            defer { self.isRefreshing = false }
+            await self.connect(rescan: false)
         }
     }
 
-    /// Rescan only when no speakers have been stored yet.
-    private func recoverAfterDeviceError(_ err: KhvolError) async -> KhvolJSONStatus? {
-        guard case .noSpeakers = err else { return nil }
-        await loadInterfaces()
+    /// Popover open: refresh the interface list and the speakers' outputs.
+    func preparePopover() {
+        loadInterfaces()
+        refresh()
+    }
+
+    func selectInterface(_ name: String) async {
+        guard !isSearching else { return }
+        targetLevel = nil
+        config.networkInterface = name
+        saveConfig()
+        connection = .searching
+        await enqueue { await self.connect(rescan: true) }.value
+    }
+
+    private func connect(rescan: Bool) async {
+        if rescan { connection = .searching }
         do {
-            let client = makeClient()
-            let count = try await client.scan()
-            guard count > 0 else { return nil }
-            return try await client.jsonStatus()
+            outputs = try await speakers.connect(interface: config.networkInterface, rescan: rescan)
+            connection = .connected
         } catch {
-            return nil
+            fail(error)
         }
     }
 
-    // MARK: - Interface loading
+    /// Nothing is known about the speakers any more, so nothing is shown or sent until a read succeeds.
+    private func fail(_ error: SpeakerError) {
+        connection = .failed(error)
+        outputs = []
+        targetLevel = nil
+    }
 
-    func loadInterfaces() async {
-        do {
-            interfaces = try await makeClient().interfaces()
-        } catch {
-            interfaces = []
+    // MARK: - Speaker operations
+
+    /// Runs `operation` after every speaker operation queued before it, so results are applied in
+    /// the order the requests were made.
+    @discardableResult
+    private func enqueue(_ operation: @escaping @MainActor () async -> Void) -> Task<Void, Never> {
+        let previous = lastOperation
+        let task = Task {
+            await previous?.value
+            await operation()
+        }
+        lastOperation = task
+        return task
+    }
+
+    /// Waits until no speaker operation is queued or running.
+    func settle() async {
+        while let task = lastOperation {
+            await task.value
+            if lastOperation == task { lastOperation = nil }
         }
     }
 
-    // MARK: - Network monitoring
+    // MARK: - Network and sleep
+
+    func loadInterfaces() {
+        interfaces = listInterfaces()
+    }
 
     private func setupNetworkMonitor() {
         if networkMonitor == nil {
@@ -285,224 +267,39 @@ final class SpeakerStore {
         networkMonitor?.start()
     }
 
+    private func observeSleep() {
+        // Free the speakers' connection slots while asleep; requests reconnect after wake.
+        // No quit handler is needed: the kernel closes BSD sockets when the process exits.
+        NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.willSleepNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.disconnectSpeakers() }
+        }
+    }
+
+    /// Not queued behind other operations: closing is safe at any time and returns nothing to apply.
+    private func disconnectSpeakers() {
+        Task { await speakers.disconnect() }
+    }
+
     private func handleNetworkPathChange(isSatisfied: Bool) {
-        // Drop speaker connections on any network change
-        let client = makeClient()
-        Task { await client.resetConnections() }
+        // Connections do not survive a network change; the next request reconnects.
+        disconnectSpeakers()
 
         guard isSatisfied else { return }
 
         // Network restored: debounce to absorb rapid back-to-back firings
         networkRecoveryTask?.cancel()
         networkRecoveryTask = Task {
-            try? await Task.sleep(for: timing.networkRecoveryDelay)
+            try? await Task.sleep(for: networkRecoveryDelay)
             guard !Task.isCancelled else { return }
-            await loadInterfaces()
-            // Auto-refresh only when disconnected to avoid interrupting normal operation
-            if connectionState == .disconnected && !interfaces.isEmpty {
-                await refreshSilently()
+            loadInterfaces()
+            // Reconnect only when not connected, to avoid interrupting normal operation
+            if connection != .connected && !interfaces.isEmpty {
+                refresh()
             }
         }
-    }
-
-    // MARK: - Interface selection
-
-    func selectInterface(_ name: String) async {
-        guard case .idle = phase else { return }
-        cancelPendingVolume()
-        config.networkInterface = name
-        saveConfig()
-        await withLoadPhase(.interfaceSelection(name: name)) {
-            do throws(KhvolError) {
-                let client = makeClient()
-                _ = try await client.scan()
-                return .success(try await client.jsonStatus())
-            } catch {
-                return .failure(error)
-            }
-        }
-    }
-
-    // MARK: - Volume preview / adjust
-
-    /// Updates the shared preview level and debounces commit to the device.
-    func setVolumePreview(_ level: Double) {
-        guard !isStatusLoading else { return }
-        // No level is known while disconnected (it may still be the initial 0), so read it first
-        // instead of sending one derived from it.
-        guard connectionState != .disconnected else {
-            scheduleRefresh()
-            return
-        }
-
-        // Compared before clamping, so a step up at the limit is still refused.
-        if blocksVolumeIncrease && level > previewAverageLevel {
-            status.lastError = "Left and right levels do not match"
-            return
-        }
-
-        status.lastError = nil
-        reduceVolume(.previewSet(clampVolume(level)))
-    }
-
-    /// Relative volume change from a delta (e.g. hotkey step).
-    func adjustVolume(by delta: Double) {
-        setVolumePreview(previewAverageLevel + delta)
-    }
-
-    func toggleMute() async {
-        cancelPendingVolume()
-        let targetMuted = !status.isMuted
-        await runMutation { (client: any KhvolClientProtocol) async throws(KhvolError) in
-            try await client.setMuted(targetMuted)
-        }
-    }
-
-    func cancelPendingVolume() {
-        reduceVolume(.cancelled)
-    }
-
-    /// Awaits the current volume commit task to completion.
-    /// Use after `setVolumePreview(_:)` to synchronise with the commit task.
-    func awaitVolumeCommit() async {
-        await volumeCommitTask?.value
-    }
-
-    // MARK: - Volume commit
-
-    private func scheduleVolumeCommit() {
-        volumeCommitTask = Task {
-            guard !Task.isCancelled else { return }
-            guard case .pending(_, let lastCommitStart) = volumeState else { return }
-            if let last = lastCommitStart {
-                let remaining = timing.volumeThrottleInterval - (ContinuousClock.now - last)
-                if remaining > .zero {
-                    try? await Task.sleep(for: remaining)
-                    guard !Task.isCancelled else { return }
-                }
-            }
-            guard case .pending(let levelToCommit, _) = volumeState else { return }
-            reduceVolume(.throttleExpired)
-            let client = makeClient()
-            do {
-                let json = try await client.setLevel(levelToCommit)
-                reduceVolume(.commitSucceeded(level: levelToCommit, json))
-            } catch {
-                reduceVolume(.commitFailed(level: levelToCommit, error))
-            }
-        }
-    }
-
-    // MARK: - FSM reducer
-
-    private func reduce(_ event: PhaseEvent) {
-        switch (phase, event) {
-
-        case (.idle, .loadBegan(let reason)):
-            refreshTask?.cancel()
-            status.lastError = nil
-            phase = .loading(reason)
-
-        case (.loading, .loadCompleted(.success(let json))):
-            apply(json: json)
-            phase = .idle
-
-        case (.loading(let reason), .loadCompleted(.failure(let err))):
-            connectionState = .disconnected
-            status.lastError = err.localizedDescription
-            if reason != .mutation { status.devices = [] }
-            phase = .idle
-
-        case (_, .silentRefreshCompleted(.success(let json))):
-            apply(json: json)
-
-        case (_, .silentRefreshCompleted(.failure(let err))):
-            connectionState = .disconnected
-            status.lastError = err.localizedDescription
-            status.devices = []
-
-        default:
-            assertionFailure("unexpected transition: \(phase) + \(event)")
-        }
-    }
-
-    private func reduceVolume(_ event: VolumeEvent) {
-        switch (volumeState, event) {
-
-        case (_, .previewSet(let level)):
-            let lastCommitStart: ContinuousClock.Instant?
-            switch volumeState {
-            case .idle:
-                lastCommitStart = nil
-            case .pending(_, let ts):
-                lastCommitStart = ts
-            case .committing(_, let start):
-                lastCommitStart = start
-            }
-            volumeCommitTask?.cancel()
-            volumeState = .pending(level: level, lastCommitStart: lastCommitStart)
-            scheduleVolumeCommit()
-
-        case (_, .cancelled):
-            volumeCommitTask?.cancel()
-            volumeCommitTask = nil
-            volumeState = .idle
-
-        case (.pending(let level, _), .throttleExpired):
-            volumeState = .committing(level: level, commitStart: ContinuousClock.now)
-
-        case (.committing(let committingLevel, _), .commitSucceeded(let level, let json))
-                where committingLevel == level:
-            apply(json: json)
-            volumeState = .idle
-
-        case (.committing(let committingLevel, _), .commitFailed(let level, let err))
-                where committingLevel == level:
-            connectionState = .disconnected
-            status.lastError = err.localizedDescription
-            if err is KhvolError { status.devices = [] }
-            // Drop the level: keeping it pending would block silent refreshes and show a level
-            // the speakers never received.
-            volumeState = .idle
-
-        case (_, .commitSucceeded), (_, .commitFailed):
-            // Stale result from a superseded commit; discard silently.
-            break
-
-        default:
-            assertionFailure("unexpected volume transition: \(volumeState) + \(event)")
-        }
-    }
-
-    private func runMutation(_ body: (any KhvolClientProtocol) async throws(KhvolError) -> KhvolJSONStatus) async {
-        guard case .idle = phase else { return }
-        await withLoadPhase(.mutation) {
-            do throws(KhvolError) {
-                return .success(try await body(makeClient()))
-            } catch {
-                return .failure(error)
-            }
-        }
-    }
-
-    private func apply(json: KhvolJSONStatus) {
-        connectionState = json.balanced ? .ready : .warning
-        status.lastError = nil
-        status.isMuted = json.muted
-        status.levelMismatch = !json.balanced
-        status.devices = json.devices.enumerated().map { index, device in
-            DeviceLevel(
-                id: index,
-                name: device.name,
-                level: device.output.level ?? 0,
-                muted: device.output.mute ?? false
-            )
-        }.sorted { $0.name < $1.name }
-        status.averageLevel = json.levels.isEmpty ? 0 : json.levels.reduce(0, +) / Double(json.levels.count)
-    }
-
-    func scheduleRefresh() {
-        refreshTask?.cancel()
-        refreshTask = Task { await refresh() }
     }
 }

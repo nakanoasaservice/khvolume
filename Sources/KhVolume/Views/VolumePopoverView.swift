@@ -34,7 +34,7 @@ struct VolumePopoverView: View {
         }
         .onAppear {
             focusedNavIndex = nil
-            Task { await store.preparePopover() }
+            store.preparePopover()
         }
         .onChange(of: navigableItems) { _, _ in
             clampFocusedNavIndex()
@@ -61,7 +61,7 @@ struct VolumePopoverView: View {
     private func isNavItemEnabled(_ item: PopoverNavItem) -> Bool {
         switch item {
         case .mute, .interface:
-            return !store.isStatusLoading
+            return !store.isSearching
         case .soundSettings, .quit:
             return true
         }
@@ -147,11 +147,11 @@ struct VolumePopoverView: View {
             }
             .padding(.horizontal, 8)
 
-            if store.status.levelMismatch {
+            if !store.isBalanced {
                 levelMismatchDetails
             }
 
-            if let err = store.status.lastError {
+            if let err = store.errorMessage {
                 Text(err)
                     .font(.caption)
                     .foregroundStyle(.orange)
@@ -165,13 +165,13 @@ struct VolumePopoverView: View {
         Button {
             activate(.mute)
         } label: {
-            Image(systemName: store.status.isMuted ? "speaker.slash.fill" : "speaker.wave.2.fill")
+            Image(systemName: store.isMuted ? "speaker.slash.fill" : "speaker.wave.2.fill")
                 .font(.title3)
                 .padding(4)
                 .contentShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
         }
         .buttonStyle(.plain)
-        .disabled(store.isStatusLoading)
+        .disabled(store.isSearching)
         .background {
             RoundedRectangle(cornerRadius: 6, style: .continuous)
                 .fill(muteHighlightFill)
@@ -179,15 +179,15 @@ struct VolumePopoverView: View {
     }
 
     private var muteHighlightFill: Color {
-        guard !store.isStatusLoading, isKeyboardFocused(.mute) else { return .clear }
+        guard !store.isSearching, isKeyboardFocused(.mute) else { return .clear }
         return Color(nsColor: .selectedContentBackgroundColor).opacity(0.85)
     }
 
     private var sliderControl: some View {
         Slider(
             value: Binding(
-                get: { store.previewAverageLevel },
-                set: { store.setVolumePreview($0) }
+                get: { store.level },
+                set: { store.setLevel($0) }
             ),
             in: 0...store.config.effectiveMax
         )
@@ -196,17 +196,15 @@ struct VolumePopoverView: View {
 
     private var levelMismatchDetails: some View {
         VStack(alignment: .leading, spacing: 6) {
-            if !store.status.devices.isEmpty {
-                VStack(alignment: .leading, spacing: 4) {
-                    ForEach(store.status.devices) { device in
-                        Text("\(device.name)  \(Int(device.level.rounded())) dB")
-                            .font(.caption)
-                            .foregroundStyle(.orange)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
+            VStack(alignment: .leading, spacing: 4) {
+                ForEach(store.outputs.sorted { ($0.name, $0.id) < ($1.name, $1.id) }) { output in
+                    Text("\(output.name)  \(Int(output.level.rounded())) dB")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .padding(.horizontal, 8)
             }
+            .padding(.horizontal, 8)
 
             Text("Left and right levels do not match. You can only decrease volume.")
                 .font(.caption)
@@ -228,9 +226,9 @@ struct VolumePopoverView: View {
             ForEach(activeInterfaces) { iface in
                 PopoverMenuRow(
                     title: interfaceRowTitle(iface),
-                    isSelected: store.interfaceName == iface.name,
+                    isSelected: store.config.networkInterface == iface.name,
                     isKeyboardFocused: isKeyboardFocused(.interface(iface.name)),
-                    isEnabled: !store.isStatusLoading
+                    isEnabled: !store.isSearching
                 ) {
                     activate(.interface(iface.name))
                 }
@@ -239,7 +237,7 @@ struct VolumePopoverView: View {
     }
 
     private var activeInterfaces: [NetworkInterfaceInfo] {
-        store.interfaces.filter { $0.status == "active" }
+        store.interfaces.filter(\.isActive)
     }
 
     private func interfaceRowTitle(_ iface: NetworkInterfaceInfo) -> String {
