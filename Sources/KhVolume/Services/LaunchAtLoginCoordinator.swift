@@ -31,6 +31,8 @@ final class LaunchAtLoginCoordinator: LaunchAtLoginManaging {
     /// Updates `config` and `errorMessage` based on the result.
     /// Saves the config on failure.
     func apply(config: inout AppConfig) {
+        // A failure turns the preference back off, which calls this again; keep its message then.
+        guard config.launchAtLogin != LaunchAtLogin.serviceIsEnabled else { return }
         let result = LaunchAtLogin.setEnabled(config.launchAtLogin)
         switch result {
         case .success:
