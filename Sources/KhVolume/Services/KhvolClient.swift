@@ -17,19 +17,10 @@ extension KhvolClientProtocol {
 enum KhvolError: LocalizedError {
     case commandFailed(String)
     case deviceError(String)
-    case parseFailed
-    case timedOut
 
     var errorDescription: String? {
         switch self {
-        case .commandFailed(let msg):
-            return msg
-        case .deviceError(let msg):
-            return msg
-        case .parseFailed:
-            return "Failed to parse speaker response"
-        case .timedOut:
-            return "Speaker did not respond in time"
+        case .commandFailed(let message), .deviceError(let message): message
         }
     }
 }
