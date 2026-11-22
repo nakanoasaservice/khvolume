@@ -17,10 +17,13 @@ extension KhvolClientProtocol {
 enum KhvolError: LocalizedError {
     case commandFailed(String)
     case deviceError(String)
+    /// No scan has stored a speaker yet; `SpeakerStore` answers this with a rescan.
+    case noSpeakers
 
     var errorDescription: String? {
         switch self {
         case .commandFailed(let message), .deviceError(let message): message
+        case .noSpeakers: "No speakers configured"
         }
     }
 }
@@ -86,7 +89,7 @@ struct KhvolClient {
     private func sendToAll(_ message: String) async throws(KhvolError) -> [SSCSpeakerPool.Reply] {
         let interface = try configuredInterface()
         let addresses = speakers.load()
-        guard !addresses.isEmpty else { throw .deviceError("no speakers configured; run scan") }
+        guard !addresses.isEmpty else { throw .noSpeakers }
         let replies = try await pool.send(message, to: addresses, interface: interface)
         if let failed = replies.first(where: { SSCMessage.isError($0.reply) }) {
             throw .deviceError("\(failed.name): \(failed.reply)")

@@ -5,11 +5,6 @@ enum AppDefaults {
     static let configKey = "config"
     static let speakersKey = "speakers"
 
-    /// True when a scan has stored at least one speaker (avoids rescan on every popover open).
-    static var hasSpeakerCache: Bool {
-        !SpeakerDirectory().load().isEmpty
-    }
-
     static func loadConfig(from defaults: UserDefaults = .standard) -> AppConfig {
         // Stored as a plist dictionary so `defaults read` shows readable values.
         guard let object = defaults.object(forKey: configKey),

@@ -8,6 +8,7 @@ final class MockKhvolClient: KhvolClientProtocol, @unchecked Sendable {
     var scanResult: Result<Int, KhvolError> = .success(1)
 
     private(set) var jsonStatusCallCount = 0
+    private(set) var scanCallCount = 0
     private(set) var setLevelCallCount = 0
     private(set) var lastSetLevelArg: Double?
     private(set) var lastSetMutedArg: Bool?
@@ -33,7 +34,8 @@ final class MockKhvolClient: KhvolClientProtocol, @unchecked Sendable {
     }
 
     func scan() async throws(KhvolError) -> Int {
-        try scanResult.get()
+        scanCallCount += 1
+        return try scanResult.get()
     }
 }
 
