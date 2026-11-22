@@ -5,7 +5,6 @@ extension SpeakerStore {
     /// Creates a `SpeakerStore` suitable for unit tests.
     ///
     /// Defaults chosen for test isolation:
-    /// - `hasSpeakerCache` returns `true` so `shouldRescan` tests only exercise message matching.
     /// - `timing` is `.testing` (all delays zero) so tests run without real sleeps.
     /// - `suppressStartup: true` prevents `startupIfNeeded()` from running automatically.
     /// - The store starts connected, as after a successful refresh, so volume changes are sent.
@@ -18,7 +17,6 @@ extension SpeakerStore {
         networkMonitor: MockNetworkMonitorService? = nil,
         hotkeyService: MockHotkeyService? = nil,
         launchAtLoginCoordinator: MockLaunchAtLoginCoordinator? = nil,
-        hasSpeakerCache: @escaping () -> Bool = { true },
         now: @escaping () -> Date = { Date() },
         timing: SpeakerStoreTiming = .testing
     ) -> SpeakerStore {
@@ -28,7 +26,6 @@ extension SpeakerStore {
             networkMonitor: networkMonitor,
             hotkeyService: hotkeyService,
             launchAtLoginCoordinator: launchAtLoginCoordinator,
-            hasSpeakerCache: hasSpeakerCache,
             now: now,
             timing: timing
         )

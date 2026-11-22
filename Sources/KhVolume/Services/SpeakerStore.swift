@@ -114,9 +114,6 @@ final class SpeakerStore {
     private let clientFactory: (() -> any KhvolClientProtocol)?
     /// Timing constants — replaced with `.testing` in unit tests to eliminate real sleeps.
     private let timing: SpeakerStoreTiming
-    /// Returns whether a speaker-config cache file exists on disk.
-    /// Injected in tests to decouple `shouldRescan` from the filesystem.
-    private let hasSpeakerCache: () -> Bool
     /// Returns the current date/time.
     /// Injected in tests to make interface-cache TTL logic deterministic.
     private let now: () -> Date
@@ -125,7 +122,6 @@ final class SpeakerStore {
         config = AppDefaults.loadConfig()
         clientFactory = nil
         launchAtLoginCoordinator = LaunchAtLoginCoordinator()
-        hasSpeakerCache = { AppDefaults.hasSpeakerCache }
         now = { Date() }
         timing = SpeakerStoreTiming()
         KhVolumeBootstrap.store = self
@@ -144,7 +140,6 @@ final class SpeakerStore {
         networkMonitor: (any NetworkMonitorService)? = nil,
         hotkeyService: (any HotkeyService)? = nil,
         launchAtLoginCoordinator: (any LaunchAtLoginManaging)? = nil,
-        hasSpeakerCache: @escaping () -> Bool = { AppDefaults.hasSpeakerCache },
         now: @escaping () -> Date = { Date() },
         timing: SpeakerStoreTiming = SpeakerStoreTiming(),
         suppressStartup: Bool = true
@@ -154,7 +149,6 @@ final class SpeakerStore {
         self.networkMonitor = networkMonitor
         self.hotkeyService = hotkeyService
         self.launchAtLoginCoordinator = launchAtLoginCoordinator ?? LaunchAtLoginCoordinator()
-        self.hasSpeakerCache = hasSpeakerCache
         self.now = now
         self.timing = timing
         if suppressStartup { self.hasStartedUp = true }
@@ -266,9 +260,9 @@ final class SpeakerStore {
         }
     }
 
-    /// Rescan only when the speaker cache is missing or a rescan keyword is in the error message.
+    /// Rescan only when no speakers have been stored yet.
     private func recoverAfterDeviceError(_ err: KhvolError) async -> KhvolJSONStatus? {
-        guard case .deviceError(let message) = err, shouldRescan(after: message) else { return nil }
+        guard case .noSpeakers = err else { return nil }
         await loadInterfaces(force: true)
         do {
             let client = makeClient()
@@ -278,12 +272,6 @@ final class SpeakerStore {
         } catch {
             return nil
         }
-    }
-
-    func shouldRescan(after message: String) -> Bool {
-        if !hasSpeakerCache() { return true }
-        let lower = message.lowercased()
-        return lower.contains("run scan") || lower.contains("no speakers configured")
     }
 
     // MARK: - Interface loading

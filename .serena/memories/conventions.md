@@ -20,7 +20,7 @@
 - `interfaces()` → network interfaces with link status
 - `setLevel(_:)` / `setMuted(_:)` → send to all speakers, then return fresh status
 - `resetConnections()` → drop pooled connections (called on network path changes)
-- Error messages containing "run scan" trigger an automatic rescan in `SpeakerStore.shouldRescan`
+- `KhvolError.noSpeakers` (no scan has stored a speaker yet) triggers an automatic rescan in `SpeakerStore`
 
 ## File organisation
 

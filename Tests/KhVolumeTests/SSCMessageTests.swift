@@ -111,8 +111,8 @@ struct KhvolClientConfigurationTests {
         await #expect {
             _ = try await client.jsonStatus()
         } throws: { error in
-            guard case .deviceError(let message) = error as? KhvolError else { return false }
-            return message == "no speakers configured; run scan"
+            guard case .noSpeakers = error as? KhvolError else { return false }
+            return true
         }
     }
 }
