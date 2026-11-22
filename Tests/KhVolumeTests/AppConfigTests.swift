@@ -65,6 +65,16 @@ struct AppDefaultsTests {
         #expect(AppDefaults.loadConfig(from: defaults) == config)
     }
 
+    @Test("a config that lacks a setting is replaced with the defaults")
+    func undecodableConfigIsReplaced() {
+        let defaults = UserDefaults.makeForTesting()
+        defaults.set(["interface": "en15", "maxVolumeLimit": 80.0], forKey: AppDefaults.configKey)
+
+        #expect(AppDefaults.loadConfig(from: defaults) == AppConfig())
+        #expect(defaults.dictionary(forKey: AppDefaults.configKey)?["interface"] == nil)
+        #expect(defaults.dictionary(forKey: AppDefaults.configKey)?["volumeStep"] as? Double == 1)
+    }
+
     @Test("missing config loads defaults")
     func missingConfig() {
         #expect(AppDefaults.loadConfig(from: .makeForTesting()) == AppConfig())

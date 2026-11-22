@@ -27,7 +27,7 @@ TEST_RUNNER_KHVOL_HARDWARE_INTERFACE=en15 xcodebuild test -project KhVolume.xcod
 ## Running the app by hand
 
 - The debug build has the same bundle id as an installed `/Applications/KH Volume.app`, so both would register the same global hotkeys and share settings. Quit the installed one first.
-- Settings live in UserDefaults: `defaults read com.khvolume.app` shows `config` (`AppConfig`) and `speakers` (`{mDNS name: IPv6 address}` from the last scan). Settings saved by earlier versions must keep loading.
+- Settings live in UserDefaults: `defaults read com.khvolume.app` shows `config` (`AppConfig`) and `speakers` (`{mDNS name: IPv6 address}` from the last scan). There is no migration: a stored `config` that does not decode (a setting was added or its type changed) is replaced with the defaults at launch.
 - It is a menu bar app (`LSUIElement`): there is no window to look for after launch.
 
 ## Speakers and SSC
