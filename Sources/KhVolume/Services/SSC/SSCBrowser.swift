@@ -1,5 +1,6 @@
 import Foundation
 import Network
+import os
 
 /// Finds SSC devices (`_ssc._tcp`) on one interface via Bonjour.
 enum SSCBrowser {
@@ -27,13 +28,13 @@ enum SSCBrowser {
 
     private static func browse(interface: String, duration: Duration) async -> [Service] {
         let browser = NWBrowser(for: .bonjour(type: "_ssc._tcp", domain: "local."), using: NWParameters())
-        let results = LockedValue<Set<NWBrowser.Result>>([])
-        browser.browseResultsChangedHandler = { latest, _ in results.set(latest) }
+        let results = OSAllocatedUnfairLock(initialState: Set<NWBrowser.Result>())
+        browser.browseResultsChangedHandler = { latest, _ in results.withLock { $0 = latest } }
         browser.start(queue: .global(qos: .userInitiated))
         try? await Task.sleep(for: duration)
         browser.cancel()
 
-        return results.get().compactMap { result in
+        return results.withLock { $0 }.compactMap { result in
             guard case .service(let name, _, _, _) = result.endpoint else { return nil }
             // The speaker port has no route, so NWBrowser can't be pinned to it; filter instead.
             let selected = result.interfaces.first { $0.name == interface }
@@ -66,9 +67,13 @@ enum SSCBrowser {
         let connection = NWConnection(to: endpoint, using: parameters)
         let queue = DispatchQueue(label: "com.khvolume.ssc.resolve")
         let address: String? = await withCheckedContinuation { continuation in
-            let finished = LockedValue(false)
+            let finished = OSAllocatedUnfairLock(initialState: false)
             let finish: @Sendable (String?) -> Void = { value in
-                guard finished.exchange(true) == false else { return }
+                let alreadyFinished = finished.withLock { done in
+                    defer { done = true }
+                    return done
+                }
+                guard !alreadyFinished else { return }
                 connection.cancel()
                 continuation.resume(returning: value)
             }
@@ -93,25 +98,5 @@ enum SSCBrowser {
         if let scope = ip.interface, scope.name != interface { return nil }
         // Store bare addresses; the scope is added back when connecting.
         return "\(ip)".split(separator: "%").first.map(String.init)
-    }
-}
-
-/// Minimal lock-protected box for state shared with Network.framework callbacks.
-final class LockedValue<Value>: @unchecked Sendable {
-    private let lock = NSLock()
-    private var value: Value
-
-    init(_ value: Value) { self.value = value }
-
-    func get() -> Value { lock.withLock { value } }
-    func set(_ newValue: Value) { lock.withLock { value = newValue } }
-
-    /// Stores `newValue` and returns the previous value.
-    func exchange(_ newValue: Value) -> Value {
-        lock.withLock {
-            let old = value
-            value = newValue
-            return old
-        }
     }
 }
