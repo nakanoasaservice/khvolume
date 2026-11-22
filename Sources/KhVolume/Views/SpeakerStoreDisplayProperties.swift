@@ -19,6 +19,11 @@ extension SpeakerStore {
         return min(1, max(0, level / config.effectiveMax))
     }
 
+    /// The speakers being controlled, so that a missing or an unexpected one can be seen.
+    var speakerNamesText: String {
+        outputs.map(\.name).sorted().joined(separator: ", ")
+    }
+
     var isVolumeSliderDisabled: Bool {
         isMuted || isSearching
     }
