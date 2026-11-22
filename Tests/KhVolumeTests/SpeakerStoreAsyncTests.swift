@@ -119,8 +119,8 @@ struct SpeakerStoreAsyncTests {
         #expect(store.pendingVolumeLevel == nil)
     }
 
-    @Test("pendingVolumeLevel is retained after failed commit")
-    func commitRetainsPendingOnFailure() async {
+    @Test("pendingVolumeLevel is cleared after failed commit")
+    func commitClearsPendingOnFailure() async {
         let mock = MockKhvolClient()
         mock.setLevelResult = .failure(KhvolError.commandFailed("device error"))
         let store = SpeakerStore.makeForTesting(client: mock)
@@ -128,10 +128,43 @@ struct SpeakerStoreAsyncTests {
         store.setVolumePreview(75)
         await store.awaitVolumeCommit()
 
-        #expect(store.pendingVolumeLevel == 75)
+        #expect(store.pendingVolumeLevel == nil)
         #expect(store.status.lastError != nil)
         #expect(store.connection == .disconnected)
         #expect(store.isStatusLoading == false)
+    }
+
+    @Test("opening the popover refreshes status after a failed commit")
+    func popoverRefreshesAfterFailedCommit() async {
+        let mock = MockKhvolClient()
+        mock.setLevelResult = .failure(KhvolError.commandFailed("device error"))
+        let store = SpeakerStore.makeForTesting(client: mock)
+        store.setVolumePreview(75)
+        await store.awaitVolumeCommit()
+
+        mock.jsonStatusResult = .success(.stub(levels: [60]))
+        await store.preparePopover()
+
+        #expect(store.previewAverageLevel == 60)
+        #expect(store.connection == .ready)
+    }
+
+    @Test("volume change while disconnected refreshes instead of sending a level")
+    func volumeChangeWhileDisconnectedRefreshes() async {
+        let mock = MockKhvolClient()
+        mock.jsonStatusResult = .failure(KhvolError.commandFailed("device is not online"))
+        let store = SpeakerStore.makeForTesting(client: mock)
+        await store.refresh()
+        #expect(store.connection == .disconnected)
+
+        // Speakers are back at 60 dB; the store still holds its initial level of 0.
+        mock.jsonStatusResult = .success(.stub(levels: [60]))
+        store.adjustVolume(by: 1)
+        await store.awaitVolumeCommit()
+        for _ in 0..<20 where store.connection != .ready { await Task.yield() }
+
+        #expect(mock.lastSetLevelArg == nil)
+        #expect(store.previewAverageLevel == 60)
     }
 
     @Test("no commit occurs when no pending level")

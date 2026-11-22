@@ -21,9 +21,10 @@ Key invariant: `refreshSilently` is a no-op while `phase == .loading(.mutation)`
 States: `idle` | `pending(level:lastCommitStart:)` | `committing(level:commitStart:)`
 
 Transitions:
-- `setVolumePreview` → `pending`
+- `setVolumePreview` → `pending`; while disconnected it schedules a refresh instead, because no level is known
 - `scheduleVolumeCommit` fires after `SpeakerStoreTiming.volumeThrottleInterval` → `committing`
 - Commit result arrives: compare `commitStart` timestamp; if superseded → discard silently → stay/return to idle
+- Commit fails → `idle` (the level is dropped) and the connection becomes disconnected
 - `cancelPendingVolume` → `idle`
 
 Events (`VolumeEvent`): reducer `SpeakerStore.reduceVolume(_:)`
