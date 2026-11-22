@@ -5,7 +5,6 @@ import SwiftUI
 final class VolumeHUDController {
     private weak var store: SpeakerStore?
     private var panel: NSPanel?
-    private var hostingView: NSHostingView<VolumeHUDView>?
     private var hideTask: Task<Void, Never>?
     private var isVisible = false
 
@@ -82,7 +81,6 @@ final class VolumeHUDController {
         let hostingView = NSHostingView(rootView: VolumeHUDView(store: store))
         hostingView.translatesAutoresizingMaskIntoConstraints = false
         panel.contentView = hostingView
-        self.hostingView = hostingView
         self.panel = panel
         return panel
     }
