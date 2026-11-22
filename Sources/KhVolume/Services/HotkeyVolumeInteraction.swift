@@ -9,18 +9,25 @@ final class HotkeyVolumeInteraction {
     }
 
     private weak var store: SpeakerStore?
-    private let hud: VolumeHUDController
+    /// Delay before hold-to-repeat; release within this window counts as a single step.
+    private let holdThreshold: Duration
+    /// Repeat interval while held.
+    private let repeatInterval: Duration
+    /// Called after every step, to show the HUD.
+    private let onStep: () -> Void
     private var activeDirection: Direction?
     private var repeatTask: Task<Void, Never>?
 
-    /// Delay before hold-to-repeat; release within this window counts as a single step.
-    private let holdThresholdNanos: UInt64 = 350_000_000
-    /// Repeat interval while held.
-    private let repeatIntervalNanos: UInt64 = 90_000_000
-
-    init(store: SpeakerStore, hud: VolumeHUDController) {
+    init(
+        store: SpeakerStore,
+        holdThreshold: Duration = .milliseconds(350),
+        repeatInterval: Duration = .milliseconds(90),
+        onStep: @escaping () -> Void
+    ) {
         self.store = store
-        self.hud = hud
+        self.holdThreshold = holdThreshold
+        self.repeatInterval = repeatInterval
+        self.onStep = onStep
     }
 
     func keyDown(_ direction: Direction) {
@@ -48,17 +55,17 @@ final class HotkeyVolumeInteraction {
         case .down:
             store.adjustVolume(by: -step)
         }
-        hud.present()
+        onStep()
     }
 
     private func startRepeatIfStillHeld() {
         repeatTask?.cancel()
         guard let heldDirection = activeDirection else { return }
-        repeatTask = Task { @MainActor [weak self] in
-            try? await Task.sleep(nanoseconds: self?.holdThresholdNanos ?? 350_000_000)
+        repeatTask = Task { @MainActor [weak self, holdThreshold, repeatInterval] in
+            try? await Task.sleep(for: holdThreshold)
             while !Task.isCancelled, self?.activeDirection == heldDirection {
                 self?.applyStep(heldDirection)
-                try? await Task.sleep(nanoseconds: self?.repeatIntervalNanos ?? 90_000_000)
+                try? await Task.sleep(for: repeatInterval)
             }
         }
     }

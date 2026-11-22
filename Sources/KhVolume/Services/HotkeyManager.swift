@@ -17,7 +17,7 @@ final class HotkeyManager {
     init(store: SpeakerStore) {
         self.store = store
         volumeHUD.configure(store: store)
-        volumeInteraction = HotkeyVolumeInteraction(store: store, hud: volumeHUD)
+        volumeInteraction = HotkeyVolumeInteraction(store: store) { [volumeHUD] in volumeHUD.present() }
     }
 
     func register() {
