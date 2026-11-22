@@ -47,6 +47,9 @@ Pre-built signed releases may be published separately. To build locally:
 ```bash
 ./scripts/build-app-bundle.sh
 open "dist/KH Volume.app"
+
+# Or build and copy it to /Applications (a running KH Volume is restarted)
+./scripts/build-app-bundle.sh --install
 ```
 
 For distribution signing and notarization, see `scripts/sign-app.sh`.

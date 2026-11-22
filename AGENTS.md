@@ -14,7 +14,7 @@ xcodebuild test -project KhVolume.xcodeproj -scheme KhVolume -destination 'platf
 # Against real speakers (skipped unless the interface is given)
 TEST_RUNNER_KHVOL_HARDWARE_INTERFACE=en15 xcodebuild test -project KhVolume.xcodeproj -scheme KhVolume -destination 'platform=macOS' -only-testing:KhVolumeTests/SSCHardwareTests
 
-# Distributable app in dist/
+# Distributable app in dist/; --install also replaces /Applications/KH Volume.app and restarts a running copy
 ./scripts/build-app-bundle.sh
 ```
 
