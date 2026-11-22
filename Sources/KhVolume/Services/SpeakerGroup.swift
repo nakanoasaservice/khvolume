@@ -67,13 +67,27 @@ actor SpeakerGroup: SpeakerControlling {
         outputs = []
         self.interface = interface
 
-        var speakers = rescan ? [] : directory.load()
-        if speakers.isEmpty {
-            speakers = await scan(interface)
-            guard !speakers.isEmpty else { throw .noSpeakersFound(interface: interface) }
-            directory.store(speakers)
+        func link(_ speaker: Speaker) -> SpeakerLink {
+            SpeakerLink(speaker: speaker, interface: interface, port: port, timeout: timeout)
         }
-        links = speakers.map { SpeakerLink(speaker: $0, interface: interface, port: port, timeout: timeout) }
+        var links = (rescan ? [] : directory.load()).map(link)
+        if links.isEmpty {
+            links = await speakersOnly(scan(interface).map(link))
+            guard !links.isEmpty else { throw .noSpeakersFound(interface: interface) }
+            directory.store(links.map(\.speaker))
+        }
+        self.links = links
+    }
+
+    /// Other devices announce SSC too. One that rejects a question about its output is not a
+    /// speaker; it is left out, so that it cannot fail every request to the group.
+    private func speakersOnly(_ found: [SpeakerLink]) async -> [SpeakerLink] {
+        let answers = await send({ SSCMessage.outputQuery($0) }, to: found)
+        return zip(found, answers).compactMap { link, answer in
+            guard case .failure(.rejected) = answer else { return link }
+            link.close()
+            return nil
+        }
     }
 
     private func readOutputs() async throws(SpeakerError) -> [SpeakerOutput] {
@@ -106,12 +120,18 @@ actor SpeakerGroup: SpeakerControlling {
 
     /// Sends `message` to every speaker in parallel. Replies come back in speaker order.
     private func sendToAll(_ message: @escaping SpeakerLink.Message) async throws(SpeakerError) -> [SpeakerLink.Reply] {
-        let links = self.links
         guard !links.isEmpty else {
             if let interface { throw .noSpeakersFound(interface: interface) }
             throw .noInterface
         }
-        let results = await withTaskGroup(of: (Int, Result<SpeakerLink.Reply, SpeakerError>).self) { group in
+        return try await send(message, to: links).map { result throws(SpeakerError) in try result.get() }
+    }
+
+    /// Sends `message` over every one of `links` in parallel. Answers come back in link order.
+    private func send(
+        _ message: @escaping SpeakerLink.Message, to links: [SpeakerLink]
+    ) async -> [Result<SpeakerLink.Reply, SpeakerError>] {
+        await withTaskGroup(of: (Int, Result<SpeakerLink.Reply, SpeakerError>).self) { group in
             for (index, link) in links.enumerated() {
                 group.addTask { (index, await link.send(message)) }
             }
@@ -119,6 +139,5 @@ actor SpeakerGroup: SpeakerControlling {
             for await (index, result) in group { collected[index] = result }
             return collected.compactMap { $0 }
         }
-        return try results.map { result throws(SpeakerError) in try result.get() }
     }
 }
