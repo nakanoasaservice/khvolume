@@ -10,8 +10,7 @@ enum NetworkInterfaceLister {
         return interfaces.compactMap { interface in
             guard let name = SCNetworkInterfaceGetBSDName(interface) as String? else { return nil }
             let label = SCNetworkInterfaceGetLocalizedDisplayName(interface) as String? ?? name
-            let active = isActive(name, flags: flags[name])
-            return NetworkInterfaceInfo(name: name, label: label, status: active ? "active" : "inactive")
+            return NetworkInterfaceInfo(name: name, label: label, isActive: isActive(name, flags: flags[name]))
         }
     }
 

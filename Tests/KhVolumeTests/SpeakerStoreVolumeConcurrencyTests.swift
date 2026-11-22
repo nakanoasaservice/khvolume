@@ -1,181 +1,180 @@
 import Testing
 @testable import KhVolume
 
-@Suite("SpeakerStore — Volume Concurrency", .serialized)
+/// What happens to requests made while the speakers are still answering an earlier one.
+@Suite("SpeakerStore — Requests in flight", .serialized)
 @MainActor
 struct SpeakerStoreVolumeConcurrencyTests {
+    private let offline = SpeakerError.unreachable(speaker: "Left")
 
-    // MARK: - Rapid preview
+    @Test("levels asked for before the first is sent are one request for the last")
+    func rapidLevelsSendOnlyTheLast() async {
+        let speakers = MockSpeakerGroup()
+        let store = SpeakerStore.makeForTesting(speakers: speakers)
 
-    /// Three previews are set before any task gets to run.
-    /// Only the last one should reach setLevel because the earlier tasks are
-    /// cancelled before they start.
-    @Test("rapid previews commit only the last level")
-    func rapidPreviewCommitsOnlyLastLevel() async {
-        let mock = MockKhvolClient()
-        mock.setLevelResult = .success(.stub(levels: [80]))
-        let store = SpeakerStore.makeForTesting(client: mock)
+        store.setLevel(70)
+        store.setLevel(75)
+        store.setLevel(80)
+        await store.settle()
 
-        store.setVolumePreview(70)
-        store.setVolumePreview(75)
-        store.setVolumePreview(80)
-        await store.awaitVolumeCommit()
-
-        #expect(mock.setLevelCallCount == 1)
-        #expect(mock.lastSetLevelArg == 80)
-        #expect(store.pendingVolumeLevel == nil)
+        #expect(speakers.setLevelArgs == [80])
+        #expect(store.targetLevel == nil)
+        #expect(store.level == 80)
     }
 
-    // MARK: - Stale commit results
+    @Test("levels asked for during a request are one following request for the last")
+    func levelsDuringRequestAreCoalesced() async {
+        let speakers = SuspendingSpeakerGroup()
+        let store = SpeakerStore.makeForTesting(speakers: speakers)
 
-    /// Regression test for the stale-result flicker bug:
-    /// T1 (level=70) is in-flight when the user slides to 80.
-    /// T1's HTTP response arrives after T2 has already started committing 80.
-    /// T1's result must be discarded — it must not overwrite T2's .committing state.
-    @Test("stale success from superseded commit is discarded")
-    func staleSuccessDiscardedWhenSuperseded() async {
-        let client = SuspendingKhvolClient()
-        let store = SpeakerStore.makeForTesting(client: client)
+        store.setLevel(70)
+        await speakers.waitForPending()
+        store.setLevel(75)
+        store.setLevel(80)
+        #expect(speakers.calls == [.setLevel(70)])  // one request at a time
 
-        // T1 starts and suspends at setLevel(70)
-        store.setVolumePreview(70)
-        await Task.yield()
-        #expect(client.pendingCommits.count == 1)
+        speakers.resumeNext(with: .success([.stub(level: 70)]))
+        await speakers.waitForPending()
+        #expect(speakers.calls == [.setLevel(70), .setLevel(80)])
+        #expect(store.level == 80)  // still the requested level, not the confirmed 70
 
-        // User moves slider to 80 → T1 cancelled, T2 starts and suspends at setLevel(80)
-        store.setVolumePreview(80)
-        await Task.yield()
-        #expect(client.pendingCommits.count == 2)
+        speakers.resumeNext(with: .success([.stub(level: 80)]))
+        await store.settle()
 
-        // T1's HTTP response arrives with stale data — must be discarded
-        client.resumeNext(with: .success(.stub(levels: [70])))
-        await Task.yield()
-
-        // T2's response arrives with the correct data
-        client.resumeNext(with: .success(.stub(levels: [80])))
-        await store.awaitVolumeCommit()
-
-        #expect(store.status.averageLevel == 80)
-        #expect(store.pendingVolumeLevel == nil)
-        #expect(store.connection == .ready)
+        #expect(speakers.calls == [.setLevel(70), .setLevel(80)])
+        #expect(store.targetLevel == nil)
+        #expect(store.outputs == [.stub(level: 80)])
     }
 
-    /// T1 fails while T2 is already committing a newer level.
-    /// T1's error must be discarded so it does not pollute the UI.
-    @Test("stale failure from superseded commit is discarded")
-    func staleFailureDiscardedWhenSuperseded() async {
-        let client = SuspendingKhvolClient()
-        let store = SpeakerStore.makeForTesting(client: client)
+    @Test("the same level asked for again during its request is not sent twice")
+    func sameLevelIsNotResent() async {
+        let speakers = SuspendingSpeakerGroup()
+        let store = SpeakerStore.makeForTesting(speakers: speakers)
 
-        store.setVolumePreview(70)
-        await Task.yield()
+        store.setLevel(70)
+        await speakers.waitForPending()
+        store.setLevel(70)
+        speakers.resumeNext(with: .success([.stub(level: 70)]))
+        await store.settle()
 
-        store.setVolumePreview(80)
-        await Task.yield()
-
-        // T1 fails — error must not surface to the user
-        client.resumeNext(with: .failure(KhvolError.commandFailed("timed out")))
-        await Task.yield()
-
-        // T2 succeeds
-        client.resumeNext(with: .success(.stub(levels: [80])))
-        await store.awaitVolumeCommit()
-
-        #expect(store.status.averageLevel == 80)
-        #expect(store.status.lastError == nil)
-        #expect(store.connection == .ready)
+        #expect(speakers.calls == [.setLevel(70)])
     }
 
-    // MARK: - Cancel while committing
+    @Test("a failed request drops the levels asked for during it")
+    func failureDropsWaitingLevel() async {
+        let speakers = SuspendingSpeakerGroup()
+        let store = SpeakerStore.makeForTesting(speakers: speakers)
 
-    /// cancelPendingVolume() is called while a setLevel request is in-flight.
-    /// The commit result must be discarded; state must remain idle.
-    @Test("cancel while committing goes idle; late result is discarded")
-    func cancelWhileCommittingGoesIdle() async {
-        let client = SuspendingKhvolClient()
-        let store = SpeakerStore.makeForTesting(client: client)
+        store.setLevel(70)
+        await speakers.waitForPending()
+        store.setLevel(80)
+        speakers.resumeNext(with: .failure(offline))
+        await store.settle()
 
-        store.setVolumePreview(70)
-        await Task.yield()  // T1 suspends at setLevel(70)
-
-        store.cancelPendingVolume()
-        #expect(store.pendingVolumeLevel == nil)
-
-        // T1's late response arrives after cancel — must be discarded
-        client.resumeNext(with: .success(.stub(levels: [70])))
-        await Task.yield()
-
-        #expect(store.pendingVolumeLevel == nil)
-        // stale json (levels:[70]) was not applied — averageLevel stays at the initial 0
-        #expect(store.status.averageLevel != 70)
+        #expect(speakers.calls == [.setLevel(70)])
+        #expect(store.targetLevel == nil)
+        #expect(store.connection == .failed(offline))
     }
 
-    /// When a commit is cancelled and the in-flight request later fails,
-    /// the error must not be shown to the user.
-    @Test("stale failure after cancel does not set error")
-    func staleFailureAfterCancelDoesNotSetError() async {
-        let client = SuspendingKhvolClient()
-        let store = SpeakerStore.makeForTesting(client: client)
+    @Test("a level can be requested again after the previous requests finished")
+    func writesAgainAfterFinishing() async {
+        let speakers = MockSpeakerGroup()
+        let store = SpeakerStore.makeForTesting(speakers: speakers)
 
-        store.setVolumePreview(70)
-        await Task.yield()
+        store.setLevel(70)
+        await store.settle()
+        store.setLevel(60)
+        await store.settle()
 
-        store.cancelPendingVolume()
-
-        client.resumeNext(with: .failure(KhvolError.commandFailed("timed out")))
-        await Task.yield()
-
-        // The stale failure must not surface as a user-visible error
-        #expect(store.status.lastError == nil)
+        #expect(speakers.setLevelArgs == [70, 60])
     }
 
-    // MARK: - refreshSilently guard
+    @Test("refresh is skipped while a level is being written")
+    func refreshSkippedWhileWriting() async {
+        let speakers = SuspendingSpeakerGroup()
+        let store = SpeakerStore.makeForTesting(speakers: speakers)
 
-    /// While a setLevel is in-flight (volumeState = .committing), preparePopover
-    /// must not trigger a jsonStatus fetch — the commit result will refresh state.
-    @Test("refreshSilently is skipped while volume commit is in flight")
-    func refreshSilentlySkippedWhileCommitting() async {
-        let client = SuspendingKhvolClient()
-        let store = SpeakerStore.makeForTesting(client: client)
+        store.setLevel(70)
+        await speakers.waitForPending()
+        store.preparePopover()
+        speakers.resumeNext(with: .success([.stub(level: 70)]))
+        await store.settle()
 
-        // T1 runs to setLevel(70) and suspends → volumeState = .committing
-        store.setVolumePreview(70)
-        await Task.yield()
-
-        // preparePopover calls refreshSilently internally; it should be a no-op
-        await store.preparePopover()
-        #expect(client.jsonStatusCallCount == 0)
-
-        // Clean up: let T1 finish
-        client.resumeNext(with: .success(.stub(levels: [70])))
-        await store.awaitVolumeCommit()
+        #expect(speakers.calls == [.setLevel(70)])
     }
 
-    // MARK: - toggleMute interaction
+    @Test("a level asked for during a read is sent after it and wins")
+    func levelDuringReadIsSentAfterIt() async {
+        let speakers = SuspendingSpeakerGroup()
+        speakers.suspendsConnect = true
+        let store = SpeakerStore.makeForTesting(speakers: speakers)
 
-    /// toggleMute() cancels any pending volume and runs a mute mutation.
-    /// If an in-flight setLevel response arrives after the mute completes,
-    /// it must not overwrite the mute state.
-    @Test("toggleMute while committing discards the pending commit result")
-    func toggleMuteWhileCommittingDiscardsPendingResult() async {
-        let client = SuspendingKhvolClient()
-        client.setMutedResult = .success(.stub(muted: true))
-        let store = SpeakerStore.makeForTesting(client: client)
-        store.status.isMuted = false
+        store.refresh()
+        await speakers.waitForPending()
+        store.setLevel(70)
+        for _ in 0..<50 { await Task.yield() }
+        #expect(speakers.calls == [.connect(rescan: false)])  // the write waits for the read
 
-        // T1 starts and suspends at setLevel(70)
-        store.setVolumePreview(70)
-        await Task.yield()
+        speakers.resumeNext(with: .success([.stub(level: 50)]))
+        await speakers.waitForPending()
+        #expect(store.level == 70)
+        speakers.resumeNext(with: .success([.stub(level: 70)]))
+        await store.settle()
 
-        // toggleMute cancels the pending volume and runs setMuted
-        await store.toggleMute()
-        #expect(store.status.isMuted == true)
-        #expect(store.pendingVolumeLevel == nil)
+        #expect(speakers.calls == [.connect(rescan: false), .setLevel(70)])
+        #expect(store.outputs == [.stub(level: 70)])
+    }
 
-        // T1's late response arrives with stale data (muted: false) — must be discarded
-        client.resumeNext(with: .success(.stub(levels: [70], muted: false)))
-        await Task.yield()
+    @Test("a level asked for during a read that fails is not sent")
+    func levelDuringFailedReadIsDropped() async {
+        let speakers = SuspendingSpeakerGroup()
+        speakers.suspendsConnect = true
+        let store = SpeakerStore.makeForTesting(speakers: speakers)
 
-        #expect(store.status.isMuted == true)
+        store.refresh()
+        await speakers.waitForPending()
+        store.setLevel(70)
+        speakers.resumeNext(with: .failure(offline))
+        await store.settle()
+
+        #expect(speakers.calls == [.connect(rescan: false)])
+        #expect(store.targetLevel == nil)
+        #expect(store.connection == .failed(offline))
+    }
+
+    @Test("mute during a level request is sent after it")
+    func muteWaitsForLevelRequest() async {
+        let speakers = SuspendingSpeakerGroup()
+        speakers.setMutedAnswer = .success([.stub(level: 70, muted: true)])
+        let store = SpeakerStore.makeForTesting(speakers: speakers)
+
+        store.setLevel(70)
+        await speakers.waitForPending()
+        let mute = Task { await store.toggleMute() }
+        for _ in 0..<50 { await Task.yield() }
+        #expect(speakers.calls == [.setLevel(70)])
+
+        speakers.resumeNext(with: .success([.stub(level: 70)]))
+        await mute.value
+
+        #expect(speakers.calls == [.setLevel(70), .setMuted(true)])
+        #expect(store.outputs == [.stub(level: 70, muted: true)])
+    }
+
+    @Test("selecting an interface drops a level that was waiting to be sent")
+    func selectInterfaceDropsWaitingLevel() async {
+        let speakers = SuspendingSpeakerGroup()
+        let store = SpeakerStore.makeForTesting(speakers: speakers)
+
+        store.setLevel(70)
+        await speakers.waitForPending()
+        store.setLevel(80)
+        let select = Task { await store.selectInterface("en15") }
+        for _ in 0..<50 { await Task.yield() }
+        speakers.resumeNext(with: .success([.stub(level: 70)]))
+        await select.value
+
+        #expect(speakers.calls == [.setLevel(70), .connect(rescan: true)])
+        #expect(store.connection == .connected)
     }
 }

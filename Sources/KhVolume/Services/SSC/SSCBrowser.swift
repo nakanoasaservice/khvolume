@@ -4,18 +4,20 @@ import os
 
 /// Finds SSC devices (`_ssc._tcp`) on one interface via Bonjour.
 enum SSCBrowser {
-    /// Returns `[mDNS service name: IPv6 address]` for the devices seen on `interface`.
-    static func scan(interface: String, browseDuration: Duration = .seconds(3)) async -> [String: String] {
+    /// Returns the speakers seen on `interface`, sorted by mDNS service name.
+    static func scan(interface: String, browseDuration: Duration = .seconds(3)) async -> [Speaker] {
         let services = await browse(interface: interface, duration: browseDuration)
-        return await withTaskGroup(of: (String, String?).self) { group in
+        return await withTaskGroup(of: Speaker?.self) { group in
             for service in services {
-                group.addTask { (service.name, await resolve(service, interface: interface)) }
+                group.addTask {
+                    await resolve(service, interface: interface).map { Speaker(id: service.name, address: $0) }
+                }
             }
-            var found: [String: String] = [:]
-            for await (name, address) in group {
-                if let address { found[name] = address }
+            var found: [Speaker] = []
+            for await speaker in group {
+                if let speaker { found.append(speaker) }
             }
-            return found
+            return found.sorted { $0.id < $1.id }
         }
     }
 

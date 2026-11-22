@@ -13,7 +13,6 @@ enum KhVolumeMain {
 }
 
 struct KhVolumeApp: App {
-    @NSApplicationDelegateAdaptor(KhVolumeAppDelegate.self) private var appDelegate
     @State private var store = SpeakerStore()
 
     var body: some Scene {

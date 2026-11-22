@@ -1,189 +1,114 @@
 import Testing
 @testable import KhVolume
 
-@Suite("SpeakerStore — Async Operations", .serialized)
+@Suite("SpeakerStore — Mute and failed requests", .serialized)
 @MainActor
 struct SpeakerStoreAsyncTests {
-
-    // MARK: refresh
-
-    @Test("refresh updates status on success")
-    func refreshSuccess() async {
-        let mock = MockKhvolClient()
-        mock.jsonStatusResult = .success(.stub(levels: [80], muted: false, balanced: true))
-        let store = SpeakerStore.makeForTesting(client: mock)
-
-        await store.refresh()
-
-        #expect(store.status.averageLevel == 80)
-        #expect(store.connection == .ready)
-        #expect(store.isStatusLoading == false)
-        #expect(store.isStatusLoading == false)
-    }
-
-    @Test("refresh sets disconnected state on error")
-    func refreshError() async {
-        let mock = MockKhvolClient()
-        mock.jsonStatusResult = .failure(KhvolError.commandFailed("timed out"))
-        let store = SpeakerStore.makeForTesting(client: mock)
-
-        await store.refresh()
-
-        #expect(store.connection == .disconnected)
-        #expect(store.status.lastError != nil)
-        #expect(store.isStatusLoading == false)
-        #expect(store.isStatusLoading == false)
-    }
-
-    @Test("refresh does nothing when already busy")
-    func refreshNoOpWhenBusy() async {
-        let mock = MockKhvolClient()
-        let store = SpeakerStore.makeForTesting(client: mock)
-        store.phase = .loading(.refresh)
-
-        await store.refresh()
-
-        #expect(mock.jsonStatusCallCount == 0)
-    }
-
-    @Test("refresh sets connection to warning when not balanced")
-    func refreshWarningWhenUnbalanced() async {
-        let mock = MockKhvolClient()
-        mock.jsonStatusResult = .success(.stub(balanced: false))
-        let store = SpeakerStore.makeForTesting(client: mock)
-
-        await store.refresh()
-
-        #expect(store.connection == .warning)
-    }
+    private let offline = SpeakerError.unreachable(speaker: "Left")
 
     // MARK: toggleMute
 
-    @Test("toggleMute calls setMuted with inverted mute state")
-    func toggleMuteCallsSetMuted() async {
-        let mock = MockKhvolClient()
-        mock.setMutedResult = .success(.stub(muted: true))
-        let store = SpeakerStore.makeForTesting(client: mock)
-        store.status.isMuted = false
+    @Test("toggleMute mutes unmuted speakers")
+    func toggleMuteMutes() async {
+        let speakers = MockSpeakerGroup()
+        let store = SpeakerStore.makeForTesting(speakers: speakers)
 
         await store.toggleMute()
 
-        #expect(mock.lastSetMutedArg == true)
+        #expect(speakers.setMutedArgs == [true])
+        #expect(store.isMuted)
     }
 
-    @Test("toggleMute clears pendingVolumeLevel")
-    func toggleMuteClearsPending() async {
-        let mock = MockKhvolClient()
-        let store = SpeakerStore.makeForTesting(client: mock)
-        store.pendingVolumeLevel = 60
+    @Test("toggleMute unmutes muted speakers")
+    func toggleMuteUnmutes() async {
+        let speakers = MockSpeakerGroup()
+        speakers.outputs = [.stub(muted: true)]
+        let store = SpeakerStore.makeForTesting(speakers: speakers, outputs: speakers.outputs)
 
         await store.toggleMute()
 
-        #expect(store.pendingVolumeLevel == nil)
+        #expect(speakers.setMutedArgs == [false])
+        #expect(!store.isMuted)
     }
 
-    @Test("toggleMute updates isMuted from response")
-    func toggleMuteUpdatesStatus() async {
-        let mock = MockKhvolClient()
-        mock.setMutedResult = .success(.stub(muted: true))
-        let store = SpeakerStore.makeForTesting(client: mock)
-        store.status.isMuted = false
+    @Test("toggleMute does not block the controls")
+    func toggleMuteKeepsConnection() async {
+        let store = SpeakerStore.makeForTesting()
+        await store.toggleMute()
+        #expect(store.connection == .connected)
+    }
+
+    @Test("a failed mute marks the connection failed")
+    func toggleMuteFailure() async {
+        let speakers = MockSpeakerGroup()
+        speakers.setMutedError = offline
+        let store = SpeakerStore.makeForTesting(speakers: speakers)
 
         await store.toggleMute()
 
-        #expect(store.status.isMuted == true)
+        #expect(store.connection == .failed(offline))
+        #expect(store.outputs.isEmpty)
     }
 
-    // MARK: Volume commit
+    @Test("toggleMute while not connected reads the speakers instead of muting")
+    func toggleMuteWhileNotConnected() async {
+        let speakers = MockSpeakerGroup()
+        let store = SpeakerStore.makeForTesting(speakers: speakers)
+        store.connection = .failed(offline)
 
-    @Test("setVolumePreview commits pending level via setLevel")
-    func commitCallsSetLevel() async {
-        let mock = MockKhvolClient()
-        mock.setLevelResult = .success(.stub(levels: [75]))
-        let store = SpeakerStore.makeForTesting(client: mock)
+        await store.toggleMute()
+        await store.settle()
 
-        store.setVolumePreview(75)
-        await store.awaitVolumeCommit()
-
-        #expect(mock.lastSetLevelArg == 75)
+        #expect(speakers.setMutedArgs.isEmpty)
+        #expect(speakers.connectCalls.count == 1)
+        #expect(store.connection == .connected)
     }
 
-    @Test("pendingVolumeLevel is cleared after successful commit")
-    func commitClearsPendingOnSuccess() async {
-        let mock = MockKhvolClient()
-        let store = SpeakerStore.makeForTesting(client: mock)
+    // MARK: failed level write
 
-        store.setVolumePreview(75)
-        await store.awaitVolumeCommit()
+    @Test("a failed level write drops the level and marks the connection failed")
+    func setLevelFailure() async {
+        let speakers = MockSpeakerGroup()
+        speakers.setLevelError = offline
+        let store = SpeakerStore.makeForTesting(speakers: speakers)
 
-        #expect(store.pendingVolumeLevel == nil)
+        store.setLevel(75)
+        await store.settle()
+
+        #expect(store.targetLevel == nil)
+        #expect(store.connection == .failed(offline))
+        #expect(store.errorMessage == "Left is not responding")
+        #expect(store.outputs.isEmpty)
     }
 
-    @Test("pendingVolumeLevel is cleared after failed commit")
-    func commitClearsPendingOnFailure() async {
-        let mock = MockKhvolClient()
-        mock.setLevelResult = .failure(KhvolError.commandFailed("device error"))
-        let store = SpeakerStore.makeForTesting(client: mock)
+    @Test("opening the popover reads the speakers again after a failed write")
+    func popoverRecoversAfterFailedWrite() async {
+        let speakers = MockSpeakerGroup()
+        speakers.setLevelError = offline
+        let store = SpeakerStore.makeForTesting(speakers: speakers)
+        store.setLevel(75)
+        await store.settle()
 
-        store.setVolumePreview(75)
-        await store.awaitVolumeCommit()
+        speakers.outputs = [.stub(level: 60)]
+        store.preparePopover()
+        await store.settle()
 
-        #expect(store.pendingVolumeLevel == nil)
-        #expect(store.status.lastError != nil)
-        #expect(store.connection == .disconnected)
-        #expect(store.isStatusLoading == false)
+        #expect(store.level == 60)
+        #expect(store.connection == .connected)
     }
 
-    @Test("opening the popover refreshes status after a failed commit")
-    func popoverRefreshesAfterFailedCommit() async {
-        let mock = MockKhvolClient()
-        mock.setLevelResult = .failure(KhvolError.commandFailed("device error"))
-        let store = SpeakerStore.makeForTesting(client: mock)
-        store.setVolumePreview(75)
-        await store.awaitVolumeCommit()
+    @Test("a volume change while not connected reads the speakers instead of sending a level")
+    func volumeChangeWhileNotConnected() async {
+        let speakers = MockSpeakerGroup()
+        speakers.outputs = [.stub(level: 60)]
+        let store = SpeakerStore.makeForTesting(speakers: speakers, outputs: [])
+        store.connection = .failed(offline)
 
-        mock.jsonStatusResult = .success(.stub(levels: [60]))
-        await store.preparePopover()
-
-        #expect(store.previewAverageLevel == 60)
-        #expect(store.connection == .ready)
-    }
-
-    @Test("volume change while disconnected refreshes instead of sending a level")
-    func volumeChangeWhileDisconnectedRefreshes() async {
-        let mock = MockKhvolClient()
-        mock.jsonStatusResult = .failure(KhvolError.commandFailed("device is not online"))
-        let store = SpeakerStore.makeForTesting(client: mock)
-        await store.refresh()
-        #expect(store.connection == .disconnected)
-
-        // Speakers are back at 60 dB; the store still holds its initial level of 0.
-        mock.jsonStatusResult = .success(.stub(levels: [60]))
         store.adjustVolume(by: 1)
-        await store.awaitVolumeCommit()
-        for _ in 0..<20 where store.connection != .ready { await Task.yield() }
+        await store.settle()
 
-        #expect(mock.lastSetLevelArg == nil)
-        #expect(store.previewAverageLevel == 60)
-    }
-
-    @Test("no commit occurs when no pending level")
-    func commitNoOpWhenNoPending() async {
-        let mock = MockKhvolClient()
-        _ = SpeakerStore.makeForTesting(client: mock)
-        // pendingVolumeLevel is nil by default — nothing to commit
-        #expect(mock.lastSetLevelArg == nil)
-    }
-
-    @Test("volume commit does not affect loading phase")
-    func commitDoesNotAffectLoadingPhase() async {
-        let mock = MockKhvolClient()
-        let store = SpeakerStore.makeForTesting(client: mock)
-
-        store.setVolumePreview(50)
-        await store.awaitVolumeCommit()
-
-        #expect(store.isStatusLoading == false)
-        #expect(store.isStatusLoading == false)
+        #expect(speakers.setLevelArgs.isEmpty)
+        #expect(store.level == 60)
+        #expect(store.connection == .connected)
     }
 }

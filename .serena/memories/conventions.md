@@ -3,24 +3,18 @@
 ## Swift
 
 - `@Observable` (Swift Observation framework) for `SpeakerStore` — not `ObservableObject`/`@Published`
-- Protocol-based testability: `KhvolClientProtocol`, `NetworkMonitorServiceProtocol`, `HotkeyServiceProtocol`, `LaunchAtLoginCoordinatorProtocol`
+- Protocol-based testability: `SpeakerControlling`, `NetworkMonitorService`, `HotkeyService`, `LaunchAtLoginManaging`; `SpeakerStore` also takes `listInterfaces` and `defaults`
 - All tests are `async` (Swift Concurrency); tests run hosted in the app, which skips the real scenes under XCTest
-- `SuspendingKhvolClient` suspends until manually resumed — use for concurrency invariant tests
-- Stale-result discarding pattern: volume commit results carry a `commitStart` timestamp; results superseded by a newer commit or cancel are silently dropped
+- `SpeakerStore.makeForTesting` saves to a throwaway UserDefaults suite — hosted tests would otherwise write the real app's settings
+- `MockSpeakerGroup` answers at once; `SuspendingSpeakerGroup` holds `setLevel` (and optionally `connect`) until resumed — use it for requests made while another is in flight
+- Mocks used by `SpeakerStore` are `@MainActor`, so `await store.settle()` / `waitForPending()` sequence tests without sleeps
 
-## FSM style
+## SpeakerControlling
 
-- Enums for states and events; `reduce(_:)` / `reduceVolume(_:)` are pure functions on `SpeakerStore`
-- Phase FSM serialises load operations (idle ↔ loading); Volume FSM throttles slider drags
-
-## KhvolClientProtocol
-
-- `jsonStatus()` → status (levels, muted, balanced, devices keyed by SSC device name)
-- `scan()` → Bonjour scan, store the speaker list in UserDefaults; throws `.deviceError` if no speakers found
-- `interfaces()` → network interfaces with link status
-- `setLevel(_:)` / `setMuted(_:)` → send to all speakers, then return fresh status
-- `resetConnections()` → drop pooled connections (called on network path changes)
-- `KhvolError.noSpeakers` (no scan has stored a speaker yet) triggers an automatic rescan in `SpeakerStore`
+- `connect(interface:rescan:)` → ensure links for the interface, then read every speaker's output; throws `.noInterface` / `.noSpeakersFound`
+- `setLevel(_:)` / `setMuted(_:)` → send to all speakers; outputs are updated from the set replies (speakers echo the applied value — checked by `SSCHardwareTests`), with a read as fallback
+- `disconnect()` → close sockets (network change, sleep); links reconnect on the next request
+- One instance for the app's lifetime; it holds the interface, links and outputs. Callers run one operation at a time (`SpeakerStore` does)
 
 ## File organisation
 

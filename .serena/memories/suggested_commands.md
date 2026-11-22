@@ -18,4 +18,4 @@ xcodebuild test -project KhVolume.xcodeproj -scheme KhVolume -destination 'platf
 
 ## App data location
 
-UserDefaults (standard domain of the app bundle id): `config` (AppConfig as a plist dictionary) and `speakers` (`{mDNS name: IPv6}`)
+UserDefaults (standard domain of the app bundle id): `config` (AppConfig as a plist dictionary) and `speakers` (`{mDNS name: IPv6}`, the last scan result)

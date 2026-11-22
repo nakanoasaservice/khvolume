@@ -5,10 +5,11 @@ struct MenuBarStatusLabel: View {
 
     var body: some View {
         Group {
-            if store.connection == .disconnected {
-                Image(systemName: "hifispeaker.badge.minus.fill")
-            } else {
+            switch store.connection {
+            case .connected, .searching:
                 Image(systemName: "hifispeaker.fill")
+            case .disconnected, .failed:
+                Image(systemName: "hifispeaker.badge.minus.fill")
             }
         }
         .frame(minWidth: 24, minHeight: 16, alignment: .center)

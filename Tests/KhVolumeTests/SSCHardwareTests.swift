@@ -15,40 +15,49 @@ import Testing
 struct SSCHardwareTests {
     private let interface = ProcessInfo.processInfo.environment["KHVOL_HARDWARE_INTERFACE"] ?? ""
 
-    @Test("scan, read, set level, mute, and many requests over pooled connections")
+    @Test("scan, read, set level, mute, and many reads over the same connections")
     func endToEnd() async throws {
-        let pool = SSCSpeakerPool()
-        let client = KhvolClient(interface: interface, speakers: SpeakerDirectory(defaults: .makeForTesting()), pool: pool)
+        let interfaces = NetworkInterfaceLister.list()
+        print("interfaces:", interfaces.map { "\($0.name)=\($0.label)/\($0.isActive ? "active" : "inactive")" })
+        #expect(interfaces.contains { $0.name == interface && $0.isActive })
 
-        let interfaces = try await client.interfaces()
-        print("interfaces:", interfaces.map { "\($0.name)=\($0.label)/\($0.status)" })
-        #expect(interfaces.contains { $0.name == interface && $0.status == "active" })
+        let directory = SpeakerDirectory(defaults: .makeForTesting())
+        let group = SpeakerGroup(directory: directory)
 
         let start = ContinuousClock.now
-        let count = try await client.scan()
-        print("scan found \(count) speakers in \(ContinuousClock.now - start)")
-        #expect(count > 0)
+        let initial = try await group.connect(interface: interface, rescan: true)
+        print("scan found \(initial.count) speakers in \(ContinuousClock.now - start):", initial)
+        #expect(!initial.isEmpty)
+        let originalLevel = initial[0].level
 
-        let initial = try await client.jsonStatus()
-        print("initial:", initial.devices)
-        let originalLevel = initial.levels[0]
+        // A set must be answered with the applied value; otherwise every set costs a second round trip.
+        for speaker in directory.load() {
+            let link = SpeakerLink(speaker: speaker, interface: interface)
+            let reply = try await link.send(SSCMessage.setLevel(originalLevel)).get()
+            print("set reply from \(reply.name):", reply.text)
+            #expect(SSCMessage.parseOutput(reply.text)?.level != nil)
+        }
 
-        let lowered = try await client.setLevel(originalLevel - 1)
-        #expect(lowered.levels.allSatisfy { abs($0 - (originalLevel - 1)) < 0.05 })
+        let setStart = ContinuousClock.now
+        let lowered = try await group.setLevel(originalLevel - 1)
+        print("set level: \(ContinuousClock.now - setStart)")
+        #expect(lowered.allSatisfy { abs($0.level - (originalLevel - 1)) < 0.05 })
+        // What the set replies said must match what the speakers report when asked.
+        #expect(try await group.connect(interface: interface, rescan: false) == lowered)
 
-        let muted = try await client.setMuted(true)
-        #expect(muted.muted)
-        let unmuted = try await client.setMuted(initial.muted)
-        #expect(unmuted.muted == initial.muted)
+        let muted = try await group.setMuted(true)
+        #expect(muted.isMuted)
+        #expect(try await group.connect(interface: interface, rescan: false) == muted)
+        let unmuted = try await group.setMuted(initial.isMuted)
+        #expect(unmuted.isMuted == initial.isMuted)
 
-        let restored = try await client.setLevel(originalLevel)
-        #expect(restored.levels.allSatisfy { abs($0 - originalLevel) < 0.05 })
+        let restored = try await group.setLevel(originalLevel)
+        #expect(restored.allSatisfy { abs($0.level - originalLevel) < 0.05 })
 
         let burstStart = ContinuousClock.now
         for _ in 0..<30 {
-            _ = try await client.jsonStatus()
+            _ = try await group.connect(interface: interface, rescan: false)
         }
-        print("30 status reads: \(ContinuousClock.now - burstStart)")
-        #expect(pool.speakerCount == count)
+        print("30 reads: \(ContinuousClock.now - burstStart)")
     }
 }
