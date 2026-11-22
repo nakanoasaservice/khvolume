@@ -74,7 +74,7 @@ struct SpeakerStoreVolumeConcurrencyTests {
         await Task.yield()
 
         // T1 fails — error must not surface to the user
-        client.resumeNext(with: .failure(KhvolError.timedOut))
+        client.resumeNext(with: .failure(KhvolError.commandFailed("timed out")))
         await Task.yield()
 
         // T2 succeeds
@@ -122,7 +122,7 @@ struct SpeakerStoreVolumeConcurrencyTests {
 
         store.cancelPendingVolume()
 
-        client.resumeNext(with: .failure(KhvolError.timedOut))
+        client.resumeNext(with: .failure(KhvolError.commandFailed("timed out")))
         await Task.yield()
 
         // The stale failure must not surface as a user-visible error

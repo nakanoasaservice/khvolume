@@ -24,7 +24,7 @@ struct SpeakerStoreAsyncTests {
     @Test("refresh sets disconnected state on error")
     func refreshError() async {
         let mock = MockKhvolClient()
-        mock.jsonStatusResult = .failure(KhvolError.timedOut)
+        mock.jsonStatusResult = .failure(KhvolError.commandFailed("timed out"))
         let store = SpeakerStore.makeForTesting(client: mock)
 
         await store.refresh()
