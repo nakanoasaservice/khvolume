@@ -13,7 +13,7 @@ Pure Swift app (`Sources/KhVolume/`): UI + state machine on top of a native SSC 
 | `KhVolumeApp.swift` | `@main` entry (`KhVolumeMain`); `KhVolumeApp` wires `MenuBarExtra` + `Settings` scenes |
 | `App/KhVolumeAppDelegate.swift` | NSApp delegate |
 | `Models/SpeakerModels.swift` | `DeviceLevel`, `SpeakerStatus`, `NetworkInterfaceInfo`, `KhvolJSONStatus`, `ConnectionState` |
-| `Models/AppConfig.swift` | Persisted settings: interface, maxVolumeLimit, volumeStep, launchAtLogin, allowForceOnMismatch, hotkeys |
+| `Models/AppConfig.swift` | Persisted settings: interface, maxVolumeLimit, volumeStep, launchAtLogin, allowForceOnMismatch (hotkeys are stored by KeyboardShortcuts) |
 | `Services/SpeakerStore.swift` | Central `@Observable` state; Phase FSM + Volume FSM — see `mem:fsm` |
 | `Services/KhvolClient.swift` | `KhvolClientProtocol` + production client: status/level/mute via SSC, scan, interface list |
 | `Services/SSC/SSCSocket.swift` | One BSD-socket TCP connection to a speaker (JSON line in/out). BSD sockets on purpose: NWConnection leaves half-open flows when the process dies and speakers only have 4 slots |
