@@ -157,6 +157,39 @@ struct SpeakerStoreConnectionTests {
         #expect(speakers.connectCalls.isEmpty)
     }
 
+    // MARK: reload
+
+    @Test("reload lists the interfaces again and searches the selected one for speakers")
+    func reload() async {
+        let speakers = MockSpeakerGroup()
+        speakers.outputs = [.stub(level: 44)]
+        var interfaces: [NetworkInterfaceInfo] = []
+        let store = SpeakerStore.makeForTesting(
+            config: configured("en15"), speakers: speakers, listInterfaces: { interfaces }
+        )
+        interfaces = [NetworkInterfaceInfo(name: "en15", label: "USB LAN", isActive: true)]
+
+        await store.reload()
+
+        #expect(store.interfaces.map(\.name) == ["en15"])
+        #expect(store.config.networkInterface == "en15")
+        #expect(speakers.connectCalls.map(\.interface) == ["en15"])
+        #expect(speakers.connectCalls.map(\.rescan) == [true])
+        #expect(store.connection == .connected)
+        #expect(store.level == 44)
+    }
+
+    @Test("reload is ignored while searching")
+    func reloadWhileSearching() async {
+        let speakers = MockSpeakerGroup()
+        let store = SpeakerStore.makeForTesting(speakers: speakers)
+        store.connection = .searching
+
+        await store.reload()
+
+        #expect(speakers.connectCalls.isEmpty)
+    }
+
     // MARK: network changes
 
     private func startedStore(

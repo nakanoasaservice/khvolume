@@ -69,7 +69,7 @@ Settings and the scanned speaker list are stored in UserDefaults (`defaults read
 |--------|------------------|
 | Menu bar icon shows a speaker with a minus badge | Speaker off, wrong network interface, or no route to the speaker |
 | No speakers in **Network** list | Cable/link down; pick the interface that has link (`ifconfig`) |
-| Level does not change | Pick the network interface again to rescan; allow **Local Network** access for KH Volume in System Settings → Privacy & Security |
+| Level does not change | Press the reload button next to **Network** to rescan; allow **Local Network** access for KH Volume in System Settings → Privacy & Security |
 | **Open at Login** fails | Install a **Developer ID–signed** `KH Volume.app` in `/Applications` |
 | Left/right levels differ | Use decrease-only until matched, or enable “allow increase when mismatched” in settings |
 
