@@ -45,7 +45,7 @@ TEST_RUNNER_KHVOL_HARDWARE_INTERFACE=en15 xcodebuild test -project KhVolume.xcod
 - A volume change only sets `targetLevel`; one loop sends the latest target. There is no timer or throttle: the round trip is the backpressure.
 - The group's level is the quietest speaker's, not the average, so a level at or below it never makes a speaker louder. "Decrease only while left and right differ" depends on this.
 - While not connected, volume and mute input reads the speakers instead of sending anything, because no level is known.
-- A scan (a 3 s Bonjour browse) runs only when the user picks an interface or no speakers are stored.
+- A scan (a 3 s Bonjour browse) runs only when the user picks an interface, presses the reload button, or no speakers are stored.
 
 ## Tests
 

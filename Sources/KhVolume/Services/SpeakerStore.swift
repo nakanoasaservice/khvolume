@@ -204,9 +204,20 @@ final class SpeakerStore {
 
     func selectInterface(_ name: String) async {
         guard !isSearching else { return }
-        targetLevel = nil
         config.networkInterface = name
         saveConfig()
+        await search()
+    }
+
+    /// Reload button: lists the interfaces again and searches the selected one for speakers.
+    func reload() async {
+        guard !isSearching else { return }
+        loadInterfaces()
+        await search()
+    }
+
+    private func search() async {
+        targetLevel = nil
         connection = .searching
         await enqueue { await self.connect(rescan: true) }.value
     }

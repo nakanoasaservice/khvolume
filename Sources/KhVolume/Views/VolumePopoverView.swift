@@ -3,6 +3,7 @@ import SwiftUI
 
 private enum PopoverNavItem: Hashable {
     case mute
+    case reload
     case interface(String)
     case soundSettings
     case quit
@@ -44,7 +45,7 @@ struct VolumePopoverView: View {
     // MARK: - Keyboard navigation
 
     private var navigableItems: [PopoverNavItem] {
-        var items: [PopoverNavItem] = [.mute]
+        var items: [PopoverNavItem] = [.mute, .reload]
         items += activeInterfaces.map { .interface($0.name) }
         items.append(.soundSettings)
         items.append(.quit)
@@ -60,7 +61,7 @@ struct VolumePopoverView: View {
 
     private func isNavItemEnabled(_ item: PopoverNavItem) -> Bool {
         switch item {
-        case .mute, .interface:
+        case .mute, .reload, .interface:
             return !store.isSearching
         case .soundSettings, .quit:
             return true
@@ -99,6 +100,8 @@ struct VolumePopoverView: View {
         switch item {
         case .mute:
             Task { await store.toggleMute() }
+        case .reload:
+            Task { await store.reload() }
         case .interface(let name):
             Task { await store.selectInterface(name) }
         case .soundSettings:
@@ -174,12 +177,13 @@ struct VolumePopoverView: View {
         .disabled(store.isSearching)
         .background {
             RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .fill(muteHighlightFill)
+                .fill(focusHighlightFill(.mute))
         }
     }
 
-    private var muteHighlightFill: Color {
-        guard !store.isSearching, isKeyboardFocused(.mute) else { return .clear }
+    /// Keyboard-focus highlight for the icon buttons; the rows draw their own.
+    private func focusHighlightFill(_ item: PopoverNavItem) -> Color {
+        guard !store.isSearching, isKeyboardFocused(item) else { return .clear }
         return Color(nsColor: .selectedContentBackgroundColor).opacity(0.85)
     }
 
@@ -216,12 +220,16 @@ struct VolumePopoverView: View {
 
     private var networkSection: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text("Network")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.leading, 8)
-                .padding(.bottom, 1)
+            HStack(spacing: 8) {
+                Text("Network")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                reloadButton
+            }
+            .padding(.leading, 8)
+            // With the button's own padding, the icon lines up with the rows' checkmark.
+            .padding(.trailing, 5)
 
             ForEach(activeInterfaces) { iface in
                 PopoverMenuRow(
@@ -234,6 +242,25 @@ struct VolumePopoverView: View {
                 }
             }
         }
+    }
+
+    private var reloadButton: some View {
+        Button {
+            activate(.reload)
+        } label: {
+            Image(systemName: "arrow.clockwise")
+                .font(.subheadline.weight(.semibold))
+                .padding(3)
+                .contentShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .disabled(store.isSearching)
+        .background {
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(focusHighlightFill(.reload))
+        }
+        .help("Search for speakers again")
+        .accessibilityLabel("Reload")
     }
 
     private var activeInterfaces: [NetworkInterfaceInfo] {
