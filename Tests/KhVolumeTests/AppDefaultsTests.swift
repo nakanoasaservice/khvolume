@@ -27,6 +27,25 @@ struct AppDefaultsTests {
         #expect(AppDefaults.loadConfig(from: defaults) == config)
     }
 
+    @Test("a config stored before the properties were renamed still loads")
+    func storedUnderEarlierNames() {
+        let defaults = UserDefaults.makeForTesting()
+        defaults.set(
+            [
+                "interface": "en15", "maxVolumeLimit": 70.0, "volumeStep": 3.0,
+                "allowForceOnMismatch": true, "launchAtLogin": true,
+            ],
+            forKey: AppDefaults.configKey
+        )
+
+        let config = AppDefaults.loadConfig(from: defaults)
+
+        #expect(config.networkInterface == "en15")
+        #expect(config.levelLimit == 70)
+        #expect(config.levelStep == 3)
+        #expect(config.allowsIncreaseWhileUnbalanced)
+    }
+
     @Test("a config that lacks a setting is replaced with the defaults")
     func undecodableConfigIsReplaced() {
         let defaults = UserDefaults.makeForTesting()
