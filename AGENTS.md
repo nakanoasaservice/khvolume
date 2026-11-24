@@ -52,3 +52,7 @@ TEST_RUNNER_KHVOL_HARDWARE_INTERFACE=en15 xcodebuild test -project KhVolume.xcod
 - Tests run inside the app as their host; `KhVolumeMain` starts an empty app when `XCTestConfigurationFilePath` is set. So **`UserDefaults.standard` in a test is the real app's settings**: use `UserDefaults.makeForTesting()` and `SpeakerStore.makeForTesting`.
 - The mocks used with `SpeakerStore` are `@MainActor`, so `await store.settle()` and `SuspendingSpeakerGroup.waitForPending()` order a test without sleeps.
 - `FakeSSCServer` is a loopback SSC device for `SSCSpeakerGroup` tests.
+
+## Pull requests
+
+- Write PR titles and descriptions in English, whatever language the conversation is in.
