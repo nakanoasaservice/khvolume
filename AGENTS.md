@@ -2,6 +2,10 @@
 
 macOS menu bar app that sets the DSP level of Neumann KH speakers over SSC (Sennheiser Sound Control). Pure Swift; the README covers what it does for users. This file holds only what the code does not show.
 
+## Language
+
+Write issues, pull requests, and commit messages in English.
+
 ## Build and test
 
 ```bash

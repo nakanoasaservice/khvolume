@@ -1,5 +1,7 @@
 # KH Volume
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/nakanoasaservice/khvolume)
+
 **KH Volume** is a macOS menu bar application designed to control the volume of **Neumann KH DSP** studio monitors. It is especially useful when your speakers are connected via **S/PDIF coaxial digital input** or USB, where the standard macOS volume keys no longer map to your monitors.
 
 Instead of adjusting the system volume slider, KH Volume directly drives the **network DSP level** of your speakers using Sennheiser Sound Control (SSC) over IPv6. This provides a practical and precise way to change the listening level and toggle mute directly from your Mac's menu bar.
