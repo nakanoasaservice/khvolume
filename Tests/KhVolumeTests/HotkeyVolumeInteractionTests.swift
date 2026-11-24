@@ -29,7 +29,6 @@ struct HotkeyVolumeInteractionTests {
     @Test("holding repeats the step, and releasing stops it")
     func holdRepeatsUntilRelease() async throws {
         var steps = 0
-        // The keys hold the store weakly, so it has to be kept here.
         let (keys, store) = makeKeys { steps += 1 }
 
         keys.keyDown(.up)

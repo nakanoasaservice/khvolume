@@ -23,71 +23,43 @@ final class SpeakerStore {
     private let speakers: any SpeakerControlling
     private let listInterfaces: () -> [NetworkInterfaceInfo]
     private let defaults: UserDefaults
+    private let networkMonitor: any NetworkMonitorService
     /// Debounce applied after a network path change before attempting recovery.
     private let networkRecoveryDelay: Duration
-    /// Retained HotkeyService instance (production: HotkeyManager; tests: mock).
-    private var hotkeyService: (any HotkeyService)?
-    private var networkMonitor: (any NetworkMonitorService)?
     private var networkRecoveryTask: Task<Void, Never>?
-    private var hasStartedUp = false
 
     /// The speaker operation queued last; each one waits for the one before it.
     private var lastOperation: Task<Void, Never>?
     private var isWriting = false
     private var isRefreshing = false
 
-    init() {
-        config = AppDefaults.loadConfig()
-        speakers = SpeakerGroup()
-        listInterfaces = NetworkInterfaceLister.list
-        defaults = .standard
-        networkRecoveryDelay = .milliseconds(500)
-        launchAtLoginCoordinator = LaunchAtLoginCoordinator()
-        // Start here, not from a view, so volume and hotkeys work before the popover is opened.
-        Task { startupIfNeeded() }
-    }
-
-    /// Testing initializer — all infrastructure dependencies are injectable.
-    ///
-    /// - Parameters:
-    ///   - suppressStartup: When `true` (the default), `startupIfNeeded()` is a no-op.
-    ///     Pass `false` and call `startupIfNeeded()` explicitly to test the startup path.
+    /// The default arguments are the real app's; tests pass their own (see `makeForTesting`).
+    /// `config` is loaded from `defaults` when it is not given.
     init(
-        config: AppConfig,
-        speakers: any SpeakerControlling,
-        listInterfaces: @escaping () -> [NetworkInterfaceInfo] = { [] },
-        defaults: UserDefaults,
+        config: AppConfig? = nil,
+        speakers: any SpeakerControlling = SpeakerGroup(),
+        listInterfaces: @escaping () -> [NetworkInterfaceInfo] = NetworkInterfaceLister.list,
+        defaults: UserDefaults = .standard,
         networkMonitor: (any NetworkMonitorService)? = nil,
-        hotkeyService: (any HotkeyService)? = nil,
         launchAtLoginCoordinator: (any LaunchAtLoginManaging)? = nil,
-        networkRecoveryDelay: Duration = .zero,
-        suppressStartup: Bool = true
+        networkRecoveryDelay: Duration = .milliseconds(500)
     ) {
-        self.config = config
+        self.config = config ?? AppDefaults.loadConfig(from: defaults)
         self.speakers = speakers
         self.listInterfaces = listInterfaces
         self.defaults = defaults
-        self.networkMonitor = networkMonitor
-        self.hotkeyService = hotkeyService
+        self.networkMonitor = networkMonitor ?? SystemNetworkMonitorService()
         self.launchAtLoginCoordinator = launchAtLoginCoordinator ?? LaunchAtLoginCoordinator()
         self.networkRecoveryDelay = networkRecoveryDelay
-        if suppressStartup { self.hasStartedUp = true }
     }
 
     // MARK: - Startup
 
-    /// Called at launch so volume and hotkeys work without opening the menu bar popover.
-    func startupIfNeeded() {
-        guard !hasStartedUp else { return }
-        hasStartedUp = true
-
-        if hotkeyService == nil {
-            hotkeyService = HotkeyManager(store: self)
-        }
-        hotkeyService?.register()
-
+    /// Starts watching the network and sleep, and reads the speakers. The app calls this once at
+    /// launch, not from a view, so that volume and hotkeys work before the popover is opened.
+    func start() {
         launchAtLoginCoordinator.reconcile(config: &config)
-        setupNetworkMonitor()
+        watchNetwork()
         observeSleep()
         loadInterfaces()
         refresh()
@@ -268,14 +240,11 @@ final class SpeakerStore {
         interfaces = listInterfaces()
     }
 
-    private func setupNetworkMonitor() {
-        if networkMonitor == nil {
-            networkMonitor = SystemNetworkMonitorService()
-        }
-        networkMonitor?.onPathChange = { [weak self] isSatisfied in
+    private func watchNetwork() {
+        networkMonitor.onPathChange = { [weak self] isSatisfied in
             self?.handleNetworkPathChange(isSatisfied: isSatisfied)
         }
-        networkMonitor?.start()
+        networkMonitor.start()
     }
 
     private func observeSleep() {

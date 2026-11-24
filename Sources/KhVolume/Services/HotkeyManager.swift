@@ -8,16 +8,18 @@ extension KeyboardShortcuts.Name {
     static let muteToggle = Self("muteToggle", initial: .init(.m, modifiers: [.control, .option]))
 }
 
+/// The global hotkeys: an input to the store, like the views, with the HUD as their feedback.
 @MainActor
 final class HotkeyManager {
-    private weak var store: SpeakerStore?
+    private let store: SpeakerStore
     private let volumeInteraction: HotkeyVolumeInteraction
-    private let volumeHUD = VolumeHUDController()
+    private let volumeHUD: VolumeHUDController
 
     init(store: SpeakerStore) {
+        let volumeHUD = VolumeHUDController(store: store)
         self.store = store
-        volumeHUD.configure(store: store)
-        volumeInteraction = HotkeyVolumeInteraction(store: store) { [volumeHUD] in volumeHUD.present() }
+        self.volumeHUD = volumeHUD
+        volumeInteraction = HotkeyVolumeInteraction(store: store) { volumeHUD.present() }
     }
 
     func register() {
@@ -37,8 +39,8 @@ final class HotkeyManager {
 
         KeyboardShortcuts.onKeyUp(for: .muteToggle) { [weak self] in
             Task { @MainActor in
-                guard let self, let store = self.store else { return }
-                await store.toggleMute()
+                guard let self else { return }
+                await self.store.toggleMute()
                 self.volumeHUD.present()
             }
         }

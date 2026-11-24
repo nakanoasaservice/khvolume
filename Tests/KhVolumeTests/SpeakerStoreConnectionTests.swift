@@ -15,12 +15,11 @@ struct SpeakerStoreConnectionTests {
 
     // MARK: startup
 
-    @Test("startup registers hotkeys, watches the network and reads the speakers")
+    @Test("start watches the network and reads the speakers")
     func startup() async {
         let speakers = MockSpeakerGroup()
         speakers.outputs = [.stub(level: 62)]
         let monitor = MockNetworkMonitorService()
-        let hotkeys = MockHotkeyService()
         let launchAtLogin = MockLaunchAtLoginCoordinator()
         let store = SpeakerStore(
             config: configured(),
@@ -28,16 +27,14 @@ struct SpeakerStoreConnectionTests {
             listInterfaces: { [NetworkInterfaceInfo(name: "en15", label: "USB LAN", isActive: true)] },
             defaults: .makeForTesting(),
             networkMonitor: monitor,
-            hotkeyService: hotkeys,
             launchAtLoginCoordinator: launchAtLogin,
-            suppressStartup: false
+            networkRecoveryDelay: .zero
         )
 
-        store.startupIfNeeded()
+        store.start()
         #expect(store.connection == .searching)
         await store.settle()
 
-        #expect(hotkeys.registerCallCount == 1)
         #expect(monitor.startCallCount == 1)
         #expect(launchAtLogin.reconcileCallCount == 1)
         #expect(store.interfaces.map(\.name) == ["en15"])
@@ -201,11 +198,10 @@ struct SpeakerStoreConnectionTests {
             listInterfaces: { interfaces },
             defaults: .makeForTesting(),
             networkMonitor: monitor,
-            hotkeyService: MockHotkeyService(),
             launchAtLoginCoordinator: MockLaunchAtLoginCoordinator(),
-            suppressStartup: false
+            networkRecoveryDelay: .zero
         )
-        store.startupIfNeeded()
+        store.start()
         await store.settle()
         return store
     }

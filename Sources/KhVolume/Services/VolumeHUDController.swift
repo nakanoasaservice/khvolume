@@ -3,7 +3,7 @@ import SwiftUI
 
 @MainActor
 final class VolumeHUDController {
-    private weak var store: SpeakerStore?
+    private let store: SpeakerStore
     private var panel: NSPanel?
     private var hideTask: Task<Void, Never>?
     private var isVisible = false
@@ -13,17 +13,16 @@ final class VolumeHUDController {
     private let menuBarGap: CGFloat = 8
     private let screenEdgeMargin: CGFloat = 8
 
-    func configure(store: SpeakerStore) {
+    init(store: SpeakerStore) {
         self.store = store
     }
 
     /// Shows or refreshes the HUD. Content updates reactively from `SpeakerStore`.
     func present() {
-        guard let store else { return }
         guard NSApp.keyWindow == nil else { return }
         hideTask?.cancel()
 
-        let panel = ensurePanel(store: store)
+        let panel = ensurePanel()
         panel.layoutIfNeeded()
         positionPanel(panel)
 
@@ -58,7 +57,7 @@ final class VolumeHUDController {
         scheduleHide()
     }
 
-    private func ensurePanel(store: SpeakerStore) -> NSPanel {
+    private func ensurePanel() -> NSPanel {
         if let panel {
             return panel
         }

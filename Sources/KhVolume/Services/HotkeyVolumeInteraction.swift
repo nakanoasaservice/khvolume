@@ -8,7 +8,7 @@ final class HotkeyVolumeInteraction {
         case down
     }
 
-    private weak var store: SpeakerStore?
+    private let store: SpeakerStore
     /// Delay before hold-to-repeat; release within this window counts as a single step.
     private let holdThreshold: Duration
     /// Repeat interval while held.
@@ -47,7 +47,6 @@ final class HotkeyVolumeInteraction {
     }
 
     private func applyStep(_ direction: Direction) {
-        guard let store else { return }
         let step = store.config.volumeStep
         switch direction {
         case .up:
