@@ -2,7 +2,7 @@ import Foundation
 
 /// App settings, stored in UserDefaults. (The scanned speaker list is `SpeakerDirectory`.)
 enum AppDefaults {
-    static let configKey = "config"
+    private static let configKey = "config"
 
     static func loadConfig(from defaults: UserDefaults = .standard) -> AppConfig {
         // Stored as a plist dictionary so `defaults read` shows readable values.

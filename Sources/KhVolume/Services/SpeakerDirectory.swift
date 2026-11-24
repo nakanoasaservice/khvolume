@@ -3,7 +3,7 @@ import Foundation
 /// The speakers found by the last scan, kept in UserDefaults as `{"<mDNS name>": "<IPv6 address>", …}`
 /// so the app can connect at launch without a scan.
 struct SpeakerDirectory: @unchecked Sendable {
-    static let key = "speakers"
+    private static let key = "speakers"
 
     var defaults: UserDefaults = .standard
 
