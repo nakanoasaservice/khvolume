@@ -6,7 +6,7 @@ import Observation
 @MainActor
 final class SpeakerStore {
     var config: AppConfig
-    var interfaces: [NetworkInterfaceInfo] = []
+    var interfaces: [NetworkInterface] = []
     /// What the speakers last reported; empty while nothing is known.
     /// Not `private(set)` so tests can start from a known state, like `connection`.
     var outputs: [SpeakerOutput] = []
@@ -14,10 +14,10 @@ final class SpeakerStore {
     /// The level the user asked for, until the speakers have confirmed it.
     private(set) var targetLevel: Double?
 
-    private let speakers: any SpeakerControlling
-    private let listInterfaces: () -> [NetworkInterfaceInfo]
+    private let speakers: any SpeakerGroup
+    private let listInterfaces: () -> [NetworkInterface]
     private let defaults: UserDefaults
-    private let networkMonitor: any NetworkMonitorService
+    private let networkMonitor: any NetworkPathMonitor
     /// Debounce applied after a network path change before attempting recovery.
     private let networkRecoveryDelay: Duration
     private var networkRecoveryTask: Task<Void, Never>?
@@ -31,17 +31,17 @@ final class SpeakerStore {
     /// `config` is loaded from `defaults` when it is not given.
     init(
         config: AppConfig? = nil,
-        speakers: any SpeakerControlling = SpeakerGroup(),
-        listInterfaces: @escaping () -> [NetworkInterfaceInfo] = NetworkInterfaceLister.list,
+        speakers: any SpeakerGroup = SSCSpeakerGroup(),
+        listInterfaces: @escaping () -> [NetworkInterface] = NetworkInterfaceLister.list,
         defaults: UserDefaults = .standard,
-        networkMonitor: (any NetworkMonitorService)? = nil,
+        networkMonitor: (any NetworkPathMonitor)? = nil,
         networkRecoveryDelay: Duration = .milliseconds(500)
     ) {
         self.config = config ?? AppDefaults.loadConfig(from: defaults)
         self.speakers = speakers
         self.listInterfaces = listInterfaces
         self.defaults = defaults
-        self.networkMonitor = networkMonitor ?? SystemNetworkMonitorService()
+        self.networkMonitor = networkMonitor ?? SystemNetworkPathMonitor()
         self.networkRecoveryDelay = networkRecoveryDelay
     }
 
@@ -64,8 +64,8 @@ final class SpeakerStore {
     var isBalanced: Bool { outputs.isBalanced }
     var isSearching: Bool { connection == .searching }
 
-    var blocksVolumeIncrease: Bool {
-        !isBalanced && !config.allowForceOnMismatch
+    var blocksLevelIncrease: Bool {
+        !isBalanced && !config.allowsIncreaseWhileUnbalanced
     }
 
     var errorMessage: String? {
@@ -89,16 +89,16 @@ final class SpeakerStore {
             return
         }
         // Compared before clamping, so a step up at the limit is still refused.
-        if blocksVolumeIncrease && level > self.level { return }
+        if blocksLevelIncrease && level > self.level { return }
 
-        targetLevel = min(config.effectiveMax, max(0, level))
+        targetLevel = level.clamped(to: 0...config.maxLevel)
         guard !isWriting else { return }
         isWriting = true
         enqueue { await self.writeTargetLevel() }
     }
 
-    /// Relative volume change from a delta (e.g. hotkey step).
-    func adjustVolume(by delta: Double) {
+    /// Changes the level by `delta` (a hotkey step).
+    func adjustLevel(by delta: Double) {
         setLevel(level + delta)
     }
 

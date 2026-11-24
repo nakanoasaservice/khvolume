@@ -47,12 +47,12 @@ final class HotkeyVolumeInteraction {
     }
 
     private func applyStep(_ direction: Direction) {
-        let step = store.config.volumeStep
+        let step = store.config.levelStep
         switch direction {
         case .up:
-            store.adjustVolume(by: step)
+            store.adjustLevel(by: step)
         case .down:
-            store.adjustVolume(by: -step)
+            store.adjustLevel(by: -step)
         }
         onStep()
     }

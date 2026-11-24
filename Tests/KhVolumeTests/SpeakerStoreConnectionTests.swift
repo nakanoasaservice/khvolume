@@ -19,11 +19,11 @@ struct SpeakerStoreConnectionTests {
     func startup() async {
         let speakers = MockSpeakerGroup()
         speakers.outputs = [.stub(level: 62)]
-        let monitor = MockNetworkMonitorService()
+        let monitor = MockNetworkPathMonitor()
         let store = SpeakerStore(
             config: configured(),
             speakers: speakers,
-            listInterfaces: { [NetworkInterfaceInfo(name: "en15", label: "USB LAN", isActive: true)] },
+            listInterfaces: { [NetworkInterface(name: "en15", label: "USB LAN", isActive: true)] },
             defaults: .makeForTesting(),
             networkMonitor: monitor,
             networkRecoveryDelay: .zero
@@ -157,11 +157,11 @@ struct SpeakerStoreConnectionTests {
     func reload() async {
         let speakers = MockSpeakerGroup()
         speakers.outputs = [.stub(level: 44)]
-        var interfaces: [NetworkInterfaceInfo] = []
+        var interfaces: [NetworkInterface] = []
         let store = SpeakerStore.makeForTesting(
             config: configured("en15"), speakers: speakers, listInterfaces: { interfaces }
         )
-        interfaces = [NetworkInterfaceInfo(name: "en15", label: "USB LAN", isActive: true)]
+        interfaces = [NetworkInterface(name: "en15", label: "USB LAN", isActive: true)]
 
         await store.reload()
 
@@ -187,7 +187,7 @@ struct SpeakerStoreConnectionTests {
     // MARK: network changes
 
     private func startedStore(
-        speakers: MockSpeakerGroup, monitor: MockNetworkMonitorService, interfaces: [NetworkInterfaceInfo]
+        speakers: MockSpeakerGroup, monitor: MockNetworkPathMonitor, interfaces: [NetworkInterface]
     ) async -> SpeakerStore {
         let store = SpeakerStore(
             config: configured(),
@@ -208,12 +208,12 @@ struct SpeakerStoreConnectionTests {
         await store.settle()
     }
 
-    private let lan = [NetworkInterfaceInfo(name: "en15", label: "USB LAN", isActive: true)]
+    private let lan = [NetworkInterface(name: "en15", label: "USB LAN", isActive: true)]
 
     @Test("a network change drops the connections")
     func networkChangeDisconnects() async {
         let speakers = MockSpeakerGroup()
-        let monitor = MockNetworkMonitorService()
+        let monitor = MockNetworkPathMonitor()
         let store = await startedStore(speakers: speakers, monitor: monitor, interfaces: lan)
 
         monitor.simulatePathChange(isSatisfied: false)
@@ -227,7 +227,7 @@ struct SpeakerStoreConnectionTests {
     func networkRestoredReconnects() async {
         let speakers = MockSpeakerGroup()
         speakers.connectError = offline
-        let monitor = MockNetworkMonitorService()
+        let monitor = MockNetworkPathMonitor()
         let store = await startedStore(speakers: speakers, monitor: monitor, interfaces: lan)
         #expect(store.connection == .failed(offline))
 
@@ -241,7 +241,7 @@ struct SpeakerStoreConnectionTests {
     @Test("a restored network leaves a working connection alone")
     func networkRestoredWhileConnected() async {
         let speakers = MockSpeakerGroup()
-        let monitor = MockNetworkMonitorService()
+        let monitor = MockNetworkPathMonitor()
         let store = await startedStore(speakers: speakers, monitor: monitor, interfaces: lan)
 
         monitor.simulatePathChange(isSatisfied: true)
@@ -251,15 +251,15 @@ struct SpeakerStoreConnectionTests {
     }
 }
 
-@Suite("SystemNetworkMonitorService")
+@Suite("SystemNetworkPathMonitor")
 @MainActor
-struct SystemNetworkMonitorServiceTests {
+struct SystemNetworkPathMonitorTests {
 
     /// NWPathMonitor reports the current path once when it starts. Treating that as a change made
     /// the store close the connections it had just opened at launch.
     @Test("starting does not report the current path as a change")
     func startIsNotAChange() async throws {
-        let monitor = SystemNetworkMonitorService()
+        let monitor = SystemNetworkPathMonitor()
         var changes = 0
         monitor.onPathChange = { _ in changes += 1 }
 

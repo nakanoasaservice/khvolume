@@ -4,19 +4,19 @@
 extension SpeakerStore {
 
     /// Formatted level label shared by HUD and popover; a dash when muted or when no level is known.
-    func volumeLevelText(for level: Double) -> String {
+    func levelText(for level: Double) -> String {
         if isMuted || outputs.isEmpty { return "—" }
         return "\(Int(level.rounded()))"
     }
 
-    var volumeLevelText: String {
-        volumeLevelText(for: level)
+    var levelText: String {
+        levelText(for: level)
     }
 
     /// Normalized slider position (0...1) shared by HUD and popover.
-    var volumeFraction: Double {
-        guard config.effectiveMax > 0, !isMuted else { return 0 }
-        return min(1, max(0, level / config.effectiveMax))
+    var levelFraction: Double {
+        guard config.maxLevel > 0, !isMuted else { return 0 }
+        return (level / config.maxLevel).clamped(to: 0...1)
     }
 
     /// The speakers being controlled, so that a missing or an unexpected one can be seen.

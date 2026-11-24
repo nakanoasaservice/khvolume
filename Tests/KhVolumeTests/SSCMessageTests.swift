@@ -80,7 +80,7 @@ struct SpeakerDirectoryTests {
     func storedFormat() {
         let defaults = UserDefaults.makeForTesting()
         SpeakerDirectory(defaults: defaults).store([left, right])
-        let stored = defaults.dictionary(forKey: AppDefaults.speakersKey) as? [String: String]
+        let stored = defaults.dictionary(forKey: SpeakerDirectory.key) as? [String: String]
         #expect(stored == ["Left-1": "fe80::1", "Right-2": "fe80::2"])
     }
 

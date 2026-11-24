@@ -1,7 +1,7 @@
 import Foundation
 
 /// The speakers as one unit: every request goes to all of them.
-protocol SpeakerControlling: Sendable {
+protocol SpeakerGroup: Sendable {
     /// Reads every speaker's output on `interface`. Speakers come from the last scan; they are
     /// searched for again when there was none, or when `rescan` is set.
     func connect(interface: String?, rescan: Bool) async throws(SpeakerError) -> [SpeakerOutput]
@@ -14,9 +14,7 @@ protocol SpeakerControlling: Sendable {
 /// Owns the connections to the speakers and what they last reported.
 ///
 /// Requests to different speakers run in parallel. Callers run one operation at a time.
-actor SpeakerGroup: SpeakerControlling {
-    static let maxLevel = 120.0
-
+actor SSCSpeakerGroup: SpeakerGroup {
     typealias Scan = @Sendable (_ interface: String) async -> [Speaker]
 
     private let directory: SpeakerDirectory
@@ -49,7 +47,7 @@ actor SpeakerGroup: SpeakerControlling {
     }
 
     func setLevel(_ level: Double) async throws(SpeakerError) -> [SpeakerOutput] {
-        let level = min(max(level, 0), Self.maxLevel)
+        let level = level.clamped(to: SpeakerOutput.levelRange)
         return try await apply { SSCMessage.setLevel(level, node: $0) }
     }
 
@@ -96,7 +94,7 @@ actor SpeakerGroup: SpeakerControlling {
             guard let output = reply.output, let level = output.level else {
                 throw .unexpectedReply(speaker: reply.name)
             }
-            read.append(SpeakerOutput(id: reply.id, name: reply.name, level: level, muted: output.mute ?? false))
+            read.append(SpeakerOutput(id: reply.id, name: reply.name, level: level, isMuted: output.mute ?? false))
         }
         outputs = read
         return read
@@ -112,7 +110,7 @@ actor SpeakerGroup: SpeakerControlling {
                   applied.level != nil || applied.mute != nil
             else { return try await readOutputs() }
             if let level = applied.level { updated[index].level = level }
-            if let mute = applied.mute { updated[index].muted = mute }
+            if let mute = applied.mute { updated[index].isMuted = mute }
         }
         outputs = updated
         return updated

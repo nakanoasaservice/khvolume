@@ -5,9 +5,9 @@ import Testing
 @MainActor
 struct SpeakerStoreComputedTests {
 
-    private func store(maxVolumeLimit: Double = 120, outputs: [SpeakerOutput] = [.stub()]) -> SpeakerStore {
+    private func store(levelLimit: Double = 120, outputs: [SpeakerOutput] = [.stub()]) -> SpeakerStore {
         var config = AppConfig()
-        config.maxVolumeLimit = maxVolumeLimit
+        config.levelLimit = levelLimit
         return SpeakerStore.makeForTesting(config: config, outputs: outputs)
     }
 
@@ -33,63 +33,63 @@ struct SpeakerStoreComputedTests {
         #expect(store(outputs: outputs).speakerNamesText == "Left, Right")
     }
 
-    // MARK: volumeLevelText
+    // MARK: levelText
 
-    @Test("volumeLevelText is a dash when muted", arguments: [0.0, 50.0, 99.9])
-    func volumeLevelTextMuted(level: Double) {
-        #expect(store(outputs: [.stub(muted: true)]).volumeLevelText(for: level) == "—")
+    @Test("levelText is a dash when muted", arguments: [0.0, 50.0, 99.9])
+    func levelTextMuted(level: Double) {
+        #expect(store(outputs: [.stub(isMuted: true)]).levelText(for: level) == "—")
     }
 
-    @Test("volumeLevelText is a dash when no level is known")
-    func volumeLevelTextUnknown() {
-        #expect(store(outputs: []).volumeLevelText == "—")
+    @Test("levelText is a dash when no level is known")
+    func levelTextUnknown() {
+        #expect(store(outputs: []).levelText == "—")
     }
 
-    @Test("volumeLevelText rounds to nearest integer", arguments: [
+    @Test("levelText rounds to nearest integer", arguments: [
         (74.4, "74"),
         (74.5, "75"),
         (74.6, "75"),
         (0.0, "0"),
         (120.0, "120"),
     ] as [(Double, String)])
-    func volumeLevelTextRounded(level: Double, expected: String) {
-        #expect(store().volumeLevelText(for: level) == expected)
+    func levelTextRounded(level: Double, expected: String) {
+        #expect(store().levelText(for: level) == expected)
     }
 
-    // MARK: volumeFraction
+    // MARK: levelFraction
 
-    @Test("volumeFraction at 50% level")
-    func volumeFractionHalf() {
-        #expect(store(maxVolumeLimit: 100, outputs: [.stub(level: 50)]).volumeFraction == 0.5)
+    @Test("levelFraction at 50% level")
+    func levelFractionHalf() {
+        #expect(store(levelLimit: 100, outputs: [.stub(level: 50)]).levelFraction == 0.5)
     }
 
-    @Test("volumeFraction clamped to 1.0 when level exceeds max")
-    func volumeFractionClamped() {
-        #expect(store(maxVolumeLimit: 100, outputs: [.stub(level: 110)]).volumeFraction == 1.0)
+    @Test("levelFraction clamped to 1.0 when level exceeds max")
+    func levelFractionClamped() {
+        #expect(store(levelLimit: 100, outputs: [.stub(level: 110)]).levelFraction == 1.0)
     }
 
-    @Test("volumeFraction is 0.0 when muted")
-    func volumeFractionMuted() {
-        #expect(store(maxVolumeLimit: 100, outputs: [.stub(level: 50, muted: true)]).volumeFraction == 0.0)
+    @Test("levelFraction is 0.0 when muted")
+    func levelFractionMuted() {
+        #expect(store(levelLimit: 100, outputs: [.stub(level: 50, isMuted: true)]).levelFraction == 0.0)
     }
 
-    @Test("volumeFraction is 0.0 when effectiveMax is 0 (division guard)")
-    func volumeFractionZeroMax() {
-        #expect(store(maxVolumeLimit: 0, outputs: [.stub(level: 50)]).volumeFraction == 0.0)
+    @Test("levelFraction is 0.0 when maxLevel is 0 (division guard)")
+    func levelFractionZeroMax() {
+        #expect(store(levelLimit: 0, outputs: [.stub(level: 50)]).levelFraction == 0.0)
     }
 
-    @Test("volumeFraction uses the requested level")
-    func volumeFractionTarget() {
-        let store = store(maxVolumeLimit: 100, outputs: [.stub(level: 50)])
+    @Test("levelFraction uses the requested level")
+    func levelFractionTarget() {
+        let store = store(levelLimit: 100, outputs: [.stub(level: 50)])
         store.setLevel(80)
-        #expect(store.volumeFraction == 0.8)
+        #expect(store.levelFraction == 0.8)
     }
 
     // MARK: isVolumeSliderDisabled
 
     @Test("isVolumeSliderDisabled true when muted")
     func sliderDisabledWhenMuted() {
-        #expect(store(outputs: [.stub(muted: true)]).isVolumeSliderDisabled)
+        #expect(store(outputs: [.stub(isMuted: true)]).isVolumeSliderDisabled)
     }
 
     @Test("isVolumeSliderDisabled true while searching")
@@ -104,25 +104,25 @@ struct SpeakerStoreComputedTests {
         #expect(!store().isVolumeSliderDisabled)
     }
 
-    // MARK: blocksVolumeIncrease
+    // MARK: blocksLevelIncrease
 
     private let unbalanced: [SpeakerOutput] = [.stub(id: "l", level: 60), .stub(id: "r", level: 40)]
 
-    @Test("blocksVolumeIncrease true when unbalanced and force not allowed")
+    @Test("blocksLevelIncrease true when unbalanced and force not allowed")
     func blocksIncreaseWhenUnbalanced() {
-        #expect(SpeakerStore.makeForTesting(outputs: unbalanced).blocksVolumeIncrease)
+        #expect(SpeakerStore.makeForTesting(outputs: unbalanced).blocksLevelIncrease)
     }
 
-    @Test("blocksVolumeIncrease false when unbalanced but force allowed")
+    @Test("blocksLevelIncrease false when unbalanced but force allowed")
     func doesNotBlockWithForceAllowed() {
         var config = AppConfig()
-        config.allowForceOnMismatch = true
-        #expect(!SpeakerStore.makeForTesting(config: config, outputs: unbalanced).blocksVolumeIncrease)
+        config.allowsIncreaseWhileUnbalanced = true
+        #expect(!SpeakerStore.makeForTesting(config: config, outputs: unbalanced).blocksLevelIncrease)
     }
 
-    @Test("blocksVolumeIncrease false when balanced")
+    @Test("blocksLevelIncrease false when balanced")
     func doesNotBlockWhenBalanced() {
-        #expect(!store().blocksVolumeIncrease)
+        #expect(!store().blocksLevelIncrease)
     }
 
     // MARK: errorMessage

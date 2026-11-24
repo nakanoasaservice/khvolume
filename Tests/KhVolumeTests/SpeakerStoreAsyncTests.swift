@@ -22,7 +22,7 @@ struct SpeakerStoreAsyncTests {
     @Test("toggleMute unmutes muted speakers")
     func toggleMuteUnmutes() async {
         let speakers = MockSpeakerGroup()
-        speakers.outputs = [.stub(muted: true)]
+        speakers.outputs = [.stub(isMuted: true)]
         let store = SpeakerStore.makeForTesting(speakers: speakers, outputs: speakers.outputs)
 
         await store.toggleMute()
@@ -104,7 +104,7 @@ struct SpeakerStoreAsyncTests {
         let store = SpeakerStore.makeForTesting(speakers: speakers, outputs: [])
         store.connection = .failed(offline)
 
-        store.adjustVolume(by: 1)
+        store.adjustLevel(by: 1)
         await store.settle()
 
         #expect(speakers.setLevelArgs.isEmpty)

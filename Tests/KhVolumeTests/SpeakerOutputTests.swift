@@ -22,7 +22,7 @@ struct SpeakerOutputTests {
 
     @Test("the group is muted when any speaker is")
     func mutedWhenAnyIs() {
-        #expect([SpeakerOutput.stub(id: "l", muted: false), .stub(id: "r", muted: true)].isMuted)
+        #expect([SpeakerOutput.stub(id: "l", isMuted: false), .stub(id: "r", isMuted: true)].isMuted)
         #expect(![SpeakerOutput.stub(id: "l"), .stub(id: "r")].isMuted)
     }
 

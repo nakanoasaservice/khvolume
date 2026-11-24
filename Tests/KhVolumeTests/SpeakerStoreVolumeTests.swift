@@ -8,7 +8,7 @@ struct SpeakerStoreVolumeTests {
 
     private func forcing() -> AppConfig {
         var config = AppConfig()
-        config.allowForceOnMismatch = true
+        config.allowsIncreaseWhileUnbalanced = true
         return config
     }
 
@@ -21,10 +21,10 @@ struct SpeakerStoreVolumeTests {
         #expect(store.targetLevel == 75)
     }
 
-    @Test("setLevel clamps to effectiveMax")
+    @Test("setLevel clamps to maxLevel")
     func setLevelClampedToMax() {
         var config = AppConfig()
-        config.maxVolumeLimit = 100
+        config.levelLimit = 100
         let store = SpeakerStore.makeForTesting(config: config)
         store.setLevel(130)
         #expect(store.targetLevel == 100)
@@ -94,41 +94,41 @@ struct SpeakerStoreVolumeTests {
         #expect(store.targetLevel == 70)
     }
 
-    // MARK: adjustVolume
+    // MARK: adjustLevel
 
-    @Test("adjustVolume steps from the reported level")
-    func adjustVolumeFromReported() {
+    @Test("adjustLevel steps from the reported level")
+    func adjustLevelFromReported() {
         let store = SpeakerStore.makeForTesting(outputs: [.stub(level: 50)])
-        store.adjustVolume(by: 5)
+        store.adjustLevel(by: 5)
         #expect(store.targetLevel == 55)
     }
 
-    @Test("adjustVolume steps from the requested level when one is waiting")
-    func adjustVolumeFromTarget() {
+    @Test("adjustLevel steps from the requested level when one is waiting")
+    func adjustLevelFromTarget() {
         let store = SpeakerStore.makeForTesting(outputs: [.stub(level: 50)])
         store.setLevel(60)
-        store.adjustVolume(by: 5)
+        store.adjustLevel(by: 5)
         #expect(store.targetLevel == 65)
     }
 
-    @Test("adjustVolume with negative delta decreases volume")
-    func adjustVolumeDown() {
+    @Test("adjustLevel with negative delta decreases volume")
+    func adjustLevelDown() {
         let store = SpeakerStore.makeForTesting(outputs: [.stub(level: 50)])
-        store.adjustVolume(by: -10)
+        store.adjustLevel(by: -10)
         #expect(store.targetLevel == 40)
     }
 
-    @Test("adjustVolume up is refused when unbalanced")
-    func adjustVolumeUpRefusedWhenUnbalanced() {
+    @Test("adjustLevel up is refused when unbalanced")
+    func adjustLevelUpRefusedWhenUnbalanced() {
         let store = SpeakerStore.makeForTesting(outputs: unbalanced)
-        store.adjustVolume(by: 5)
+        store.adjustLevel(by: 5)
         #expect(store.targetLevel == nil)
     }
 
-    @Test("adjustVolume down when unbalanced goes below the quietest speaker")
-    func adjustVolumeDownWhenUnbalanced() {
+    @Test("adjustLevel down when unbalanced goes below the quietest speaker")
+    func adjustLevelDownWhenUnbalanced() {
         let store = SpeakerStore.makeForTesting(outputs: unbalanced)
-        store.adjustVolume(by: -5)
+        store.adjustLevel(by: -5)
         #expect(store.targetLevel == 35)
     }
 }

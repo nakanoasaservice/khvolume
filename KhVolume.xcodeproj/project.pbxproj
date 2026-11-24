@@ -53,6 +53,7 @@
 		F3A4893950BCF4D68E72AFC8 /* FakeSSCServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = E051B41F44DDAE0EF241490E /* FakeSSCServer.swift */; };
 		9881E7C457119B02A635D61C /* SSCHardwareTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD23BA754934FC345531A26D /* SSCHardwareTests.swift */; };
 		00B58510DCF0BD00BE792159 /* UserDefaults+Testing.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8D22C7FCEBC76B670CDCC6F /* UserDefaults+Testing.swift */; };
+		BB600F507DC5B28646796146 /* Comparable+Clamped.swift in Sources */ = {isa = PBXBuildFile; fileRef = 743A688A0F75D08F7A298A82 /* Comparable+Clamped.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -113,6 +114,7 @@
 		E051B41F44DDAE0EF241490E /* FakeSSCServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FakeSSCServer.swift; sourceTree = "<group>"; };
 		CD23BA754934FC345531A26D /* SSCHardwareTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSCHardwareTests.swift; sourceTree = "<group>"; };
 		D8D22C7FCEBC76B670CDCC6F /* UserDefaults+Testing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UserDefaults+Testing.swift"; sourceTree = "<group>"; };
+		743A688A0F75D08F7A298A82 /* Comparable+Clamped.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Comparable+Clamped.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -232,6 +234,7 @@
 		E0307448FE8FE6E1011666ED /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				743A688A0F75D08F7A298A82 /* Comparable+Clamped.swift */,
 				DB8DB8AC5768B2A2B07B7CB3 /* AppConfig.swift */,
 				8BF466FE41707E5AFA292429 /* SpeakerModels.swift */,
 			);
@@ -393,6 +396,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BB600F507DC5B28646796146 /* Comparable+Clamped.swift in Sources */,
 				4D1D449826F7DAED3E54CEB3 /* AppConfig.swift in Sources */,
 				6B74A1EDF66DEB734AF7CCCD /* AppDefaults.swift in Sources */,
 				17A53D9687D7D0FF723CFC9E /* HotkeyManager.swift in Sources */,

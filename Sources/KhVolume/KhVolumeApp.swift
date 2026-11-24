@@ -39,7 +39,7 @@ struct KhVolumeApp: App {
         .menuBarExtraStyle(.window)
 
         Settings {
-            SoundSettingsView(store: store, loginItem: loginItem)
+            SettingsView(store: store, loginItem: loginItem)
         }
         .windowResizability(.contentSize)
         .defaultSize(width: 420, height: 440)

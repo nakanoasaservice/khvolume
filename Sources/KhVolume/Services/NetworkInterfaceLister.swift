@@ -4,13 +4,13 @@ import SystemConfiguration
 
 /// Lists hardware network ports (what `networksetup -listallhardwareports` shows) with link state.
 enum NetworkInterfaceLister {
-    static func list() -> [NetworkInterfaceInfo] {
+    static func list() -> [NetworkInterface] {
         let interfaces = SCNetworkInterfaceCopyAll() as? [SCNetworkInterface] ?? []
         let flags = interfaceFlags()
         return interfaces.compactMap { interface in
             guard let name = SCNetworkInterfaceGetBSDName(interface) as String? else { return nil }
             let label = SCNetworkInterfaceGetLocalizedDisplayName(interface) as String? ?? name
-            return NetworkInterfaceInfo(name: name, label: label, isActive: isActive(name, flags: flags[name]))
+            return NetworkInterface(name: name, label: label, isActive: isActive(name, flags: flags[name]))
         }
     }
 

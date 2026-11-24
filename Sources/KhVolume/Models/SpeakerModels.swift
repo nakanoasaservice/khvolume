@@ -10,12 +10,15 @@ struct Speaker: Hashable, Sendable {
 
 /// What one speaker last reported about its output.
 struct SpeakerOutput: Identifiable, Equatable, Sendable {
+    /// The levels a speaker accepts, in dB.
+    static let levelRange: ClosedRange<Double> = 0...120
+
     /// The speaker's mDNS service name.
     let id: String
     /// SSC device name ("Left", "Right"…); two speakers may share one.
     var name: String
     var level: Double
-    var muted: Bool
+    var isMuted: Bool
 }
 
 extension Collection where Element == SpeakerOutput {
@@ -29,7 +32,7 @@ extension Collection where Element == SpeakerOutput {
     }
 
     var isMuted: Bool {
-        contains(where: \.muted)
+        contains(where: \.isMuted)
     }
 
     /// The level of the group: the quietest speaker's, so that a level at or below it never makes
@@ -67,7 +70,7 @@ enum SpeakerError: LocalizedError, Equatable {
     }
 }
 
-struct NetworkInterfaceInfo: Identifiable, Equatable {
+struct NetworkInterface: Identifiable, Equatable {
     let name: String
     let label: String
     /// Whether the port has link.

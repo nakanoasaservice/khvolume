@@ -5,7 +5,7 @@ private enum PopoverNavItem: Hashable {
     case mute
     case reload
     case interface(String)
-    case soundSettings
+    case settings
     case quit
 }
 
@@ -47,7 +47,7 @@ struct VolumePopoverView: View {
     private var navigableItems: [PopoverNavItem] {
         var items: [PopoverNavItem] = [.mute, .reload]
         items += activeInterfaces.map { .interface($0.name) }
-        items.append(.soundSettings)
+        items.append(.settings)
         items.append(.quit)
         return items
     }
@@ -63,7 +63,7 @@ struct VolumePopoverView: View {
         switch item {
         case .mute, .reload, .interface:
             return !store.isSearching
-        case .soundSettings, .quit:
+        case .settings, .quit:
             return true
         }
     }
@@ -104,9 +104,9 @@ struct VolumePopoverView: View {
             Task { await store.reload() }
         case .interface(let name):
             Task { await store.selectInterface(name) }
-        case .soundSettings:
+        case .settings:
             dismiss()
-            SoundSettingsPresenter.present(openSettings: openSettings)
+            SettingsWindowPresenter.present(openSettings: openSettings)
         case .quit:
             NSApplication.shared.terminate(nil)
         }
@@ -144,14 +144,14 @@ struct VolumePopoverView: View {
             HStack(spacing: 10) {
                 muteButton
                 sliderControl
-                Text(store.volumeLevelText)
+                Text(store.levelText)
                     .monospacedDigit()
                     .frame(width: 28, alignment: .trailing)
             }
             .padding(.horizontal, 8)
 
             if !store.isBalanced {
-                levelMismatchDetails
+                unbalancedLevelDetails
             } else if !store.outputs.isEmpty {
                 Text(store.speakerNamesText)
                     .font(.caption)
@@ -199,12 +199,12 @@ struct VolumePopoverView: View {
                 get: { store.level },
                 set: { store.setLevel($0) }
             ),
-            in: 0...store.config.effectiveMax
+            in: 0...store.config.maxLevel
         )
         .disabled(store.isVolumeSliderDisabled)
     }
 
-    private var levelMismatchDetails: some View {
+    private var unbalancedLevelDetails: some View {
         VStack(alignment: .leading, spacing: 6) {
             VStack(alignment: .leading, spacing: 4) {
                 ForEach(store.outputs.sorted { ($0.name, $0.id) < ($1.name, $1.id) }) { output in
@@ -237,14 +237,14 @@ struct VolumePopoverView: View {
             // With the button's own padding, the icon lines up with the rows' checkmark.
             .padding(.trailing, 5)
 
-            ForEach(activeInterfaces) { iface in
+            ForEach(activeInterfaces) { interface in
                 PopoverMenuRow(
-                    title: interfaceRowTitle(iface),
-                    isSelected: store.config.networkInterface == iface.name,
-                    isKeyboardFocused: isKeyboardFocused(.interface(iface.name)),
+                    title: interfaceRowTitle(interface),
+                    isSelected: store.config.networkInterface == interface.name,
+                    isKeyboardFocused: isKeyboardFocused(.interface(interface.name)),
                     isEnabled: !store.isSearching
                 ) {
-                    activate(.interface(iface.name))
+                    activate(.interface(interface.name))
                 }
             }
         }
@@ -269,24 +269,24 @@ struct VolumePopoverView: View {
         .accessibilityLabel("Reload")
     }
 
-    private var activeInterfaces: [NetworkInterfaceInfo] {
+    private var activeInterfaces: [NetworkInterface] {
         store.interfaces.filter(\.isActive)
     }
 
-    private func interfaceRowTitle(_ iface: NetworkInterfaceInfo) -> String {
-        if iface.label.isEmpty {
-            return iface.name
+    private func interfaceRowTitle(_ interface: NetworkInterface) -> String {
+        if interface.label.isEmpty {
+            return interface.name
         }
-        return iface.label
+        return interface.label
     }
 
     private var actionsSection: some View {
         VStack(alignment: .leading, spacing: 2) {
             PopoverMenuRow(
                 title: "Preferences…",
-                isKeyboardFocused: isKeyboardFocused(.soundSettings)
+                isKeyboardFocused: isKeyboardFocused(.settings)
             ) {
-                activate(.soundSettings)
+                activate(.settings)
             }
 
             PopoverMenuRow(

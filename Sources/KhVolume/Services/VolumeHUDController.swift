@@ -8,7 +8,7 @@ final class VolumeHUDController {
     private var hideTask: Task<Void, Never>?
     private var isVisible = false
 
-    private let hideDelayNanos: UInt64 = 1_500_000_000
+    private let hideDelay: Duration = .milliseconds(1500)
     private let slideOffset: CGFloat = 10
     private let menuBarGap: CGFloat = 8
     private let screenEdgeMargin: CGFloat = 8
@@ -109,8 +109,8 @@ final class VolumeHUDController {
     }
 
     private func scheduleHide() {
-        hideTask = Task { @MainActor [weak self] in
-            try? await Task.sleep(nanoseconds: self?.hideDelayNanos ?? 1_500_000_000)
+        hideTask = Task { @MainActor [weak self, hideDelay] in
+            try? await Task.sleep(for: hideDelay)
             guard !Task.isCancelled else { return }
             self?.hideAnimated()
         }

@@ -12,18 +12,18 @@ extension SpeakerStore {
     /// To test the startup path, use `SpeakerStore.init` and call `store.start()`.
     static func makeForTesting(
         config: AppConfig = AppConfig(),
-        speakers: (any SpeakerControlling)? = nil,
+        speakers: (any SpeakerGroup)? = nil,
         outputs: [SpeakerOutput] = [.stub()],
-        listInterfaces: @escaping () -> [NetworkInterfaceInfo] = { [] },
+        listInterfaces: @escaping () -> [NetworkInterface] = { [] },
         defaults: UserDefaults = .makeForTesting(),
-        networkMonitor: MockNetworkMonitorService? = nil
+        networkMonitor: MockNetworkPathMonitor? = nil
     ) -> SpeakerStore {
         let store = SpeakerStore(
             config: config,
             speakers: speakers ?? MockSpeakerGroup(),
             listInterfaces: listInterfaces,
             defaults: defaults,
-            networkMonitor: networkMonitor ?? MockNetworkMonitorService(),
+            networkMonitor: networkMonitor ?? MockNetworkPathMonitor(),
             networkRecoveryDelay: .zero
         )
         store.outputs = outputs

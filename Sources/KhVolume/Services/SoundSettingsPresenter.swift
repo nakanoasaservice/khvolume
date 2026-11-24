@@ -3,7 +3,7 @@ import SwiftUI
 
 /// Brings the preferences window to the front (for MenuBarExtra).
 @MainActor
-enum SoundSettingsPresenter {
+enum SettingsWindowPresenter {
     static func present(openSettings: OpenSettingsAction) {
         if NSApp.activationPolicy() != .regular {
             NSApp.setActivationPolicy(.regular)

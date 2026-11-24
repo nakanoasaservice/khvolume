@@ -3,9 +3,9 @@ import os
 import Testing
 @testable import KhVolume
 
-/// `SpeakerGroup` against a loopback SSC device, with the speaker list in a test UserDefaults suite.
-@Suite("SpeakerGroup — connections and requests")
-struct SpeakerGroupTests {
+/// `SSCSpeakerGroup` against a loopback SSC device, with the speaker list in a test UserDefaults suite.
+@Suite("SSCSpeakerGroup — connections and requests")
+struct SSCSpeakerGroupTests {
     private static let fake = Speaker(id: "fake", address: "::1")
     private static let outputReply = #"{"audio":{"out":{"level":50.0,"mute":false}}}"#
 
@@ -15,10 +15,10 @@ struct SpeakerGroupTests {
         stored: [Speaker] = [fake],
         found: [Speaker] = [],
         scans: OSAllocatedUnfairLock<Int> = .init(initialState: 0)
-    ) -> (SpeakerGroup, SpeakerDirectory) {
+    ) -> (SSCSpeakerGroup, SpeakerDirectory) {
         let directory = SpeakerDirectory(defaults: .makeForTesting())
         directory.store(stored)
-        let group = SpeakerGroup(directory: directory, port: server.port, timeout: 1) { _ in
+        let group = SSCSpeakerGroup(directory: directory, port: server.port, timeout: 1) { _ in
             scans.withLock { $0 += 1 }
             return found
         }
@@ -35,7 +35,7 @@ struct SpeakerGroupTests {
 
         let outputs = try await group.connect(interface: "lo0", rescan: false)
 
-        #expect(outputs == [SpeakerOutput(id: "fake", name: "Fake", level: 50, muted: false)])
+        #expect(outputs == [SpeakerOutput(id: "fake", name: "Fake", level: 50, isMuted: false)])
         #expect(scans.withLock { $0 } == 0)
     }
 
@@ -116,7 +116,7 @@ struct SpeakerGroupTests {
 
         let outputs = try await group.setMuted(true)
 
-        #expect(outputs.map(\.muted) == [true])
+        #expect(outputs.map(\.isMuted) == [true])
         #expect(server.acceptedCount == 2)
     }
 
@@ -164,7 +164,7 @@ struct SpeakerGroupTests {
 
         let outputs = try await group.setLevel(42)
 
-        #expect(outputs == [SpeakerOutput(id: "fake", name: "Fake", level: 42, muted: false)])
+        #expect(outputs == [SpeakerOutput(id: "fake", name: "Fake", level: 42, isMuted: false)])
         #expect(server.requests.filter { $0 == SSCMessage.outputQuery() }.count == 1)
     }
 
@@ -187,7 +187,7 @@ struct SpeakerGroupTests {
 
         let outputs = try await group.setMuted(true)
 
-        #expect(outputs == [SpeakerOutput(id: "fake", name: "Fake", level: 50, muted: true)])
+        #expect(outputs == [SpeakerOutput(id: "fake", name: "Fake", level: 50, isMuted: true)])
     }
 
     @Test("a set reply without the applied value falls back to reading")
@@ -254,14 +254,14 @@ struct SpeakerGroupTests {
         let (group, _) = makeGroup(server)
 
         let read = try await group.connect(interface: "lo0", rescan: false)
-        #expect(read == [SpeakerOutput(id: "fake", name: "Sub", level: 50, muted: false)])
+        #expect(read == [SpeakerOutput(id: "fake", name: "Sub", level: 50, isMuted: false)])
 
         let lowered = try await group.setLevel(42)
         #expect(lowered.map(\.level) == [42])
         #expect(server.requests.last == #"{"audio":{"out5":{"level":42.0}}}"#)
 
         let muted = try await group.setMuted(true)
-        #expect(muted == [SpeakerOutput(id: "fake", name: "Sub", level: 42, muted: true)])
+        #expect(muted == [SpeakerOutput(id: "fake", name: "Sub", level: 42, isMuted: true)])
         #expect(server.requests.last == #"{"audio":{"out5":{"mute":true}}}"#)
 
         // Every set was answered with the applied value, so the output was read once.
@@ -277,7 +277,7 @@ struct SpeakerGroupTests {
         _ = try await group.connect(interface: "lo0", rescan: false)
         let lowered = try await group.setLevel(42)
 
-        #expect(lowered == [SpeakerOutput(id: "fake", name: "Sub", level: 42, muted: false)])
+        #expect(lowered == [SpeakerOutput(id: "fake", name: "Sub", level: 42, isMuted: false)])
         #expect(server.requests.last == SSCMessage.setLevel(42))
     }
 

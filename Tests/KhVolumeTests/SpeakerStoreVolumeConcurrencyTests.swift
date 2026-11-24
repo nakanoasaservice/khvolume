@@ -145,7 +145,7 @@ struct SpeakerStoreVolumeConcurrencyTests {
     @Test("mute during a level request is sent after it")
     func muteWaitsForLevelRequest() async {
         let speakers = SuspendingSpeakerGroup()
-        speakers.setMutedAnswer = .success([.stub(level: 70, muted: true)])
+        speakers.setMutedAnswer = .success([.stub(level: 70, isMuted: true)])
         let store = SpeakerStore.makeForTesting(speakers: speakers)
 
         store.setLevel(70)
@@ -158,7 +158,7 @@ struct SpeakerStoreVolumeConcurrencyTests {
         await mute.value
 
         #expect(speakers.calls == [.setLevel(70), .setMuted(true)])
-        #expect(store.outputs == [.stub(level: 70, muted: true)])
+        #expect(store.outputs == [.stub(level: 70, isMuted: true)])
     }
 
     @Test("selecting an interface drops a level that was waiting to be sent")
