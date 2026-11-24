@@ -3,15 +3,14 @@ import Network
 
 /// Abstracts NWPathMonitor for dependency injection and testability.
 @MainActor
-protocol NetworkMonitorService: AnyObject {
+protocol NetworkPathMonitor: AnyObject {
     /// Called on MainActor whenever the network path changes.
     /// `true` means the path is satisfied (network available); `false` means lost.
     var onPathChange: (@MainActor (Bool) -> Void)? { get set }
     func start()
-    func stop()
 }
 
-final class SystemNetworkMonitorService: NetworkMonitorService {
+final class SystemNetworkPathMonitor: NetworkPathMonitor {
     var onPathChange: (@MainActor (Bool) -> Void)?
 
     private var monitor: NWPathMonitor?

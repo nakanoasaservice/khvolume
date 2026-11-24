@@ -13,7 +13,22 @@ enum KhVolumeMain {
 }
 
 struct KhVolumeApp: App {
-    @State private var store = SpeakerStore()
+    @State private var store: SpeakerStore
+    @State private var loginItem = LoginItem()
+    /// Kept for the life of the app; the hotkey handlers hold it weakly.
+    private let hotkeys: HotkeyManager
+
+    init() {
+        let store = SpeakerStore()
+        let hotkeys = HotkeyManager(store: store)
+        _store = State(initialValue: store)
+        self.hotkeys = hotkeys
+        // Started here, not from a view, so volume and hotkeys work before the popover is opened.
+        Task { @MainActor in
+            hotkeys.register()
+            store.start()
+        }
+    }
 
     var body: some Scene {
         MenuBarExtra {
@@ -24,7 +39,7 @@ struct KhVolumeApp: App {
         .menuBarExtraStyle(.window)
 
         Settings {
-            SoundSettingsView(store: store)
+            SettingsView(store: store, loginItem: loginItem)
         }
         .windowResizability(.contentSize)
         .defaultSize(width: 420, height: 440)

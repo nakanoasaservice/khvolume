@@ -2,7 +2,7 @@
 
 /// Speakers that answer at once: sets are applied to `outputs`, like real speakers echo them.
 @MainActor
-final class MockSpeakerGroup: SpeakerControlling {
+final class MockSpeakerGroup: SpeakerGroup {
     var outputs: [SpeakerOutput] = [.stub()]
     var connectError: SpeakerError?
     var setLevelError: SpeakerError?
@@ -29,7 +29,7 @@ final class MockSpeakerGroup: SpeakerControlling {
     func setMuted(_ muted: Bool) async throws(SpeakerError) -> [SpeakerOutput] {
         setMutedArgs.append(muted)
         if let setMutedError { throw setMutedError }
-        for index in outputs.indices { outputs[index].muted = muted }
+        for index in outputs.indices { outputs[index].isMuted = muted }
         return outputs
     }
 
@@ -43,8 +43,8 @@ extension SpeakerOutput {
         id: String = "speaker",
         name: String = "Speaker",
         level: Double = 50,
-        muted: Bool = false
+        isMuted: Bool = false
     ) -> SpeakerOutput {
-        SpeakerOutput(id: id, name: name, level: level, muted: muted)
+        SpeakerOutput(id: id, name: name, level: level, isMuted: isMuted)
     }
 }

@@ -2,18 +2,18 @@ import AppKit
 import SwiftUI
 import KeyboardShortcuts
 
-struct SoundSettingsView: View {
+struct SettingsView: View {
     @Bindable var store: SpeakerStore
+    let loginItem: LoginItem
 
     var body: some View {
         Form {
             Section("General") {
-                Toggle("Open KH Volume at login", isOn: $store.config.launchAtLogin)
-                    .onChange(of: store.config.launchAtLogin) { _, _ in
-                        store.saveConfig()
-                        store.applyLaunchAtLoginPreference()
-                    }
-                if let message = store.launchAtLoginMessage {
+                Toggle("Open KH Volume at login", isOn: Binding(
+                    get: { loginItem.isEnabled },
+                    set: { loginItem.setEnabled($0) }
+                ))
+                if let message = loginItem.errorMessage {
                     Text(message)
                         .font(.caption)
                         .foregroundStyle(.orange)
@@ -23,20 +23,20 @@ struct SoundSettingsView: View {
             Section("Volume") {
                 LabeledContent("Volume limit") {
                     HStack(spacing: 12) {
-                        Slider(value: $store.config.maxVolumeLimit, in: 0...SpeakerGroup.maxLevel)
-                        Text("\(Int(store.config.maxVolumeLimit.rounded())) dB")
+                        Slider(value: $store.config.levelLimit, in: SpeakerOutput.levelRange)
+                        Text("\(Int(store.config.levelLimit.rounded())) dB")
                             .monospacedDigit()
                             .frame(width: 52, alignment: .trailing)
                     }
                 }
-                .onChange(of: store.config.maxVolumeLimit) { _, _ in store.saveConfig() }
+                .onChange(of: store.config.levelLimit) { _, _ in store.saveConfig() }
 
-                Picker("Volume step", selection: $store.config.volumeStep) {
+                Picker("Volume step", selection: $store.config.levelStep) {
                     Text("1 dB").tag(1.0)
                     Text("3 dB").tag(3.0)
                     Text("6 dB").tag(6.0)
                 }
-                .onChange(of: store.config.volumeStep) { _, _ in store.saveConfig() }
+                .onChange(of: store.config.levelStep) { _, _ in store.saveConfig() }
             }
 
             Section("Shortcuts") {
@@ -46,8 +46,8 @@ struct SoundSettingsView: View {
             }
 
             Section("Advanced") {
-                Toggle("Allow increasing volume when left/right levels differ", isOn: $store.config.allowForceOnMismatch)
-                    .onChange(of: store.config.allowForceOnMismatch) { _, _ in store.saveConfig() }
+                Toggle("Allow increasing volume when left/right levels differ", isOn: $store.config.allowsIncreaseWhileUnbalanced)
+                    .onChange(of: store.config.allowsIncreaseWhileUnbalanced) { _, _ in store.saveConfig() }
             }
         }
         .formStyle(.grouped)
@@ -60,7 +60,7 @@ struct SoundSettingsView: View {
                 .frame(width: 0, height: 0)
         }
         .onAppear {
-            store.reconcileLaunchAtLoginFromService()
+            loginItem.refresh()
         }
     }
 }
@@ -97,7 +97,7 @@ private struct SettingsWindowLifecycleView: NSViewRepresentable {
                 queue: .main
             ) { _ in
                 Task { @MainActor in
-                    SoundSettingsPresenter.settingsWindowDidClose()
+                    SettingsWindowPresenter.settingsWindowDidClose()
                 }
             }
         }

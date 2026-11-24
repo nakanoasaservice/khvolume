@@ -3,27 +3,26 @@ import SwiftUI
 
 @MainActor
 final class VolumeHUDController {
-    private weak var store: SpeakerStore?
+    private let store: SpeakerStore
     private var panel: NSPanel?
     private var hideTask: Task<Void, Never>?
     private var isVisible = false
 
-    private let hideDelayNanos: UInt64 = 1_500_000_000
+    private let hideDelay: Duration = .milliseconds(1500)
     private let slideOffset: CGFloat = 10
     private let menuBarGap: CGFloat = 8
     private let screenEdgeMargin: CGFloat = 8
 
-    func configure(store: SpeakerStore) {
+    init(store: SpeakerStore) {
         self.store = store
     }
 
     /// Shows or refreshes the HUD. Content updates reactively from `SpeakerStore`.
     func present() {
-        guard let store else { return }
         guard NSApp.keyWindow == nil else { return }
         hideTask?.cancel()
 
-        let panel = ensurePanel(store: store)
+        let panel = ensurePanel()
         panel.layoutIfNeeded()
         positionPanel(panel)
 
@@ -58,7 +57,7 @@ final class VolumeHUDController {
         scheduleHide()
     }
 
-    private func ensurePanel(store: SpeakerStore) -> NSPanel {
+    private func ensurePanel() -> NSPanel {
         if let panel {
             return panel
         }
@@ -110,8 +109,8 @@ final class VolumeHUDController {
     }
 
     private func scheduleHide() {
-        hideTask = Task { @MainActor [weak self] in
-            try? await Task.sleep(nanoseconds: self?.hideDelayNanos ?? 1_500_000_000)
+        hideTask = Task { @MainActor [weak self, hideDelay] in
+            try? await Task.sleep(for: hideDelay)
             guard !Task.isCancelled else { return }
             self?.hideAnimated()
         }

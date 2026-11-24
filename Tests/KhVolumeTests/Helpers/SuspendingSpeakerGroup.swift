@@ -7,7 +7,7 @@
 /// `SpeakerStore` are `@MainActor`, `waitForPending` only has to yield until the store's
 /// operation reaches the suspended request.
 @MainActor
-final class SuspendingSpeakerGroup: SpeakerControlling {
+final class SuspendingSpeakerGroup: SpeakerGroup {
     enum Call: Equatable {
         case connect(rescan: Bool)
         case setLevel(Double)
@@ -18,7 +18,7 @@ final class SuspendingSpeakerGroup: SpeakerControlling {
 
     var suspendsConnect = false
     var connectAnswer: Answer = .success([.stub()])
-    var setMutedAnswer: Answer = .success([.stub(muted: true)])
+    var setMutedAnswer: Answer = .success([.stub(isMuted: true)])
 
     private(set) var calls: [Call] = []
     private var pending: [CheckedContinuation<Answer, Never>] = []

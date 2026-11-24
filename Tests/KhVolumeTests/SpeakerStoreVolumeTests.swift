@@ -1,14 +1,15 @@
 import Testing
 @testable import KhVolume
 
-@Suite("SpeakerStore — Volume requests")
+@Suite("SpeakerStore — Volume requests", .serialized)
 @MainActor
 struct SpeakerStoreVolumeTests {
+    private let offline = SpeakerError.unreachable(speaker: "Left")
     private let unbalanced: [SpeakerOutput] = [.stub(id: "l", level: 60), .stub(id: "r", level: 40)]
 
     private func forcing() -> AppConfig {
         var config = AppConfig()
-        config.allowForceOnMismatch = true
+        config.allowsIncreaseWhileUnbalanced = true
         return config
     }
 
@@ -21,10 +22,10 @@ struct SpeakerStoreVolumeTests {
         #expect(store.targetLevel == 75)
     }
 
-    @Test("setLevel clamps to effectiveMax")
+    @Test("setLevel clamps to maxLevel")
     func setLevelClampedToMax() {
         var config = AppConfig()
-        config.maxVolumeLimit = 100
+        config.levelLimit = 100
         let store = SpeakerStore.makeForTesting(config: config)
         store.setLevel(130)
         #expect(store.targetLevel == 100)
@@ -94,41 +95,89 @@ struct SpeakerStoreVolumeTests {
         #expect(store.targetLevel == 70)
     }
 
-    // MARK: adjustVolume
+    // MARK: adjustLevel
 
-    @Test("adjustVolume steps from the reported level")
-    func adjustVolumeFromReported() {
+    @Test("adjustLevel steps from the reported level")
+    func adjustLevelFromReported() {
         let store = SpeakerStore.makeForTesting(outputs: [.stub(level: 50)])
-        store.adjustVolume(by: 5)
+        store.adjustLevel(by: 5)
         #expect(store.targetLevel == 55)
     }
 
-    @Test("adjustVolume steps from the requested level when one is waiting")
-    func adjustVolumeFromTarget() {
+    @Test("adjustLevel steps from the requested level when one is waiting")
+    func adjustLevelFromTarget() {
         let store = SpeakerStore.makeForTesting(outputs: [.stub(level: 50)])
         store.setLevel(60)
-        store.adjustVolume(by: 5)
+        store.adjustLevel(by: 5)
         #expect(store.targetLevel == 65)
     }
 
-    @Test("adjustVolume with negative delta decreases volume")
-    func adjustVolumeDown() {
+    @Test("adjustLevel with negative delta decreases volume")
+    func adjustLevelDown() {
         let store = SpeakerStore.makeForTesting(outputs: [.stub(level: 50)])
-        store.adjustVolume(by: -10)
+        store.adjustLevel(by: -10)
         #expect(store.targetLevel == 40)
     }
 
-    @Test("adjustVolume up is refused when unbalanced")
-    func adjustVolumeUpRefusedWhenUnbalanced() {
+    @Test("adjustLevel up is refused when unbalanced")
+    func adjustLevelUpRefusedWhenUnbalanced() {
         let store = SpeakerStore.makeForTesting(outputs: unbalanced)
-        store.adjustVolume(by: 5)
+        store.adjustLevel(by: 5)
         #expect(store.targetLevel == nil)
     }
 
-    @Test("adjustVolume down when unbalanced goes below the quietest speaker")
-    func adjustVolumeDownWhenUnbalanced() {
+    @Test("adjustLevel down when unbalanced goes below the quietest speaker")
+    func adjustLevelDownWhenUnbalanced() {
         let store = SpeakerStore.makeForTesting(outputs: unbalanced)
-        store.adjustVolume(by: -5)
+        store.adjustLevel(by: -5)
         #expect(store.targetLevel == 35)
+    }
+
+    // MARK: failed requests
+
+    @Test("a failed level write drops the level and marks the connection failed")
+    func setLevelFailure() async {
+        let speakers = MockSpeakerGroup()
+        speakers.setLevelError = offline
+        let store = SpeakerStore.makeForTesting(speakers: speakers)
+
+        store.setLevel(75)
+        await store.settle()
+
+        #expect(store.targetLevel == nil)
+        #expect(store.connection == .failed(offline))
+        #expect(store.errorMessage == "Left is not responding")
+        #expect(store.outputs.isEmpty)
+    }
+
+    @Test("opening the popover reads the speakers again after a failed write")
+    func popoverRecoversAfterFailedWrite() async {
+        let speakers = MockSpeakerGroup()
+        speakers.setLevelError = offline
+        let store = SpeakerStore.makeForTesting(speakers: speakers)
+        store.setLevel(75)
+        await store.settle()
+
+        speakers.outputs = [.stub(level: 60)]
+        store.preparePopover()
+        await store.settle()
+
+        #expect(store.level == 60)
+        #expect(store.connection == .connected)
+    }
+
+    @Test("a volume change while not connected reads the speakers instead of sending a level")
+    func volumeChangeWhileNotConnected() async {
+        let speakers = MockSpeakerGroup()
+        speakers.outputs = [.stub(level: 60)]
+        let store = SpeakerStore.makeForTesting(speakers: speakers, outputs: [])
+        store.connection = .failed(offline)
+
+        store.adjustLevel(by: 1)
+        await store.settle()
+
+        #expect(speakers.setLevelArgs.isEmpty)
+        #expect(store.level == 60)
+        #expect(store.connection == .connected)
     }
 }

@@ -1,0 +1,43 @@
+import Foundation
+
+/// A speaker found on the network.
+struct Speaker: Hashable, Sendable {
+    /// mDNS service name; unique on the network, unlike the SSC device name.
+    let id: String
+    /// IPv6 address without the interface scope.
+    let address: String
+}
+
+/// What one speaker last reported about its output.
+struct SpeakerOutput: Identifiable, Equatable, Sendable {
+    /// The levels a speaker accepts, in dB.
+    static let levelRange: ClosedRange<Double> = 0...120
+
+    /// The speaker's mDNS service name.
+    let id: String
+    /// SSC device name ("Left", "Right"…); two speakers may share one.
+    var name: String
+    var level: Double
+    var isMuted: Bool
+}
+
+extension Collection where Element == SpeakerOutput {
+    /// Levels closer than this count as the same level.
+    static var balanceTolerance: Double { 0.05 }
+
+    /// True when every speaker is at the same level.
+    var isBalanced: Bool {
+        guard let lowest = map(\.level).min(), let highest = map(\.level).max() else { return true }
+        return highest - lowest < Self.balanceTolerance
+    }
+
+    var isMuted: Bool {
+        contains(where: \.isMuted)
+    }
+
+    /// The level of the group: the quietest speaker's, so that a level at or below it never makes
+    /// any speaker louder. 0 when no speaker has reported.
+    var level: Double {
+        map(\.level).min() ?? 0
+    }
+}

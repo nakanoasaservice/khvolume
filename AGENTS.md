@@ -9,7 +9,7 @@ macOS menu bar app that sets the DSP level of Neumann KH speakers over SSC (Senn
 xcodebuild test -project KhVolume.xcodeproj -scheme KhVolume -destination 'platform=macOS'
 
 # One suite
-xcodebuild test -project KhVolume.xcodeproj -scheme KhVolume -destination 'platform=macOS' -only-testing:KhVolumeTests/SpeakerGroupTests
+xcodebuild test -project KhVolume.xcodeproj -scheme KhVolume -destination 'platform=macOS' -only-testing:KhVolumeTests/SSCSpeakerGroupTests
 
 # Against real speakers (skipped unless the interface is given)
 TEST_RUNNER_KHVOL_HARDWARE_INTERFACE=en15 xcodebuild test -project KhVolume.xcodeproj -scheme KhVolume -destination 'platform=macOS' -only-testing:KhVolumeTests/SSCHardwareTests
@@ -19,7 +19,7 @@ TEST_RUNNER_KHVOL_HARDWARE_INTERFACE=en15 xcodebuild test -project KhVolume.xcod
 ```
 
 - Run all tests after any code change. There is no linter or formatter.
-- The hardware test lowers the level by 1 dB and mutes for a moment, then restores both. Run it when a change touches `Services/SSC/` or `SpeakerGroup`.
+- The hardware test lowers the level by 1 dB and mutes for a moment, then restores both. Run it when a change touches `Services/SSC/`.
 - **Do not add a `Package.swift`.** `swift build` records the deployment target (macOS 14) as the linked SDK version, so macOS 26+ treats the app as built with an old SDK and drops the current system design. The Xcode project records the real SDK.
 - **The Xcode project lists every source file.** Adding, renaming or removing a Swift file also needs the matching entries in `KhVolume.xcodeproj/project.pbxproj`, or the build breaks.
 - Swift 5 language mode, macOS 14 minimum, Xcode 26+.
@@ -27,7 +27,7 @@ TEST_RUNNER_KHVOL_HARDWARE_INTERFACE=en15 xcodebuild test -project KhVolume.xcod
 ## Running the app by hand
 
 - The debug build has the same bundle id as an installed `/Applications/KH Volume.app`, so both would register the same global hotkeys and share settings. Quit the installed one first.
-- Settings live in UserDefaults: `defaults read com.khvolume.app` shows `config` (`AppConfig`) and `speakers` (`{mDNS name: IPv6 address}` from the last scan). There is no migration: a stored `config` that does not decode (a setting was added or its type changed) is replaced with the defaults at launch.
+- Settings live in UserDefaults: `defaults read com.khvolume.app` shows `config` (`AppConfig`) and `speakers` (`{mDNS name: IPv6 address}` from the last scan). There is no migration: a stored `config` that does not decode (a setting was added or its type changed) is replaced with the defaults at launch. Renaming a property of `AppConfig` is safe as long as its `CodingKeys` name stays.
 - It is a menu bar app (`LSUIElement`): there is no window to look for after launch.
 
 ## Speakers and SSC
@@ -51,4 +51,4 @@ TEST_RUNNER_KHVOL_HARDWARE_INTERFACE=en15 xcodebuild test -project KhVolume.xcod
 
 - Tests run inside the app as their host; `KhVolumeMain` starts an empty app when `XCTestConfigurationFilePath` is set. So **`UserDefaults.standard` in a test is the real app's settings**: use `UserDefaults.makeForTesting()` and `SpeakerStore.makeForTesting`.
 - The mocks used with `SpeakerStore` are `@MainActor`, so `await store.settle()` and `SuspendingSpeakerGroup.waitForPending()` order a test without sleeps.
-- `FakeSSCServer` is a loopback SSC device for `SpeakerGroup` tests.
+- `FakeSSCServer` is a loopback SSC device for `SSCSpeakerGroup` tests.

@@ -22,7 +22,7 @@ struct SSCHardwareTests {
         #expect(interfaces.contains { $0.name == interface && $0.isActive })
 
         let directory = SpeakerDirectory(defaults: .makeForTesting())
-        let group = SpeakerGroup(directory: directory)
+        let group = SSCSpeakerGroup(directory: directory)
 
         let start = ContinuousClock.now
         let initial = try await group.connect(interface: interface, rescan: true)

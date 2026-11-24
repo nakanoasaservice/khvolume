@@ -6,7 +6,7 @@ struct VolumeHUDView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(store.volumeLevelText)
+            Text(store.levelText)
                 .font(.system(size: 13, weight: .semibold))
                 .monospacedDigit()
                 .foregroundStyle(.white)
@@ -17,7 +17,7 @@ struct VolumeHUDView: View {
                     .foregroundStyle(.white.opacity(0.85))
                     .frame(width: 14)
 
-                VolumeHUDTrack(fraction: store.volumeFraction)
+                VolumeHUDTrack(fraction: store.levelFraction)
 
                 Image(systemName: "speaker.wave.3.fill")
                     .font(.system(size: 12, weight: .medium))
