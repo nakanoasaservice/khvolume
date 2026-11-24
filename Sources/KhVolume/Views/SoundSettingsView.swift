@@ -4,16 +4,16 @@ import KeyboardShortcuts
 
 struct SoundSettingsView: View {
     @Bindable var store: SpeakerStore
+    let loginItem: LoginItem
 
     var body: some View {
         Form {
             Section("General") {
-                Toggle("Open KH Volume at login", isOn: $store.config.launchAtLogin)
-                    .onChange(of: store.config.launchAtLogin) { _, _ in
-                        store.saveConfig()
-                        store.applyLaunchAtLoginPreference()
-                    }
-                if let message = store.launchAtLoginMessage {
+                Toggle("Open KH Volume at login", isOn: Binding(
+                    get: { loginItem.isEnabled },
+                    set: { loginItem.setEnabled($0) }
+                ))
+                if let message = loginItem.errorMessage {
                     Text(message)
                         .font(.caption)
                         .foregroundStyle(.orange)
@@ -60,7 +60,7 @@ struct SoundSettingsView: View {
                 .frame(width: 0, height: 0)
         }
         .onAppear {
-            store.reconcileLaunchAtLoginFromService()
+            loginItem.refresh()
         }
     }
 }

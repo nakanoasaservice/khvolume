@@ -14,6 +14,7 @@ enum KhVolumeMain {
 
 struct KhVolumeApp: App {
     @State private var store: SpeakerStore
+    @State private var loginItem = LoginItem()
     /// Kept for the life of the app; the hotkey handlers hold it weakly.
     private let hotkeys: HotkeyManager
 
@@ -38,7 +39,7 @@ struct KhVolumeApp: App {
         .menuBarExtraStyle(.window)
 
         Settings {
-            SoundSettingsView(store: store)
+            SoundSettingsView(store: store, loginItem: loginItem)
         }
         .windowResizability(.contentSize)
         .defaultSize(width: 420, height: 440)

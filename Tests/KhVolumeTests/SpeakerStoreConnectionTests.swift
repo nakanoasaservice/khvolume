@@ -20,14 +20,12 @@ struct SpeakerStoreConnectionTests {
         let speakers = MockSpeakerGroup()
         speakers.outputs = [.stub(level: 62)]
         let monitor = MockNetworkMonitorService()
-        let launchAtLogin = MockLaunchAtLoginCoordinator()
         let store = SpeakerStore(
             config: configured(),
             speakers: speakers,
             listInterfaces: { [NetworkInterfaceInfo(name: "en15", label: "USB LAN", isActive: true)] },
             defaults: .makeForTesting(),
             networkMonitor: monitor,
-            launchAtLoginCoordinator: launchAtLogin,
             networkRecoveryDelay: .zero
         )
 
@@ -36,7 +34,6 @@ struct SpeakerStoreConnectionTests {
         await store.settle()
 
         #expect(monitor.startCallCount == 1)
-        #expect(launchAtLogin.reconcileCallCount == 1)
         #expect(store.interfaces.map(\.name) == ["en15"])
         #expect(speakers.connectCalls.map(\.interface) == ["en15"])
         #expect(speakers.connectCalls.map(\.rescan) == [false])
@@ -198,7 +195,6 @@ struct SpeakerStoreConnectionTests {
             listInterfaces: { interfaces },
             defaults: .makeForTesting(),
             networkMonitor: monitor,
-            launchAtLoginCoordinator: MockLaunchAtLoginCoordinator(),
             networkRecoveryDelay: .zero
         )
         store.start()

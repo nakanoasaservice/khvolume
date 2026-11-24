@@ -7,12 +7,10 @@ struct AppConfig: Codable, Equatable {
         case networkInterface = "interface"
         case maxVolumeLimit
         case volumeStep
-        case launchAtLogin
         case allowForceOnMismatch
     }
     var maxVolumeLimit: Double = SpeakerGroup.maxLevel
     var volumeStep: Double = 1
-    var launchAtLogin: Bool = false
     var allowForceOnMismatch: Bool = false
 
     var effectiveMax: Double {

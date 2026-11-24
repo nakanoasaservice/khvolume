@@ -14,12 +14,6 @@ final class SpeakerStore {
     /// The level the user asked for, until the speakers have confirmed it.
     private(set) var targetLevel: Double?
 
-    /// Forwarded from `launchAtLoginCoordinator.errorMessage`.
-    var launchAtLoginMessage: String? { launchAtLoginCoordinator.errorMessage }
-
-    /// Manages LaunchAtLogin preference and owns its error-message state.
-    let launchAtLoginCoordinator: any LaunchAtLoginManaging
-
     private let speakers: any SpeakerControlling
     private let listInterfaces: () -> [NetworkInterfaceInfo]
     private let defaults: UserDefaults
@@ -41,7 +35,6 @@ final class SpeakerStore {
         listInterfaces: @escaping () -> [NetworkInterfaceInfo] = NetworkInterfaceLister.list,
         defaults: UserDefaults = .standard,
         networkMonitor: (any NetworkMonitorService)? = nil,
-        launchAtLoginCoordinator: (any LaunchAtLoginManaging)? = nil,
         networkRecoveryDelay: Duration = .milliseconds(500)
     ) {
         self.config = config ?? AppDefaults.loadConfig(from: defaults)
@@ -49,7 +42,6 @@ final class SpeakerStore {
         self.listInterfaces = listInterfaces
         self.defaults = defaults
         self.networkMonitor = networkMonitor ?? SystemNetworkMonitorService()
-        self.launchAtLoginCoordinator = launchAtLoginCoordinator ?? LaunchAtLoginCoordinator()
         self.networkRecoveryDelay = networkRecoveryDelay
     }
 
@@ -58,7 +50,6 @@ final class SpeakerStore {
     /// Starts watching the network and sleep, and reads the speakers. The app calls this once at
     /// launch, not from a view, so that volume and hotkeys work before the popover is opened.
     func start() {
-        launchAtLoginCoordinator.reconcile(config: &config)
         watchNetwork()
         observeSleep()
         loadInterfaces()
@@ -85,14 +76,6 @@ final class SpeakerStore {
 
     func saveConfig() {
         AppDefaults.saveConfig(config, to: defaults)
-    }
-
-    func applyLaunchAtLoginPreference() {
-        launchAtLoginCoordinator.apply(config: &config)
-    }
-
-    func reconcileLaunchAtLoginFromService() {
-        launchAtLoginCoordinator.reconcile(config: &config)
     }
 
     // MARK: - Volume

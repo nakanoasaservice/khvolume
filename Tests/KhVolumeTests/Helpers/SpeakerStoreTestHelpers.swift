@@ -16,8 +16,7 @@ extension SpeakerStore {
         outputs: [SpeakerOutput] = [.stub()],
         listInterfaces: @escaping () -> [NetworkInterfaceInfo] = { [] },
         defaults: UserDefaults = .makeForTesting(),
-        networkMonitor: MockNetworkMonitorService? = nil,
-        launchAtLoginCoordinator: MockLaunchAtLoginCoordinator? = nil
+        networkMonitor: MockNetworkMonitorService? = nil
     ) -> SpeakerStore {
         let store = SpeakerStore(
             config: config,
@@ -25,7 +24,6 @@ extension SpeakerStore {
             listInterfaces: listInterfaces,
             defaults: defaults,
             networkMonitor: networkMonitor ?? MockNetworkMonitorService(),
-            launchAtLoginCoordinator: launchAtLoginCoordinator ?? MockLaunchAtLoginCoordinator(),
             networkRecoveryDelay: .zero
         )
         store.outputs = outputs
