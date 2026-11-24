@@ -21,9 +21,9 @@ struct AppDefaultsTests {
         var config = AppConfig()
         config.networkInterface = "en15"
         AppDefaults.saveConfig(config, to: defaults)
-        var stored = defaults.dictionary(forKey: AppDefaults.configKey) ?? [:]
+        var stored = defaults.dictionary(forKey: "config") ?? [:]
         stored["hotkeyVolumeUp"] = "option+equal"
-        defaults.set(stored, forKey: AppDefaults.configKey)
+        defaults.set(stored, forKey: "config")
         #expect(AppDefaults.loadConfig(from: defaults) == config)
     }
 
@@ -35,7 +35,7 @@ struct AppDefaultsTests {
                 "interface": "en15", "maxVolumeLimit": 70.0, "volumeStep": 3.0,
                 "allowForceOnMismatch": true, "launchAtLogin": true,
             ],
-            forKey: AppDefaults.configKey
+            forKey: "config"
         )
 
         let config = AppDefaults.loadConfig(from: defaults)
@@ -49,11 +49,11 @@ struct AppDefaultsTests {
     @Test("a config that lacks a setting is replaced with the defaults")
     func undecodableConfigIsReplaced() {
         let defaults = UserDefaults.makeForTesting()
-        defaults.set(["interface": "en15", "maxVolumeLimit": 80.0], forKey: AppDefaults.configKey)
+        defaults.set(["interface": "en15", "maxVolumeLimit": 80.0], forKey: "config")
 
         #expect(AppDefaults.loadConfig(from: defaults) == AppConfig())
-        #expect(defaults.dictionary(forKey: AppDefaults.configKey)?["interface"] == nil)
-        #expect(defaults.dictionary(forKey: AppDefaults.configKey)?["volumeStep"] as? Double == 1)
+        #expect(defaults.dictionary(forKey: "config")?["interface"] == nil)
+        #expect(defaults.dictionary(forKey: "config")?["volumeStep"] as? Double == 1)
     }
 
     @Test("missing config loads defaults")
