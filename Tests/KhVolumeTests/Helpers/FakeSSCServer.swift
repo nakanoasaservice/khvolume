@@ -1,7 +1,7 @@
 import Darwin
 import Foundation
 
-/// Minimal SSC device on [::1]:<random port> for pool tests. Replies to each CRLF-terminated line
+/// Minimal SSC device on [::1]:<random port> for `SSCSpeakerGroup` tests. Replies to each CRLF-terminated line
 /// with `reply(line)` and records connections and requests.
 final class FakeSSCServer: @unchecked Sendable {
     let port: UInt16

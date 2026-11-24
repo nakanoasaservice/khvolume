@@ -10,12 +10,12 @@
 		00A3A07FC6160E7123180B37 /* SpeakerStoreConnectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 191F58C2C957D01F428EFD6B /* SpeakerStoreConnectionTests.swift */; };
 		0C85F51E795110A6F43660A1 /* MenuBarStatusLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56C17E2CDC83A87B63CC9CA6 /* MenuBarStatusLabel.swift */; };
 		0FA58754E5470673263DA6EC /* SpeakerStoreVolumeConcurrencyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBC811D438C7684D2325AE9C /* SpeakerStoreVolumeConcurrencyTests.swift */; };
-		0FF259952B80B2B54B352EAF /* SpeakerStoreAsyncTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79385C3DE8B0927B6014BBC3 /* SpeakerStoreAsyncTests.swift */; };
+		0FF259952B80B2B54B352EAF /* SpeakerStoreMuteTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79385C3DE8B0927B6014BBC3 /* SpeakerStoreMuteTests.swift */; };
 		1054B5061C33F95FF54B7A8F /* LoginItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4D2CAE41B892D1ECA887C5D /* LoginItem.swift */; };
 		17A53D9687D7D0FF723CFC9E /* HotkeyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29BF772FA72D56E61509E97E /* HotkeyManager.swift */; };
 		17A5A4CFDA03C4B137C23F7C /* SpeakerStoreTestHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = E35BE4E8BB5D613C8EA7C8A4 /* SpeakerStoreTestHelpers.swift */; };
 		2D285D19D99E574FB77B36D5 /* SpeakerStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF19B73105D54E33739E3AEA /* SpeakerStore.swift */; };
-		3A5AE5DAC491D754BF73316D /* SpeakerStoreComputedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A71E9A32E328389A6576A551 /* SpeakerStoreComputedTests.swift */; };
+		3A5AE5DAC491D754BF73316D /* SpeakerStoreDerivedStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A71E9A32E328389A6576A551 /* SpeakerStoreDerivedStateTests.swift */; };
 		40398FC47F8CC4B0E3631FE6 /* HotkeyVolumeInteraction.swift in Sources */ = {isa = PBXBuildFile; fileRef = F60CC07A65FB714EABAF2531 /* HotkeyVolumeInteraction.swift */; };
 		4D1D449826F7DAED3E54CEB3 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB8DB8AC5768B2A2B07B7CB3 /* AppConfig.swift */; };
 		5CF6BE010AB431B17A1D5DB2 /* PopoverMenuRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F6BDF558358FF89E6D0F712 /* PopoverMenuRow.swift */; };
@@ -26,34 +26,41 @@
 		76CEF1DEC3DEF4B2AC34B572 /* SpeakerErrorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFC6EB8432502459D66F30FE /* SpeakerErrorTests.swift */; };
 		A7C1E5F2B3D44A6E9F0C1D2E /* HotkeyVolumeInteractionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8D2F6A3C4E55B7FA01D2E3F /* HotkeyVolumeInteractionTests.swift */; };
 		77ABD2A70B4717217C6E1F94 /* AppConfigTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34D442D215FE9FE7377D43AC /* AppConfigTests.swift */; };
-		7E23CB66EBBE7BE06D8A8493 /* SpeakerGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD295A7B75C37830941D9E8B /* SpeakerGroup.swift */; };
-		872AE82AEE5878B541118DD0 /* MockNetworkMonitorService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8719BA50AFCFA05772BF7B52 /* MockNetworkMonitorService.swift */; };
+		7E23CB66EBBE7BE06D8A8493 /* SSCSpeakerGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD295A7B75C37830941D9E8B /* SSCSpeakerGroup.swift */; };
+		872AE82AEE5878B541118DD0 /* MockNetworkPathMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8719BA50AFCFA05772BF7B52 /* MockNetworkPathMonitor.swift */; };
 		892B86479A5E81441250597E /* MockSpeakerGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EACC9ABDE7C661F68426BAF /* MockSpeakerGroup.swift */; };
 		8E1AC97B4FC7096F96465C63 /* SpeakerStoreDisplayProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82962EB5CA865A4DB866B0CE /* SpeakerStoreDisplayProperties.swift */; };
-		949415CC6B8DB2DD58C9AD25 /* NetworkMonitorService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90B415F0371D08D1D1C5E042 /* NetworkMonitorService.swift */; };
+		949415CC6B8DB2DD58C9AD25 /* NetworkPathMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90B415F0371D08D1D1C5E042 /* NetworkPathMonitor.swift */; };
 		9DEC965985DDD7751278D8CC /* VolumeHUDView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC92CE43BE483BEF4D289127 /* VolumeHUDView.swift */; };
 		9E3F09785DBCBA3B8C71CD1B /* PopoverKeyboardHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 161AA6DA806B6748E4D32455 /* PopoverKeyboardHandler.swift */; };
 		B0A9526BF159F6FB9A441AA7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9A587CEA7F52E299A3CAC850 /* Assets.xcassets */; };
 		D35A0CB9E5EE9BFB0E6E3223 /* SuspendingSpeakerGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE2FB7FCFE5689548784F209 /* SuspendingSpeakerGroup.swift */; };
 		DA2A25A5F1F40DA4ED24B998 /* SpeakerStoreVolumeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 894C915C42DE45F9DC8C7C12 /* SpeakerStoreVolumeTests.swift */; };
 		E81E92CE2D67F10CAC9355D3 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = E24847FEC26E547FE62A7D78 /* KeyboardShortcuts */; };
-		EABA73BA9212AB13233FD56C /* SoundSettingsPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1FBAA4FABA087107B1CBD09 /* SoundSettingsPresenter.swift */; };
-		EE824148EC4A60D83089CDCF /* SpeakerModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BF466FE41707E5AFA292429 /* SpeakerModels.swift */; };
+		EABA73BA9212AB13233FD56C /* SettingsWindowPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1FBAA4FABA087107B1CBD09 /* SettingsWindowPresenter.swift */; };
+		EE824148EC4A60D83089CDCF /* Speaker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BF466FE41707E5AFA292429 /* Speaker.swift */; };
 		F5AEBFA69892BBD957D43E02 /* KhVolumeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C492CD0E97B6A5400A0C6E84 /* KhVolumeApp.swift */; };
-		F821D31C55E4560B5C7FA85E /* SoundSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98FAF50FF39E541B26028080 /* SoundSettingsView.swift */; };
+		F821D31C55E4560B5C7FA85E /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98FAF50FF39E541B26028080 /* SettingsView.swift */; };
 		FEACA20AD497CC365B4CD900 /* SSCBrowser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5771223DDA2CF9ABDAB91762 /* SSCBrowser.swift */; };
-		51BDCB883AEC4FBEE58207D9 /* SSCMessages.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFECB178B737A17D6E766F36 /* SSCMessages.swift */; };
+		51BDCB883AEC4FBEE58207D9 /* SSCMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFECB178B737A17D6E766F36 /* SSCMessage.swift */; };
 		9140EFBEA762340EC60CFA47 /* SSCSocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A95A1B06C0C327A94EC7EEC /* SSCSocket.swift */; };
 		C5E31AF8C2F395765BC37A7E /* SpeakerLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 211ED026CBDAF236A6E2B01A /* SpeakerLink.swift */; };
 		CA4A1D7EFD1F66DDB792C15D /* SpeakerDirectory.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0BFFC4D7D57455218FF2422 /* SpeakerDirectory.swift */; };
 		71EAC0BA5AB6F15FC0B87EC1 /* NetworkInterfaceLister.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD7942A8C4F432D733170215 /* NetworkInterfaceLister.swift */; };
 		010B867E4427BCD86A47FEA2 /* SSCMessageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A34AA1C391FCE9441A18BC7A /* SSCMessageTests.swift */; };
-		56CBF8D1EE1FD38268D4E5EC /* SpeakerGroupTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2994EDB7D86E8336899ED5F /* SpeakerGroupTests.swift */; };
+		56CBF8D1EE1FD38268D4E5EC /* SSCSpeakerGroupTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2994EDB7D86E8336899ED5F /* SSCSpeakerGroupTests.swift */; };
 		B2C0D1E3F4051627384950A1 /* SSCBrowserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B9C0D2E3F4051627384950 /* SSCBrowserTests.swift */; };
 		F3A4893950BCF4D68E72AFC8 /* FakeSSCServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = E051B41F44DDAE0EF241490E /* FakeSSCServer.swift */; };
 		9881E7C457119B02A635D61C /* SSCHardwareTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD23BA754934FC345531A26D /* SSCHardwareTests.swift */; };
 		00B58510DCF0BD00BE792159 /* UserDefaults+Testing.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8D22C7FCEBC76B670CDCC6F /* UserDefaults+Testing.swift */; };
 		BB600F507DC5B28646796146 /* Comparable+Clamped.swift in Sources */ = {isa = PBXBuildFile; fileRef = 743A688A0F75D08F7A298A82 /* Comparable+Clamped.swift */; };
+		533D735BBFD36876F8044B62 /* SpeakerGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = DED3DFB5F5C56EF460FBFF29 /* SpeakerGroup.swift */; };
+		DBF081CE2359C061CB5D03FE /* ConnectionState.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDC3FF2025E38DCB3311C099 /* ConnectionState.swift */; };
+		F0037A56E3ADA4403C1307B3 /* SpeakerError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E2329F6B1EE58A51A592CF7 /* SpeakerError.swift */; };
+		9D7A47D074D3185ECAF14597 /* NetworkInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50B318403AA7FFF0A11A77FB /* NetworkInterface.swift */; };
+		CA9978817AED0880EF1E8440 /* SpeakerDirectoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A0303371509180C2ED607FB /* SpeakerDirectoryTests.swift */; };
+		078AA54E95395083EE53ADC2 /* SystemNetworkPathMonitorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13C0BE93910A33819AE46C19 /* SystemNetworkPathMonitorTests.swift */; };
+		5A8B9E0997EA9A55643DB83B /* AppDefaultsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24999E3ADB4BC84220D54A12 /* AppDefaultsTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -76,24 +83,24 @@
 		34D442D215FE9FE7377D43AC /* AppConfigTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfigTests.swift; sourceTree = "<group>"; };
 		5332559AF4F6F90788A47985 /* KhVolumeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = KhVolumeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		56C17E2CDC83A87B63CC9CA6 /* MenuBarStatusLabel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarStatusLabel.swift; sourceTree = "<group>"; };
-		79385C3DE8B0927B6014BBC3 /* SpeakerStoreAsyncTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeakerStoreAsyncTests.swift; sourceTree = "<group>"; };
+		79385C3DE8B0927B6014BBC3 /* SpeakerStoreMuteTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeakerStoreMuteTests.swift; sourceTree = "<group>"; };
 		82962EB5CA865A4DB866B0CE /* SpeakerStoreDisplayProperties.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeakerStoreDisplayProperties.swift; sourceTree = "<group>"; };
-		8719BA50AFCFA05772BF7B52 /* MockNetworkMonitorService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockNetworkMonitorService.swift; sourceTree = "<group>"; };
+		8719BA50AFCFA05772BF7B52 /* MockNetworkPathMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockNetworkPathMonitor.swift; sourceTree = "<group>"; };
 		894C915C42DE45F9DC8C7C12 /* SpeakerStoreVolumeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeakerStoreVolumeTests.swift; sourceTree = "<group>"; };
-		8BF466FE41707E5AFA292429 /* SpeakerModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeakerModels.swift; sourceTree = "<group>"; };
-		90B415F0371D08D1D1C5E042 /* NetworkMonitorService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkMonitorService.swift; sourceTree = "<group>"; };
+		8BF466FE41707E5AFA292429 /* Speaker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Speaker.swift; sourceTree = "<group>"; };
+		90B415F0371D08D1D1C5E042 /* NetworkPathMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkPathMonitor.swift; sourceTree = "<group>"; };
 		91C8D9DD0860192036B3A779 /* KH Volume.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "KH Volume.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		98FAF50FF39E541B26028080 /* SoundSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundSettingsView.swift; sourceTree = "<group>"; };
+		98FAF50FF39E541B26028080 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		9A587CEA7F52E299A3CAC850 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		A1FBAA4FABA087107B1CBD09 /* SoundSettingsPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundSettingsPresenter.swift; sourceTree = "<group>"; };
-		A71E9A32E328389A6576A551 /* SpeakerStoreComputedTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeakerStoreComputedTests.swift; sourceTree = "<group>"; };
+		A1FBAA4FABA087107B1CBD09 /* SettingsWindowPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsWindowPresenter.swift; sourceTree = "<group>"; };
+		A71E9A32E328389A6576A551 /* SpeakerStoreDerivedStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeakerStoreDerivedStateTests.swift; sourceTree = "<group>"; };
 		A8F29B1EFC8141001C78955B /* VolumeHUDController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VolumeHUDController.swift; sourceTree = "<group>"; };
 		AD8F77905869BE58F7A43C85 /* VolumePopoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VolumePopoverView.swift; sourceTree = "<group>"; };
 		BC92CE43BE483BEF4D289127 /* VolumeHUDView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VolumeHUDView.swift; sourceTree = "<group>"; };
 		C492CD0E97B6A5400A0C6E84 /* KhVolumeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KhVolumeApp.swift; sourceTree = "<group>"; };
 		D4D2CAE41B892D1ECA887C5D /* LoginItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginItem.swift; sourceTree = "<group>"; };
 		DB8DB8AC5768B2A2B07B7CB3 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
-		DD295A7B75C37830941D9E8B /* SpeakerGroup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeakerGroup.swift; sourceTree = "<group>"; };
+		DD295A7B75C37830941D9E8B /* SSCSpeakerGroup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSCSpeakerGroup.swift; sourceTree = "<group>"; };
 		DE2FB7FCFE5689548784F209 /* SuspendingSpeakerGroup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuspendingSpeakerGroup.swift; sourceTree = "<group>"; };
 		E35BE4E8BB5D613C8EA7C8A4 /* SpeakerStoreTestHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeakerStoreTestHelpers.swift; sourceTree = "<group>"; };
 		EFC6EB8432502459D66F30FE /* SpeakerErrorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeakerErrorTests.swift; sourceTree = "<group>"; };
@@ -103,18 +110,25 @@
 		FBC811D438C7684D2325AE9C /* SpeakerStoreVolumeConcurrencyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeakerStoreVolumeConcurrencyTests.swift; sourceTree = "<group>"; };
 		FF19B73105D54E33739E3AEA /* SpeakerStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeakerStore.swift; sourceTree = "<group>"; };
 		5771223DDA2CF9ABDAB91762 /* SSCBrowser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSCBrowser.swift; sourceTree = "<group>"; };
-		CFECB178B737A17D6E766F36 /* SSCMessages.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSCMessages.swift; sourceTree = "<group>"; };
+		CFECB178B737A17D6E766F36 /* SSCMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSCMessage.swift; sourceTree = "<group>"; };
 		9A95A1B06C0C327A94EC7EEC /* SSCSocket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSCSocket.swift; sourceTree = "<group>"; };
 		211ED026CBDAF236A6E2B01A /* SpeakerLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeakerLink.swift; sourceTree = "<group>"; };
 		F0BFFC4D7D57455218FF2422 /* SpeakerDirectory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeakerDirectory.swift; sourceTree = "<group>"; };
 		CD7942A8C4F432D733170215 /* NetworkInterfaceLister.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkInterfaceLister.swift; sourceTree = "<group>"; };
 		A34AA1C391FCE9441A18BC7A /* SSCMessageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSCMessageTests.swift; sourceTree = "<group>"; };
-		D2994EDB7D86E8336899ED5F /* SpeakerGroupTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeakerGroupTests.swift; sourceTree = "<group>"; };
+		D2994EDB7D86E8336899ED5F /* SSCSpeakerGroupTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSCSpeakerGroupTests.swift; sourceTree = "<group>"; };
 		A1B9C0D2E3F4051627384950 /* SSCBrowserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSCBrowserTests.swift; sourceTree = "<group>"; };
 		E051B41F44DDAE0EF241490E /* FakeSSCServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FakeSSCServer.swift; sourceTree = "<group>"; };
 		CD23BA754934FC345531A26D /* SSCHardwareTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSCHardwareTests.swift; sourceTree = "<group>"; };
 		D8D22C7FCEBC76B670CDCC6F /* UserDefaults+Testing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UserDefaults+Testing.swift"; sourceTree = "<group>"; };
 		743A688A0F75D08F7A298A82 /* Comparable+Clamped.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Comparable+Clamped.swift"; sourceTree = "<group>"; };
+		DED3DFB5F5C56EF460FBFF29 /* SpeakerGroup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeakerGroup.swift; sourceTree = "<group>"; };
+		CDC3FF2025E38DCB3311C099 /* ConnectionState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionState.swift; sourceTree = "<group>"; };
+		5E2329F6B1EE58A51A592CF7 /* SpeakerError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeakerError.swift; sourceTree = "<group>"; };
+		50B318403AA7FFF0A11A77FB /* NetworkInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkInterface.swift; sourceTree = "<group>"; };
+		5A0303371509180C2ED607FB /* SpeakerDirectoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeakerDirectoryTests.swift; sourceTree = "<group>"; };
+		13C0BE93910A33819AE46C19 /* SystemNetworkPathMonitorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemNetworkPathMonitorTests.swift; sourceTree = "<group>"; };
+		24999E3ADB4BC84220D54A12 /* AppDefaultsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDefaultsTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -151,7 +165,7 @@
 			children = (
 				E051B41F44DDAE0EF241490E /* FakeSSCServer.swift */,
 				0EACC9ABDE7C661F68426BAF /* MockSpeakerGroup.swift */,
-				8719BA50AFCFA05772BF7B52 /* MockNetworkMonitorService.swift */,
+				8719BA50AFCFA05772BF7B52 /* MockNetworkPathMonitor.swift */,
 				E35BE4E8BB5D613C8EA7C8A4 /* SpeakerStoreTestHelpers.swift */,
 				DE2FB7FCFE5689548784F209 /* SuspendingSpeakerGroup.swift */,
 				D8D22C7FCEBC76B670CDCC6F /* UserDefaults+Testing.swift */,
@@ -179,15 +193,18 @@
 		7B31B6DC3A7841749CEC1412 /* KhVolumeTests */ = {
 			isa = PBXGroup;
 			children = (
+				24999E3ADB4BC84220D54A12 /* AppDefaultsTests.swift */,
+				13C0BE93910A33819AE46C19 /* SystemNetworkPathMonitorTests.swift */,
+				5A0303371509180C2ED607FB /* SpeakerDirectoryTests.swift */,
 				34D442D215FE9FE7377D43AC /* AppConfigTests.swift */,
 				EFC6EB8432502459D66F30FE /* SpeakerErrorTests.swift */,
 				B8D2F6A3C4E55B7FA01D2E3F /* HotkeyVolumeInteractionTests.swift */,
 				CD23BA754934FC345531A26D /* SSCHardwareTests.swift */,
 				A34AA1C391FCE9441A18BC7A /* SSCMessageTests.swift */,
-				D2994EDB7D86E8336899ED5F /* SpeakerGroupTests.swift */,
+				D2994EDB7D86E8336899ED5F /* SSCSpeakerGroupTests.swift */,
 				A1B9C0D2E3F4051627384950 /* SSCBrowserTests.swift */,
-				79385C3DE8B0927B6014BBC3 /* SpeakerStoreAsyncTests.swift */,
-				A71E9A32E328389A6576A551 /* SpeakerStoreComputedTests.swift */,
+				79385C3DE8B0927B6014BBC3 /* SpeakerStoreMuteTests.swift */,
+				A71E9A32E328389A6576A551 /* SpeakerStoreDerivedStateTests.swift */,
 				F1A8B151312045C08CCF1D27 /* SpeakerOutputTests.swift */,
 				191F58C2C957D01F428EFD6B /* SpeakerStoreConnectionTests.swift */,
 				FBC811D438C7684D2325AE9C /* SpeakerStoreVolumeConcurrencyTests.swift */,
@@ -200,10 +217,12 @@
 		8179A2452F8BB8223F1BF134 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				A1FBAA4FABA087107B1CBD09 /* SettingsWindowPresenter.swift */,
+				A8F29B1EFC8141001C78955B /* VolumeHUDController.swift */,
 				56C17E2CDC83A87B63CC9CA6 /* MenuBarStatusLabel.swift */,
 				161AA6DA806B6748E4D32455 /* PopoverKeyboardHandler.swift */,
 				2F6BDF558358FF89E6D0F712 /* PopoverMenuRow.swift */,
-				98FAF50FF39E541B26028080 /* SoundSettingsView.swift */,
+				98FAF50FF39E541B26028080 /* SettingsView.swift */,
 				82962EB5CA865A4DB866B0CE /* SpeakerStoreDisplayProperties.swift */,
 				BC92CE43BE483BEF4D289127 /* VolumeHUDView.swift */,
 				AD8F77905869BE58F7A43C85 /* VolumePopoverView.swift */,
@@ -234,9 +253,12 @@
 		E0307448FE8FE6E1011666ED /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				50B318403AA7FFF0A11A77FB /* NetworkInterface.swift */,
+				5E2329F6B1EE58A51A592CF7 /* SpeakerError.swift */,
+				CDC3FF2025E38DCB3311C099 /* ConnectionState.swift */,
 				743A688A0F75D08F7A298A82 /* Comparable+Clamped.swift */,
 				DB8DB8AC5768B2A2B07B7CB3 /* AppConfig.swift */,
-				8BF466FE41707E5AFA292429 /* SpeakerModels.swift */,
+				8BF466FE41707E5AFA292429 /* Speaker.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -244,17 +266,16 @@
 		F2BA4B6B887BBFB1C5CD5491 /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				F0BFFC4D7D57455218FF2422 /* SpeakerDirectory.swift */,
+				DED3DFB5F5C56EF460FBFF29 /* SpeakerGroup.swift */,
 				0572A62B659E31B297B14CEE /* AppDefaults.swift */,
 				29BF772FA72D56E61509E97E /* HotkeyManager.swift */,
 				F60CC07A65FB714EABAF2531 /* HotkeyVolumeInteraction.swift */,
 				9665954A49A0A14986C291AA /* SSC */,
-				DD295A7B75C37830941D9E8B /* SpeakerGroup.swift */,
 				CD7942A8C4F432D733170215 /* NetworkInterfaceLister.swift */,
 				D4D2CAE41B892D1ECA887C5D /* LoginItem.swift */,
-				90B415F0371D08D1D1C5E042 /* NetworkMonitorService.swift */,
-				A1FBAA4FABA087107B1CBD09 /* SoundSettingsPresenter.swift */,
+				90B415F0371D08D1D1C5E042 /* NetworkPathMonitor.swift */,
 				FF19B73105D54E33739E3AEA /* SpeakerStore.swift */,
-				A8F29B1EFC8141001C78955B /* VolumeHUDController.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -262,11 +283,11 @@
 		9665954A49A0A14986C291AA /* SSC */ = {
 			isa = PBXGroup;
 			children = (
+				DD295A7B75C37830941D9E8B /* SSCSpeakerGroup.swift */,
 				5771223DDA2CF9ABDAB91762 /* SSCBrowser.swift */,
-				CFECB178B737A17D6E766F36 /* SSCMessages.swift */,
+				CFECB178B737A17D6E766F36 /* SSCMessage.swift */,
 				9A95A1B06C0C327A94EC7EEC /* SSCSocket.swift */,
 				211ED026CBDAF236A6E2B01A /* SpeakerLink.swift */,
-				F0BFFC4D7D57455218FF2422 /* SpeakerDirectory.swift */,
 			);
 			path = SSC;
 			sourceTree = "<group>";
@@ -370,13 +391,16 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5A8B9E0997EA9A55643DB83B /* AppDefaultsTests.swift in Sources */,
+				078AA54E95395083EE53ADC2 /* SystemNetworkPathMonitorTests.swift in Sources */,
+				CA9978817AED0880EF1E8440 /* SpeakerDirectoryTests.swift in Sources */,
 				77ABD2A70B4717217C6E1F94 /* AppConfigTests.swift in Sources */,
 				76CEF1DEC3DEF4B2AC34B572 /* SpeakerErrorTests.swift in Sources */,
 				A7C1E5F2B3D44A6E9F0C1D2E /* HotkeyVolumeInteractionTests.swift in Sources */,
 				892B86479A5E81441250597E /* MockSpeakerGroup.swift in Sources */,
-				872AE82AEE5878B541118DD0 /* MockNetworkMonitorService.swift in Sources */,
-				0FF259952B80B2B54B352EAF /* SpeakerStoreAsyncTests.swift in Sources */,
-				3A5AE5DAC491D754BF73316D /* SpeakerStoreComputedTests.swift in Sources */,
+				872AE82AEE5878B541118DD0 /* MockNetworkPathMonitor.swift in Sources */,
+				0FF259952B80B2B54B352EAF /* SpeakerStoreMuteTests.swift in Sources */,
+				3A5AE5DAC491D754BF73316D /* SpeakerStoreDerivedStateTests.swift in Sources */,
 				69A5498ED7FBFB9ABC3C2E32 /* SpeakerOutputTests.swift in Sources */,
 				00A3A07FC6160E7123180B37 /* SpeakerStoreConnectionTests.swift in Sources */,
 				17A5A4CFDA03C4B137C23F7C /* SpeakerStoreTestHelpers.swift in Sources */,
@@ -386,7 +410,7 @@
 				00B58510DCF0BD00BE792159 /* UserDefaults+Testing.swift in Sources */,
 				9881E7C457119B02A635D61C /* SSCHardwareTests.swift in Sources */,
 				F3A4893950BCF4D68E72AFC8 /* FakeSSCServer.swift in Sources */,
-				56CBF8D1EE1FD38268D4E5EC /* SpeakerGroupTests.swift in Sources */,
+				56CBF8D1EE1FD38268D4E5EC /* SSCSpeakerGroupTests.swift in Sources */,
 				B2C0D1E3F4051627384950A1 /* SSCBrowserTests.swift in Sources */,
 				010B867E4427BCD86A47FEA2 /* SSCMessageTests.swift in Sources */,
 			);
@@ -396,27 +420,31 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9D7A47D074D3185ECAF14597 /* NetworkInterface.swift in Sources */,
+				F0037A56E3ADA4403C1307B3 /* SpeakerError.swift in Sources */,
+				DBF081CE2359C061CB5D03FE /* ConnectionState.swift in Sources */,
+				533D735BBFD36876F8044B62 /* SpeakerGroup.swift in Sources */,
 				BB600F507DC5B28646796146 /* Comparable+Clamped.swift in Sources */,
 				4D1D449826F7DAED3E54CEB3 /* AppConfig.swift in Sources */,
 				6B74A1EDF66DEB734AF7CCCD /* AppDefaults.swift in Sources */,
 				17A53D9687D7D0FF723CFC9E /* HotkeyManager.swift in Sources */,
 				40398FC47F8CC4B0E3631FE6 /* HotkeyVolumeInteraction.swift in Sources */,
 				F5AEBFA69892BBD957D43E02 /* KhVolumeApp.swift in Sources */,
-				7E23CB66EBBE7BE06D8A8493 /* SpeakerGroup.swift in Sources */,
+				7E23CB66EBBE7BE06D8A8493 /* SSCSpeakerGroup.swift in Sources */,
 				71EAC0BA5AB6F15FC0B87EC1 /* NetworkInterfaceLister.swift in Sources */,
 				CA4A1D7EFD1F66DDB792C15D /* SpeakerDirectory.swift in Sources */,
 				C5E31AF8C2F395765BC37A7E /* SpeakerLink.swift in Sources */,
 				9140EFBEA762340EC60CFA47 /* SSCSocket.swift in Sources */,
-				51BDCB883AEC4FBEE58207D9 /* SSCMessages.swift in Sources */,
+				51BDCB883AEC4FBEE58207D9 /* SSCMessage.swift in Sources */,
 				FEACA20AD497CC365B4CD900 /* SSCBrowser.swift in Sources */,
 				1054B5061C33F95FF54B7A8F /* LoginItem.swift in Sources */,
 				0C85F51E795110A6F43660A1 /* MenuBarStatusLabel.swift in Sources */,
-				949415CC6B8DB2DD58C9AD25 /* NetworkMonitorService.swift in Sources */,
+				949415CC6B8DB2DD58C9AD25 /* NetworkPathMonitor.swift in Sources */,
 				9E3F09785DBCBA3B8C71CD1B /* PopoverKeyboardHandler.swift in Sources */,
 				5CF6BE010AB431B17A1D5DB2 /* PopoverMenuRow.swift in Sources */,
-				EABA73BA9212AB13233FD56C /* SoundSettingsPresenter.swift in Sources */,
-				F821D31C55E4560B5C7FA85E /* SoundSettingsView.swift in Sources */,
-				EE824148EC4A60D83089CDCF /* SpeakerModels.swift in Sources */,
+				EABA73BA9212AB13233FD56C /* SettingsWindowPresenter.swift in Sources */,
+				F821D31C55E4560B5C7FA85E /* SettingsView.swift in Sources */,
+				EE824148EC4A60D83089CDCF /* Speaker.swift in Sources */,
 				2D285D19D99E574FB77B36D5 /* SpeakerStore.swift in Sources */,
 				8E1AC97B4FC7096F96465C63 /* SpeakerStoreDisplayProperties.swift in Sources */,
 				6228280FA10ED8D11D0890BF /* VolumeHUDController.swift in Sources */,

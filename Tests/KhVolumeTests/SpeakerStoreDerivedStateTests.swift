@@ -1,9 +1,9 @@
 import Testing
 @testable import KhVolume
 
-@Suite("SpeakerStore — Computed Properties")
+@Suite("SpeakerStore — Derived state")
 @MainActor
-struct SpeakerStoreComputedTests {
+struct SpeakerStoreDerivedStateTests {
 
     private func store(levelLimit: Double = 120, outputs: [SpeakerOutput] = [.stub()]) -> SpeakerStore {
         var config = AppConfig()

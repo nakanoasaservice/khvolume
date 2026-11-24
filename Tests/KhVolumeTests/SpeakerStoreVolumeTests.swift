@@ -1,9 +1,10 @@
 import Testing
 @testable import KhVolume
 
-@Suite("SpeakerStore — Volume requests")
+@Suite("SpeakerStore — Volume requests", .serialized)
 @MainActor
 struct SpeakerStoreVolumeTests {
+    private let offline = SpeakerError.unreachable(speaker: "Left")
     private let unbalanced: [SpeakerOutput] = [.stub(id: "l", level: 60), .stub(id: "r", level: 40)]
 
     private func forcing() -> AppConfig {
@@ -130,5 +131,53 @@ struct SpeakerStoreVolumeTests {
         let store = SpeakerStore.makeForTesting(outputs: unbalanced)
         store.adjustLevel(by: -5)
         #expect(store.targetLevel == 35)
+    }
+
+    // MARK: failed requests
+
+    @Test("a failed level write drops the level and marks the connection failed")
+    func setLevelFailure() async {
+        let speakers = MockSpeakerGroup()
+        speakers.setLevelError = offline
+        let store = SpeakerStore.makeForTesting(speakers: speakers)
+
+        store.setLevel(75)
+        await store.settle()
+
+        #expect(store.targetLevel == nil)
+        #expect(store.connection == .failed(offline))
+        #expect(store.errorMessage == "Left is not responding")
+        #expect(store.outputs.isEmpty)
+    }
+
+    @Test("opening the popover reads the speakers again after a failed write")
+    func popoverRecoversAfterFailedWrite() async {
+        let speakers = MockSpeakerGroup()
+        speakers.setLevelError = offline
+        let store = SpeakerStore.makeForTesting(speakers: speakers)
+        store.setLevel(75)
+        await store.settle()
+
+        speakers.outputs = [.stub(level: 60)]
+        store.preparePopover()
+        await store.settle()
+
+        #expect(store.level == 60)
+        #expect(store.connection == .connected)
+    }
+
+    @Test("a volume change while not connected reads the speakers instead of sending a level")
+    func volumeChangeWhileNotConnected() async {
+        let speakers = MockSpeakerGroup()
+        speakers.outputs = [.stub(level: 60)]
+        let store = SpeakerStore.makeForTesting(speakers: speakers, outputs: [])
+        store.connection = .failed(offline)
+
+        store.adjustLevel(by: 1)
+        await store.settle()
+
+        #expect(speakers.setLevelArgs.isEmpty)
+        #expect(store.level == 60)
+        #expect(store.connection == .connected)
     }
 }
